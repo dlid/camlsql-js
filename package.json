@@ -1,0 +1,30 @@
+{
+  "name": "casql",
+  "version": "0.0.1",
+  "description": "Create CAML queries using SQL syntax",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dlid/caSql.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dlid/caSql/issues"
+  },
+  "homepage": "https://github.com/dlid/caSql#readme",
+  "devDependencies": {
+    "browser-sync": "^2.18.13",
+    "gulp": "^3.9.1",
+    "gulp-clean": "^0.3.2",
+    "gulp-concat": "^2.6.1",
+    "gulp-inject-string": "^1.1.0",
+    "gulp-jshint": "^2.0.4",
+    "gulp-minify": "^1.0.0",
+    "gulp-sourcemaps": "^2.6.1",
+    "gulp-wrap": "^0.13.0"
+  }
+}

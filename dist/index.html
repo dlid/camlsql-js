@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<script src="js/casql.js"></script>
+		<script src="js/vkbeautify.0.99.00.beta.js"></script>
+		<style type="text/css">
+			pre {margin:0;}
+			h1 {margin:0;padding:0;font-weight: normal; font-size: 1.1em;}
+			.sql { background-color: #eee; padding:10px; color: darkgreen; font-weight: bold;  }
+			.param { background-color: #eee; color: blue; padding-left: 10px; padding-bottom: 10px  }
+			.xml { background-color: #ccc; padding: 10px; color: maroon;  }
+		</style>
+	</head>
+	<body>
+
+		<script>
+
+			var tests = [
+				{sql : "SELECT Title, ImageUrl FROM ListName WHERE [Title] LIKE ?", param : ["%hello%"]},
+				{sql : "SELECT * FROM List WHERE Title <> ?", param : ["apa"]},
+				{sql : "SELECT * FROM List WHERE Title LIKE ?", param : ["%hej"]},
+				{sql : "SELECT * FROM List WHERE Title is null", param : []},
+				{sql : "SELECT * FROM List WHERE Title is not null", param : []},
+				{sql : "SELECT * FROM List WHERE Created >= ? AND Created <= ?", param : [caSql.today(-30), caSql.today()]},
+				{sql : "SELECT Title, SlideImage FROM List WHERE Id = ? and t = ? ORDER BY Created", param : [5, 'cheese']},
+				{sql : "SELECT Title, ImageUrl FROM List WHERE Title LIKE ? AND ([StartDate] is null or [StartDate] >= ?) ", param : ['test%', caSql.today()]},
+				//{sql : "SELECT * FROM List ORDER BY Title DESC", param : null},1
+//				{sql : "SELECT * FROM [Second List] WHERE Title = ? AND (Field2 = ? OR Field8 < ?)", param : [
+//					caSql.number(5)
+//				]},
+			]			
+
+			for (var i=0; i < tests.length; i++) {
+				var c = new caSql(tests[i].sql, tests[i].param);
+				document.write("<h1>Example " + (i+1) + "</h1>")
+				document.write("<pre><span style='color: steelblue'>var</span> <span style='color: green'>c</span> = <span style='color: #F9263E'>new</span> <span style='color:purple'>caSql</span>('<span style='color: blue'>" + tests[i].sql +"</span>', ");
+				document.write("<span style='color:blue'>" + JSON.stringify(tests[i].param ? tests[i].param : [], null, 1) +"</span></pre>");
+				document.write("<pre class='xml'>" + vkbeautify.xml(c.getXml()).replace(/</g, '&lt;').replace(/>/g, '&gt;') + " </pre>" );
+				document.write("<hr>");
+			}
+
+
+
+		</script>
