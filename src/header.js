@@ -1,3 +1,3 @@
-var camlsql = (function(query, param )  {
+var camlsql = (function(query, param)  {
 
 

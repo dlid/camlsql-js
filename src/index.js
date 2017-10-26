@@ -1,6 +1,14 @@
+	
+	var _properties = {
+		query : query
+	},
+	quiet = false;
 
-
-
+	if (arguments.length == 3) {
+		if (arguments[2] == true) {
+			quiet = true;
+		}
+	}
 	if (!String.prototype.encodeHTML) {
 	  String.prototype.encodeHTML = function () {
 	    return this.replace(/&/g, '&amp;')
@@ -41,11 +49,16 @@
 
 		if (fields.length == 1 && fields[0] == '*') fields = [];
 
- 		return {
+		var w = WhereParser(m[3], quiet);
+
+ 		return { 
  			listName : listName,
 			viewFields : fields,
-			where : WhereParser(m[3])
-		};
+			where : w.statements,
+			macroType : w.macroType,
+			macroCount : w.macroCount,
+			macros : w.macros
+		}; 
 
 	}
 
@@ -60,6 +73,8 @@
 			ret = camlsql.text(parameter);
 		} else if (typeof parameter == "number") {
 			ret = camlsql.number(parameter);
+		} else if (typeof parameter == "object" && parameter.type !== "undefined") {
+			return parameter;
 		}
 		return ret;
 	}
@@ -67,14 +82,12 @@
 
 	var newParam = {};
 	if (param && param.length > 0) {
+		_properties.originalParam = param;
 		for (var i=0; i < param.length; i++) {
 			newParam["@param" + i] = parseParameter(param[i]);
 		}
+		_properties.param = newParam;
 	}
-
-	console.log("PARAMS", newParam);
-
-
 
 	var parsedQuery = parseQuery(query),
 		viewXml = "<View>";
@@ -86,6 +99,9 @@
 		viewXml += "</ViewFields>";
 	}
 
+	_properties.macroType = parsedQuery.macroType;
+	_properties.macroCount = parsedQuery.macroCount;
+	_properties.macros = parsedQuery.macros;
 
 	var queryXml = andOrWhatnot(parsedQuery.where);
 	if (queryXml) {
@@ -94,6 +110,7 @@
 
 	function andOrWhatnot(items) {
 		var xml = "";
+		if (!items) return "";
 		if (items.length > 1) {
 			var operatorElement = items[1].operator == "and" ? "And" : "Or";
 			
@@ -116,30 +133,22 @@
 			if (item.comparison !== "null" && item.comparison !== "notnull") {
 				if (typeof param === "undefined") {
 					xml += "<casql:Error>" + ("Parameter not found ("+item.macro+")").encodeHTML() + "</casql:Error>";
-					console.error("[casql] Parameter not found", item.macro);
+					if(!quiet) console.error("[casql] Parameter not found", item.macro);
 					return xml;
 				}
 			}
-			if (item.comparison == "eq") {
-				xml += "<Eq>";
+
+			var simpleMappings = {'eq' : 'Eq', 'gt' : 'Gt', 'gte' : 'Geq', 'lte' : 'Leq', 'lt' : 'lt', 'ne' : 'Neq'};
+
+			if (typeof simpleMappings[item.comparison] !== "undefined") {
+				elementName = simpleMappings[item.comparison];
+				xml += "<" + elementName + ">";
 				xml += fieldRefValue(item, param);
-				xml += "</Eq>";
-			} else if (item.comparison == "gte") {
-				xml += "<Geq>";
+				xml += "</" + elementName + ">";
+			} else if (item.comparison == "in") {
+				xml += "<IsNull>";
 				xml += fieldRefValue(item, param);
-				xml += "</Geq>";
-			} else if (item.comparison == "lte") {
-				xml += "<Leq>";
-				xml += fieldRefValue(item, param);
-				xml += "</Leq>";
-			} else if (item.comparison == "lt") {
-				xml += "<Lt>";
-				xml += fieldRefValue(item, param);
-				xml += "</Lt>";
-			} else if (item.comparison == "ne") {
-				xml += "<Neq>";
-				xml += fieldRefValue(item, param);
-				xml += "</Neq>";
+				xml += "</IsNull>";
 			} else if (item.comparison == "null") {
 				xml += "<IsNull>";
 				xml += '<FieldRef Name="' + item.field.encodeHTML() + '" />'
@@ -151,8 +160,7 @@
 			} else if (item.comparison == "like") {
 				var elementName = "Contains",
 					paramValue = null;
-
-				if (param.value.indexOf('%') === 0 && param.value.indexOf('%') === param.value.length -1) {
+				if (param.value.indexOf('%') === 0 && param.value[param.value.length-1] === "%") {
 					paramValue = param.value.replace(/^%?|%?$/g, '');
 				} else if (param.value.indexOf('%') === 0) {
 					console.warn("[casql] SharePoint does not support an 'EndsWith' statement. Contains will be used instead. (Field '" + item.field + "')");
@@ -173,30 +181,48 @@
 		return xml;
 	}
 
-	function fieldRefValue(item, param, editedParamValue) {
-		var xml = "",
-			value = "",
-			paramValue = typeof editedParamValue !== "undefined" && editedParamValue !== null ? editedParamValue : param.value;
-			
-
-
+	function createValueElement(item, param, paramValue) {
+		var xml = "";
 		if (param.type == "DateTime") {
 			if (param.today === true) {
-				value = "<Today";
+				xml = "<Today";
 				if (paramValue) {
-					value += ' OffsetDays="' + paramValue + '"';
+					xml += ' OffsetDays="' + paramValue + '"';
 				}
-				value += " />";
+				xml += " />";
 			}
 		} else if (param.type == "Text") {
 			if (param.multiline === true) {
-				value = "<<![CDATA[";
-				value += paramValue;
-				value += "]]>";
+				xml = "<<![CDATA[";
+				xml += paramValue;
+				xml += "]]>";
 			} else {
-				value += paramValue.encodeHTML();
+				xml += paramValue.encodeHTML();
 			}
+		} else if (param.type == "Number") {
+			xml += paramValue;
 		}
+		xml = '<Value Type="' + param.type + '">' + xml +'</Value>';
+		return xml;
+	}
+
+	function fieldRefValue(item, param, editedParamValue) {
+		var xml = "",
+			value = "",
+			paramValue = typeof editedParamValue !== "undefined" && editedParamValue !== null ? editedParamValue : (param ? param.value : null);
+	
+		if (item.comparison == "in") {
+			xml += '<FieldRef Name="' + item.field.encodeHTML() + '" />'
+			xml += '<Values>';
+			for (var i=0; i < param.length; i++) {
+				xml += createValueElement(item, param[i], param[i].value);			
+			}
+			xml += '</Values>';
+			return xml;
+		} else {
+			value = createValueElement(item, param, paramValue);
+		}
+		
 		xml += '<FieldRef Name="' + item.field.encodeHTML() + '" />'
 		xml += '<Value Type="' + param.type + '">' + value +'</Value>';
 		return xml;
@@ -222,7 +248,8 @@
 
 	var returnValue = {
 		getXml : getXml,
-		getListName : getListName
+		getListName : getListName,
+		_properties : _properties
 	};
 
 	if (typeof executeQuery !== "undefined")

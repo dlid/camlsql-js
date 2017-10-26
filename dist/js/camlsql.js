@@ -1,15 +1,15 @@
 /*! */
 
 
-	/* File: c:\git\camlsql-js\src\header.js  */
-var camlsql = (function(query, param )  {
+	/* File: D:\git\camlsql-js\src\header.js  */
+var camlsql = (function(query, param)  {
 
 
 
 
 
-	/* File: c:\git\camlsql-js\src\where-parser.js  */
-	var WhereParser = function(whereString) {
+	/* File: D:\git\camlsql-js\src\where-parser.js  */
+	var WhereParser = function(whereString, quiet) {
 		var blockOpen = '(',
 			blockClose = ')',
     		conjunction = ['and', 'or', '&&', '||'],
@@ -125,7 +125,7 @@ var camlsql = (function(query, param )  {
 	    						s.comparison = p.comparison;
 	    						statements.push(s);
 	    					} else {
-	    						console.error("[casql] Could not parse statement", "'" + sp[j] + "'");
+	    						if(!quiet) console.error("[casql] Could not parse statement", "'" + sp[j] + "'");
 	    					}
     					}
     					if (statements.length > 1) {
@@ -150,7 +150,9 @@ var camlsql = (function(query, param )  {
     			return newBlocks;
     		}
 
-    		var _parameters = 0;
+    		var _parameters = 0,
+                _numMacros = 0,
+                _macros = [];
     		function parseStatement(str) {
 
     			if (typeof str === "undefined") return null;
@@ -161,31 +163,34 @@ var camlsql = (function(query, param )  {
     			var m = str.match(/(.*)\s*(<>|>=|[^<]>|<=|<[^>]|[^<>]=|like|isnull|isnotnull|in)\s*(\?|@[a-z]+)/i);
     			if (m) {
     				var comparison = "eq",
-    					macro  = "@param" + _parameters;
-    					//console.warn("MATCH", str, m);
-    				if (m[2] == '>') comparison = "gt";
-    				if (m[2] == '>=') comparison = "gte";
-    				if (m[2] == '<') comparison = "lt";
-    				if (m[2] == '<=') comparison = "lte";
-    				if (m[2] == '==') comparison = "eq";
+    					macro  = "@param" + _parameters,
+                        cmpMatch = trim(m[2]);
+    					
+    				if (cmpMatch == '>') comparison = "gt";
+    				if (cmpMatch == '>=') comparison = "gte";
+    				if (cmpMatch == '<') comparison = "lt";
+    				if (cmpMatch == '<=') comparison = "lte";
+    				if (cmpMatch == '==') comparison = "eq";
                     
-    				if (m[2] == '<>' || m[2] == "!=") comparison = "ne";
-    				if (m[2].toLowerCase() == 'like') comparison = "like";
-    				if (m[2].toLowerCase() == 'isnull') comparison = "null";
-    				if (m[2].toLowerCase() == 'isnotnull') comparison = "notnull";
-                    if (m[2].toLowerCase() == 'in') comparison = "in";
+    				if (cmpMatch == '<>' || cmpMatch == "!=") comparison = "ne";
+    				if (cmpMatch.toLowerCase() == 'like') comparison = "like";
+    				if (cmpMatch.toLowerCase() == 'isnull') comparison = "null";
+    				if (cmpMatch.toLowerCase() == 'isnotnull') comparison = "notnull";
+                    if (cmpMatch.toLowerCase() == 'in') comparison = "in";
 
     				if (comparison != "null" && comparison != "notnull") {
     					_parameters++; 
+                        _numMacros++;
     					if (prevMacro == null) 
 	    					prevMacro = m[3];
 	    				else if (prevMacro != m[3]) {
-	    					console.error("[casql] You can not mix named macros and ?");
+	    					if(!quiet) console.error("[casql] You can not mix named macros and ?");
 	    					return null;
 	    				}
 	    				if (m[3][0] == "@") {
     						macro = m[3];
-	    				}
+	    				} 
+                        _macros.push(macro);
     				} else {
     					macro = null;
     				}
@@ -202,120 +207,132 @@ var camlsql = (function(query, param )  {
     		var parsed = parse_blocks(whereString);
     		//console.log("PARSED", whereString, parsed);
 
-    	return parsed;
-
+    	return {
+            statements : parsed, 
+            macroType : prevMacro,
+            macroCount : _numMacros,
+            macros : _macros
+        }
 
 
 
 	}
 
 
-	/* File: c:\git\camlsql-js\src\sp-exec.js  */
-var executeQuery = function() {
-	var args = Array.prototype.slice.call(arguments),
-		spWeb = null,
-		execCallback = null,
-		clientContext,
-		spList = null,
-		listName = this.getListName(),
-		spListItems = null,
-		viewXml = this.getXml();
+	/* File: D:\git\camlsql-js\src\sp-exec.js  */
+var executeQuery = function () {
+        var args = Array.prototype.slice.call(arguments),
+            spWeb = null,
+            execCallback = null,
+            clientContext,
+            spList = null,
+            listName = this.getListName(),
+            spListItems = null,
+            viewXml = this.getXml();
 
-	if (args.length > 1) {
-		if (typeof args[0] === "object") {
-			spWeb = args[0];
-			if (typeof args[1] == "function") {
-				execCallback = args[1];
-			}
+        if (args.length > 1) {
+            if (typeof args[0] === "object") {
+                spWeb = args[0];
+                if (typeof args[1] == "function") {
+                    execCallback = args[1];
+                }
+            }
+        } else if (args.length == 1) {
+            if (typeof args[0] === "object") {
+                spWeb = args[0];
+            } else if (typeof args[0] == "function") {
+                execCallback = args[0];
+            }
+        }
+
+        if (typeof SP !== "undefined") {
+
+            SP.SOD.executeFunc('sp.js', 'SP.ClientContext', function () {
+                clientContext = SP.ClientContext.get_current();
+                if (spWeb === null) {
+                    spWeb = clientContext.get_web();
+                    spList = spWeb.get_lists().getByTitle(listName);
+
+                    clientContext.load(spList);
+                    clientContext.executeQueryAsync(onListLoaded, function () {
+                        execCallback({
+                            status: "error",
+                            message: "Failed to load list",
+                            data: {
+                                sql: getSql,
+                                viewXml: viewXml,
+                                listName: listName,
+                                error: Array.prototype.slice.call(arguments)
+                            }
+                        }, null);
+                    });
+
+                }
+            });
+
+        } else {
+            execCallback({
+                status: "error",
+                message: "SP is not defined",
+                data: null
+            }, null);
+        }
+
+        function onListLoaded() {
+            var camlQuery = new SP.CamlQuery();
+            var camlQueryString = viewXml;
+
+
+            camlQuery.set_viewXml(camlQueryString);
+            spListItems = spList.getItems(camlQuery);
+            clientContext.load(spListItems);
+            clientContext.executeQueryAsync(camlQuerySuccess, function () {
+                execCallback({
+                    status: "error",
+                    message: "Error executing the SP.CamlQuery",
+                    data: {
+                        sql: getSql,
+                        viewXml: viewXml,
+                        listName: listName,
+                        error: Array.prototype.slice.call(arguments)
+                    }
+                }, null);
+            });
+        }
+
+         function camlQuerySuccess() {
+            var listItemEnumerator = spListItems.getEnumerator(),
+                items = [],
+                spListItem;
+
+            while (listItemEnumerator.moveNext()) {
+                spListItem = listItemEnumerator.get_current();
+                items.push(spListItem.get_fieldValues());
+            }
+            execCallback(null, items);
+        }
+
+        console.log({
+            web: spWeb,
+            callback: execCallback
+        });
+
+        return this;
+    }
+
+
+	/* File: D:\git\camlsql-js\src\index.js  */
+	
+	var _properties = {
+		query : query
+	},
+	quiet = false;
+
+	if (arguments.length == 3) {
+		if (arguments[2] == true) {
+			quiet = true;
 		}
-	} else if (args.length == 1) {
-		if (typeof args[0] === "object") {
-			spWeb = args[0];
-		 } else if (typeof args[0] == "function") {
-			execCallback = args[0];
-		}
 	}
-
-	if (typeof SP !== "undefined") {
-		
-		SP.SOD.executeFunc('sp.js','SP.ClientContext', function() {
-			clientContext = SP.ClientContext.get_current();
-			if (spWeb === null) {
-				spWeb  = clientContext.get_web();
-				spList = oWeb.get_lists().getByTitle(listName);
-
-				clientContext.load(spList);
-			    clientContext.executeQueryAsync(onListLoaded, function() {
-			    	execCallback({ 
-			    		status : "error", 
-			    		message : "Failed to load list", 
-			    		data : {
-			    			sql : getSql,
-			    			viewXml : viewXml,
-			    			listName : listName,
-			    			error : Array.prototype.slice.call(arguments)
-			    		}
-			    	}, null);
-			    });
-
-			}
-		});
-
-	} else {
-		execCallback({ 
-    		status : "error", 
-    		message : "SP is not defined", 
-    		data : null
-    	}, null);
-	}
-
-	function onListLoaded() {
-		var camlQuery = new SP.CamlQuery();
-	    var camlQueryString = viewXml;
-	    camlQuery.set_viewXml(camlQueryString);
-	    spListItems = companiesList.getItems(camlQuery);
-	    clientContext.load(allCompanies);
-	    clientContext.executeQueryAsync(camlQuerySuccess, function() {
-	    	execCallback({ 
-	    		status : "error", 
-	    		message : "Error executing the SP.CamlQuery", 
-	    		data : {
-	    			sql : getSql,
-	    			viewXml : viewXml,
-	    			listName : listName,
-	    			error : Array.prototype.slice.call(arguments)
-	    		}
-	    	}, null);
-	    });
-	}
-
-	function camlQuerySuccess() {
-		  var listItemEnumerator = spListItems.getEnumerator();
-		  while (listItemEnumerator.moveNext()) {
-		      var currentCompany = listItemEnumerator.get_current();
-		      // var thisCompanyId = currentCompany.get_item('ID');
-		      // var thisCompanyName = currentCompany.get_item('companyName');
-		      // companiesMarkupBlock += thisCompanyId;
-		      // companiesMarkupBlock += " : ";
-		      // companiesMarkupBlock += thisCompanyName;
-		      // companiesMarkupBlock += "<br />";
-	    }
-	}
-
-	console.log({
-		web : spWeb,
-		callback : execCallback
-	});
-
-	return this;
-}
-
-
-
-	/* File: c:\git\camlsql-js\src\index.js  */
-
-
-
 	if (!String.prototype.encodeHTML) {
 	  String.prototype.encodeHTML = function () {
 	    return this.replace(/&/g, '&amp;')
@@ -356,11 +373,16 @@ var executeQuery = function() {
 
 		if (fields.length == 1 && fields[0] == '*') fields = [];
 
- 		return {
+		var w = WhereParser(m[3], quiet);
+
+ 		return { 
  			listName : listName,
 			viewFields : fields,
-			where : WhereParser(m[3])
-		};
+			where : w.statements,
+			macroType : w.macroType,
+			macroCount : w.macroCount,
+			macros : w.macros
+		}; 
 
 	}
 
@@ -375,6 +397,8 @@ var executeQuery = function() {
 			ret = camlsql.text(parameter);
 		} else if (typeof parameter == "number") {
 			ret = camlsql.number(parameter);
+		} else if (typeof parameter == "object" && parameter.type !== "undefined") {
+			return parameter;
 		}
 		return ret;
 	}
@@ -382,14 +406,12 @@ var executeQuery = function() {
 
 	var newParam = {};
 	if (param && param.length > 0) {
+		_properties.originalParam = param;
 		for (var i=0; i < param.length; i++) {
 			newParam["@param" + i] = parseParameter(param[i]);
 		}
+		_properties.param = newParam;
 	}
-
-	console.log("PARAMS", newParam);
-
-
 
 	var parsedQuery = parseQuery(query),
 		viewXml = "<View>";
@@ -401,6 +423,9 @@ var executeQuery = function() {
 		viewXml += "</ViewFields>";
 	}
 
+	_properties.macroType = parsedQuery.macroType;
+	_properties.macroCount = parsedQuery.macroCount;
+	_properties.macros = parsedQuery.macros;
 
 	var queryXml = andOrWhatnot(parsedQuery.where);
 	if (queryXml) {
@@ -409,6 +434,7 @@ var executeQuery = function() {
 
 	function andOrWhatnot(items) {
 		var xml = "";
+		if (!items) return "";
 		if (items.length > 1) {
 			var operatorElement = items[1].operator == "and" ? "And" : "Or";
 			
@@ -431,30 +457,22 @@ var executeQuery = function() {
 			if (item.comparison !== "null" && item.comparison !== "notnull") {
 				if (typeof param === "undefined") {
 					xml += "<casql:Error>" + ("Parameter not found ("+item.macro+")").encodeHTML() + "</casql:Error>";
-					console.error("[casql] Parameter not found", item.macro);
+					if(!quiet) console.error("[casql] Parameter not found", item.macro);
 					return xml;
 				}
 			}
-			if (item.comparison == "eq") {
-				xml += "<Eq>";
+
+			var simpleMappings = {'eq' : 'Eq', 'gt' : 'Gt', 'gte' : 'Geq', 'lte' : 'Leq', 'lt' : 'lt', 'ne' : 'Neq'};
+
+			if (typeof simpleMappings[item.comparison] !== "undefined") {
+				elementName = simpleMappings[item.comparison];
+				xml += "<" + elementName + ">";
 				xml += fieldRefValue(item, param);
-				xml += "</Eq>";
-			} else if (item.comparison == "gte") {
-				xml += "<Geq>";
+				xml += "</" + elementName + ">";
+			} else if (item.comparison == "in") {
+				xml += "<IsNull>";
 				xml += fieldRefValue(item, param);
-				xml += "</Geq>";
-			} else if (item.comparison == "lte") {
-				xml += "<Leq>";
-				xml += fieldRefValue(item, param);
-				xml += "</Leq>";
-			} else if (item.comparison == "lt") {
-				xml += "<Lt>";
-				xml += fieldRefValue(item, param);
-				xml += "</Lt>";
-			} else if (item.comparison == "ne") {
-				xml += "<Neq>";
-				xml += fieldRefValue(item, param);
-				xml += "</Neq>";
+				xml += "</IsNull>";
 			} else if (item.comparison == "null") {
 				xml += "<IsNull>";
 				xml += '<FieldRef Name="' + item.field.encodeHTML() + '" />'
@@ -466,8 +484,7 @@ var executeQuery = function() {
 			} else if (item.comparison == "like") {
 				var elementName = "Contains",
 					paramValue = null;
-
-				if (param.value.indexOf('%') === 0 && param.value.indexOf('%') === param.value.length -1) {
+				if (param.value.indexOf('%') === 0 && param.value[param.value.length-1] === "%") {
 					paramValue = param.value.replace(/^%?|%?$/g, '');
 				} else if (param.value.indexOf('%') === 0) {
 					console.warn("[casql] SharePoint does not support an 'EndsWith' statement. Contains will be used instead. (Field '" + item.field + "')");
@@ -488,30 +505,48 @@ var executeQuery = function() {
 		return xml;
 	}
 
-	function fieldRefValue(item, param, editedParamValue) {
-		var xml = "",
-			value = "",
-			paramValue = typeof editedParamValue !== "undefined" && editedParamValue !== null ? editedParamValue : param.value;
-			
-
-
+	function createValueElement(item, param, paramValue) {
+		var xml = "";
 		if (param.type == "DateTime") {
 			if (param.today === true) {
-				value = "<Today";
+				xml = "<Today";
 				if (paramValue) {
-					value += ' OffsetDays="' + paramValue + '"';
+					xml += ' OffsetDays="' + paramValue + '"';
 				}
-				value += " />";
+				xml += " />";
 			}
 		} else if (param.type == "Text") {
 			if (param.multiline === true) {
-				value = "<<![CDATA[";
-				value += paramValue;
-				value += "]]>";
+				xml = "<<![CDATA[";
+				xml += paramValue;
+				xml += "]]>";
 			} else {
-				value += paramValue.encodeHTML();
+				xml += paramValue.encodeHTML();
 			}
+		} else if (param.type == "Number") {
+			xml += paramValue;
 		}
+		xml = '<Value Type="' + param.type + '">' + xml +'</Value>';
+		return xml;
+	}
+
+	function fieldRefValue(item, param, editedParamValue) {
+		var xml = "",
+			value = "",
+			paramValue = typeof editedParamValue !== "undefined" && editedParamValue !== null ? editedParamValue : (param ? param.value : null);
+	
+		if (item.comparison == "in") {
+			xml += '<FieldRef Name="' + item.field.encodeHTML() + '" />'
+			xml += '<Values>';
+			for (var i=0; i < param.length; i++) {
+				xml += createValueElement(item, param[i], param[i].value);			
+			}
+			xml += '</Values>';
+			return xml;
+		} else {
+			value = createValueElement(item, param, paramValue);
+		}
+		
 		xml += '<FieldRef Name="' + item.field.encodeHTML() + '" />'
 		xml += '<Value Type="' + param.type + '">' + value +'</Value>';
 		return xml;
@@ -537,7 +572,8 @@ var executeQuery = function() {
 
 	var returnValue = {
 		getXml : getXml,
-		getListName : getListName
+		getListName : getListName,
+		_properties : _properties
 	};
 
 	if (typeof executeQuery !== "undefined")
@@ -546,11 +582,11 @@ var executeQuery = function() {
 	return returnValue;
 
 
-	/* File: c:\git\camlsql-js\src\footer.js  */
+	/* File: D:\git\camlsql-js\src\footer.js  */
 });
 
 
-	/* File: c:\git\camlsql-js\src\help-functions.js  */
+	/* File: D:\git\camlsql-js\src\help-functions.js  */
 /**
  * Helper functions for parameters
  */

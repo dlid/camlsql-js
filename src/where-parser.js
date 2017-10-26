@@ -1,4 +1,4 @@
-	var WhereParser = function(whereString) {
+	var WhereParser = function(whereString, quiet) {
 		var blockOpen = '(',
 			blockClose = ')',
     		conjunction = ['and', 'or', '&&', '||'],
@@ -114,7 +114,7 @@
 	    						s.comparison = p.comparison;
 	    						statements.push(s);
 	    					} else {
-	    						console.error("[casql] Could not parse statement", "'" + sp[j] + "'");
+	    						if(!quiet) console.error("[casql] Could not parse statement", "'" + sp[j] + "'");
 	    					}
     					}
     					if (statements.length > 1) {
@@ -139,7 +139,9 @@
     			return newBlocks;
     		}
 
-    		var _parameters = 0;
+    		var _parameters = 0,
+                _numMacros = 0,
+                _macros = [];
     		function parseStatement(str) {
 
     			if (typeof str === "undefined") return null;
@@ -150,31 +152,34 @@
     			var m = str.match(/(.*)\s*(<>|>=|[^<]>|<=|<[^>]|[^<>]=|like|isnull|isnotnull|in)\s*(\?|@[a-z]+)/i);
     			if (m) {
     				var comparison = "eq",
-    					macro  = "@param" + _parameters;
-    					//console.warn("MATCH", str, m);
-    				if (m[2] == '>') comparison = "gt";
-    				if (m[2] == '>=') comparison = "gte";
-    				if (m[2] == '<') comparison = "lt";
-    				if (m[2] == '<=') comparison = "lte";
-    				if (m[2] == '==') comparison = "eq";
+    					macro  = "@param" + _parameters,
+                        cmpMatch = trim(m[2]);
+    					
+    				if (cmpMatch == '>') comparison = "gt";
+    				if (cmpMatch == '>=') comparison = "gte";
+    				if (cmpMatch == '<') comparison = "lt";
+    				if (cmpMatch == '<=') comparison = "lte";
+    				if (cmpMatch == '==') comparison = "eq";
                     
-    				if (m[2] == '<>' || m[2] == "!=") comparison = "ne";
-    				if (m[2].toLowerCase() == 'like') comparison = "like";
-    				if (m[2].toLowerCase() == 'isnull') comparison = "null";
-    				if (m[2].toLowerCase() == 'isnotnull') comparison = "notnull";
-                    if (m[2].toLowerCase() == 'in') comparison = "in";
+    				if (cmpMatch == '<>' || cmpMatch == "!=") comparison = "ne";
+    				if (cmpMatch.toLowerCase() == 'like') comparison = "like";
+    				if (cmpMatch.toLowerCase() == 'isnull') comparison = "null";
+    				if (cmpMatch.toLowerCase() == 'isnotnull') comparison = "notnull";
+                    if (cmpMatch.toLowerCase() == 'in') comparison = "in";
 
     				if (comparison != "null" && comparison != "notnull") {
     					_parameters++; 
+                        _numMacros++;
     					if (prevMacro == null) 
 	    					prevMacro = m[3];
 	    				else if (prevMacro != m[3]) {
-	    					console.error("[casql] You can not mix named macros and ?");
+	    					if(!quiet) console.error("[casql] You can not mix named macros and ?");
 	    					return null;
 	    				}
 	    				if (m[3][0] == "@") {
     						macro = m[3];
-	    				}
+	    				} 
+                        _macros.push(macro);
     				} else {
     					macro = null;
     				}
@@ -191,8 +196,12 @@
     		var parsed = parse_blocks(whereString);
     		//console.log("PARSED", whereString, parsed);
 
-    	return parsed;
-
+    	return {
+            statements : parsed, 
+            macroType : prevMacro,
+            macroCount : _numMacros,
+            macros : _macros
+        }
 
 
 

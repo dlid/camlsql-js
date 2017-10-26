@@ -3,47 +3,246 @@
 	<head>
 		<script src="js/camlsql.js"></script>
 		<script src="js/vkbeautify.0.99.00.beta.js"></script>
+		<link href="https://fonts.googleapis.com/css?family=VT323" rel="stylesheet">
 		<style type="text/css">
+		body,html {margin:0;padding:0;}
 			pre {margin:0;}
 			h1 {margin:0;padding:0;font-weight: normal; font-size: 1.1em;}
 			.sql { background-color: #eee; padding:10px; color: darkgreen; font-weight: bold;  }
 			.param { background-color: #eee; color: blue; padding-left: 10px; padding-bottom: 10px  }
-			.xml { background-color: #ccc; padding: 10px; color: maroon;  }
+			.xml {  padding: 10px; color: maroon;  }
+			.examples .javascript {border-left: 4px solid orange;}
+			.examples .xml:before {content: 'Output ViewXML:';}
+			.wrapper {
+				max-width: 1200px;
+				margin: 0 auto;
+			}
 		</style>
+		<link rel="stylesheet"
+      href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/tomorrow.min.css">
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.2/vue.min.js"></script>
 	</head>
 	<body>
+	<div style="border-top: 1px solid #AFB1A4; background-color: #272822; padding:24px 0 4px 0">
 
+		<div  class="wrapper" style="margin-bottom: 30px">
+			<input type="search" style="outline: none; color: #fff;margin: 0 auto;background-color: transparent; border: none; border-bottom: 1px solid #686868;padding: 10px; font-size: 1.25em; width: 100%;" placeholder="Been here before? Filter out examples here" />
+		</div>
+		<h1 style="font-size: 2em; color: #fff; text-align:center; font-family: arial; margin-bottom:48px; margin-top: 60px;">You need a CAML query, huh?</h1>
+		<h1 style="font-size: 1.5em; font-weight: normal; color: #fff; text-align:center; color: #cacaca; font-family: arial; margin-top: 60px; margin-bottom:48px;">how do <em style="color: lightblue">you</em> do it?</h1>
+
+
+
+			<pre style="color: #AFB1A4; font-family: monospace; font-size: 1.25em" class="javascript wrapper"><code>var query = 'SELECT Title, ImageUrl FROM List WHERE Title LIKE ? AND ([StartDate] is null or [StartDate] >= ?) ',
+    param = [ "test%", camlsql.today()];
+
+camlsql.prepare(query, param).exec(function(err, rows) {
+   if (err) 
+    console.error("Error", err);
+   else 
+    console.log("Great success", rows);
+});</code>
+			</pre>
+		</div>
+
+			<div style="background-color: #fff; font-family: 'Segoe UI',arial,sans-serif; color: #212121; left: 50%;  width: 60px; height: 60px; box-sizing: border-box;
+			 margin-top: -45px; position:absolute; border-radius: 25px; font-size: 2.25em; text-align:center;font-weight: bold; border:2px solid black;">or</div>
+	
+		<div style="background-color: #272822; padding: 8px 0 48px 0">
+
+			<pre style="color: #AFB1A4; font-family: monospace; font-size: 1.25em" class="wrapper"><code>
+var viewXml = '&lt;View>' + 
+    ' &lt;ViewFields>&lt;FieldRef Name="Title" />&lt;FieldRef Name="ImageUrl" />&lt;/ViewFields>' +
+    ' &lt;Query>' + 
+    '  &lt;Where>' + 
+    '   &lt;And>' + 
+    '    &lt;BeginsWith>' + 
+    '     &lt;FieldRef Name="Title" />' + 
+    '     &lt;Value Type="Text">test&lt;/Value>' +
+    '    &lt;/BeginsWith>' + 
+    '    &lt;Or>' +
+    '     &lt;IsNull>' + 
+    '      &lt;FieldRef Name="StartDate" />' + 
+    '     &lt;/IsNull>' + 
+    '     &lt;Geq>' + 
+    '      &lt;FieldRef Name="StartDate" />' + 
+    '      &lt;Value Type="DateTime">&lt;Today />&lt;/Value>' + 
+    '     &lt;/Geq>' + 
+    '    &lt;/Or>' + 
+    '   &lt;/And>' + 
+    '  &lt;/Where>' + 
+    ' &lt;/Query>' + 
+    '&lt;/View>';
+
+SP.SOD.executeFunc('sp.js', 'SP.ClientContext', function () {
+ var clientContext = SP.ClientContext.get_current();
+ var spWeb = clientContext.get_web();
+ spList = spWeb.get_lists().getByTitle("MyList");
+
+ clientContext.load(spList);
+ clientContext.executeQueryAsync(onListLoaded, function () { console.error("Error fetching list");});
+ 
+ function onListLoaded() {
+  var camlQuery = new SP.CamlQuery();
+  var camlQueryString = viewXml;
+
+  camlQuery.set_viewXml(camlQueryString);
+  spListItems = spList.getItems(camlQuery);
+  clientContext.load(spListItems);
+  clientContext.executeQueryAsync(camlQuerySuccess, function () {
+        console.error("Error executing caml query")
+  });
+
+  function camlQuerySuccess() {
+   var listItemEnumerator = spListItems.getEnumerator(),
+       items = [],
+       spListItem;
+	while (listItemEnumerator.moveNext()) {
+	    spListItem = listItemEnumerator.get_current();
+	    items.push(spListItem.get_fieldValues());
+	}
+	console.log("Great success", items);
+  }
+}
+</code></pre>
+		</div>
+
+		<div id="app" class="wrapper">
+				<input type="text" v-model="liveQuery" style="color: lime; background-color: black;font-family: 'VT323', monospace;font-size: 2em; xcolor: #000; margin: 24px 0; width: 100%; padding:8px" />
+				<div v-for="m in liveMacros" style="margin-top: 2px;">
+					<code style=" margin-right: -8px; border-right: 10px solid #bb4d74;color: #000; padding:6px; font-family: monospace; font-size: 1.25em; background-color:#F92672; color:#fff; font-weight: 300;">{{m.name}}</code> <select style="padding: 6px;">
+						<option>text</option>
+						<option>number</option>
+						<option>today</option>
+						<option>number</option>
+						<option>guid</option>
+						<option>lookup</option>
+						<option>datetime</option>
+					</select> <input type="text" v-model="m.value" style="padding: 6px;"  />
+				</div> 
+				<pre class="javascript" style="font-size: 1.25em; color: #000; font-weight: bold;"><code>{{code}}</code></pre>
+
+				<pre class="xml"><code>{{xml}}</code></pre>
+
+		</div>
+
+		<div class="wrapper examples">
+			<h2>Live examples</h2>
+			<p>These View XML's was generated by the camljs scriptas you loaded the page.</p>
+			
+ 
 		<script>
 
 			var tests = [
 
-				{sql : "SELECT Title FROM ListName WHERE [Id] IN ?", param : [
+				{title : 'Select Where ID IN by passing an array parameter', sql : "SELECT Title FROM ListName WHERE [Id] IN ?", param : [
 					[5,3,6,7]
-				]}
+				], writeParam : ['[5,3,6,7]'], 'tags' : [
+					{tag : "<In />"},
+					{tag : "camlsql.number()"}
+				]},
 
-				// {sql : "SELECT Title, ImageUrl FROM ListName WHERE [Title] LIKE ?", param : ["%Hello%"]},
-				// {sql : "SELECT * FROM List WHERE Title <> ?", param : ["apa"]},
-				// {sql : "SELECT * FROM List WHERE Title LIKE ?", param : ["%hej"]},
-				// {sql : "SELECT * FROM List WHERE Title is null", param : []},
-				// {sql : "SELECT * FROM List WHERE Title is not null", param : []},
-				// {sql : "SELECT * FROM List WHERE Created >= ? AND Created <= ?", param : [caSql.today(-30), caSql.today()]},
-				// {sql : "SELECT Title, SlideImage FROM List WHERE Id = ? and t = ? ORDER BY Created", param : [5, 'cheese']},
-				// {sql : "SELECT Title, ImageUrl FROM List WHERE Title LIKE ? AND ([StartDate] is null or [StartDate] >= ?) ", param : ['test%', caSql.today()]},
+				{title : 'BeginsWith and Contains using SQL LIKE statement', sql : "SELECT Title, ImageUrl FROM ListName WHERE [Title] LIKE ?", param : ["%Hello%"], writeParam : ['"%Hello%"']},
+				{title : 'Fetch all fields with a Not Equal To statement', sql : "SELECT * FROM List WHERE Title <> ?", param : ["apa"]},
+				{title : 'EndsWith is not supported by SharePoint and will translate to a Contains', sql : "SELECT * FROM List WHERE Title LIKE ?", param : ["%hej"]},
+				{title : 'Is Null', sql : "SELECT * FROM List WHERE Title is null", param : []},
+				{title : 'Is Not Null', sql : "SELECT * FROM List WHERE Title is not null", param : []},
+				{title : 'Using the today parameter when working with dates', sql : "SELECT * FROM List WHERE Created >= ? AND Created <= ?", param : [camlsql.today(-30), camlsql.today()], writeParam : ['camlsql.today(-30)', 'camlsql.today()']},
+				{title : 'Multiple conditions will generate the correct XML structure ', sql : "SELECT Title, SlideImage FROM List WHERE Id = ? and t = ? ORDER BY Created", param : [5, 'cheese']},
+				{title : 'Groups with AND and OR works', sql : "SELECT Title FROM List WHERE Title LIKE ? AND ([StartDate] is null or [StartDate] >= ?) AND [Archived] is null", 
+				 param : ['test%', camlsql.today()], writeParam : ['"test%"', 'camlsql.today()']},
 				//{sql : "SELECT * FROM List ORDER BY Title DESC", param : null},1
 //				{sql : "SELECT * FROM [Second List] WHERE Title = ? AND (Field2 = ? OR Field8 < ?)", param : [
 //					caSql.number(5)
 //				]},
 			]			
 
+			function writeParameters(i) {
+
+				if (i.writeParam) {
+					return ", [\n " +i.writeParam.join(',\n ') + "\n]";
+				}
+				return "";
+			}
+
 			for (var i=0; i < tests.length; i++) {
 				var c = new camlsql(tests[i].sql, tests[i].param);
-				document.write("<h1>Example " + (i+1) + "</h1>")
-				document.write("<pre><span style='color: steelblue'>var</span> <span style='color: green'>c</span> = <span style='color: #F9263E'>new</span> <span style='color:purple'>camlsql</span>('<span style='color: blue'>" + tests[i].sql +"</span>', ");
-				document.write("<span style='color:blue'>" + JSON.stringify(tests[i].param ? tests[i].param : [], null, 1) +"</span></pre>");
-				document.write("<pre class='xml'>" + vkbeautify.xml(c.getXml()).replace(/</g, '&lt;').replace(/>/g, '&gt;') + " </pre>" );
-				document.write("<hr>");
+				document.write("<h1 style='font-weight:bold; margin-top: 12px'>" + (tests[i].title ? tests[i].title : "Example " + (i+1)) + "</h1>")
+				document.write("<pre style='line-height: 1.5em;' class='javascript'><code>camlsql.prepare('" + tests[i].sql +"'");
+				document.write("" + writeParameters(tests[i]) +").getXml();</code></pre>");
+				document.write("<pre style='xdisplay: none' class='xml'><code>" + vkbeautify.xml(c.getXml()).replace(/</g, '&lt;').replace(/>/g, '&gt;') + "</code></pre>" );
+			
 			}
 
 
 
 		</script>
+		
+		<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+	
+		<script>hljs.initHighlighting();</script>
+		<script>
+			var app = new Vue({
+				el : '#app',
+				mounted : function() {
+					if (localStorage.getItem('liveData')) {
+						var d = JSON.parse(localStorage.getItem('liveData'));
+						if (d.query) {
+							this.liveQuery = d.query;
+							this.refreshLiveData();
+						}
+					}
+				},
+				data : {
+					text : "hejsanx",
+					liveQuery : 'SELECT Field FROM [List]',
+					liveMacroCount : 0,
+					liveMacros : [],
+					xml : '<apaa />',
+					code : '// Waiting to generate some code'
+				},
+				methods : {
+					refreshLiveData : function() {
+						var self = this;
+
+						var p = camlsql.prepare(this.liveQuery, [], true);
+
+						var macros = p._properties.macros;
+						this.liveMacroCount = p._properties.macroCount;
+
+						if (p) {
+							if (this.liveMacroCount > this.liveMacros.length) {
+								for (var i=this.liveMacros.length; i < this.liveMacroCount; i++) {
+									this.liveMacros.push({ name : p._properties.macros[i], value : "" });
+								}
+							}
+
+						}
+						// Fix macros...
+						var param = [];
+						if (this.liveMacros) {
+							for (var i=0; i < this.liveMacros.length; i++) {
+								param.push(this.liveMacros[i].value);
+							}		
+						}
+						console.warn("REFRESH", this.liveQuery);
+						p = camlsql.prepare(this.liveQuery, param, true);		
+						console.warn("REFRESH", p.getXml());
+
+						self.xml = vkbeautify.xml(p.getXml());
+						if (p) {
+
+							self.code = "camlsql.prepare(" + JSON.stringify(this.liveQuery) + ", [])";
+
+						} 
+					}
+				}
+				, 
+				watch : {
+					"liveQuery" : function() {
+						this.refreshLiveData();
+					}
+				}
+			})
+		</script>
+	</div>
