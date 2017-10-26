@@ -166,7 +166,7 @@ var caSql = (function(query, param )  {
     			if (m) {
     				var comparison = "eq",
     					macro  = "@param" + _parameters;
-    					console.warn("MATCH", str, m);
+    					//console.warn("MATCH", str, m);
     				if (m[2] == '>') comparison = "gt";
     				if (m[2] == '>=') comparison = "gte";
     				if (m[2] == '<') comparison = "lt";
@@ -400,7 +400,7 @@ var caSql = (function(query, param )  {
 
 	viewXml += "</View>";
 
-	console.log(query, param, parsedQuery);
+	//console.log(query, param, parsedQuery);
 
 	function getXml() {
 		return viewXml;

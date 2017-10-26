@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<script src="js/casql.js"></script>
+		<script src="js/casql.min.js"></script>
 		<script src="js/vkbeautify.0.99.00.beta.js"></script>
 		<style type="text/css">
 			pre {margin:0;}
@@ -16,7 +16,7 @@
 		<script>
 
 			var tests = [
-				{sql : "SELECT Title, ImageUrl FROM ListName WHERE [Title] LIKE ?", param : ["%hello%"]},
+				{sql : "SELECT Title, ImageUrl FROM ListName WHERE [Title] LIKE ?", param : ["%Hello%"]},
 				{sql : "SELECT * FROM List WHERE Title <> ?", param : ["apa"]},
 				{sql : "SELECT * FROM List WHERE Title LIKE ?", param : ["%hej"]},
 				{sql : "SELECT * FROM List WHERE Title is null", param : []},

@@ -155,7 +155,7 @@
     			if (m) {
     				var comparison = "eq",
     					macro  = "@param" + _parameters;
-    					console.warn("MATCH", str, m);
+    					//console.warn("MATCH", str, m);
     				if (m[2] == '>') comparison = "gt";
     				if (m[2] == '>=') comparison = "gte";
     				if (m[2] == '<') comparison = "lt";

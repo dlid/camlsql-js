@@ -185,7 +185,7 @@
 
 	viewXml += "</View>";
 
-	console.log(query, param, parsedQuery);
+	//console.log(query, param, parsedQuery);
 
 	function getXml() {
 		return viewXml;
