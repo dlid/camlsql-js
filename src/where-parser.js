@@ -14,10 +14,6 @@
     			return str.replace(/^\s+|\s+$/g, '');
     		}
 
-    		function formatFieldName(name) {
-    			return trim(name).replace(/^\[|\]$/g, '');
-    		}
-
     		function parse_blocks(str) {
     			var i,
     				blockStartIndex = null,
@@ -151,7 +147,7 @@
     			str = str.replace(/ is not null/i, ' isnotnull ?');
     			str = str.replace(/ is null/i, ' isnull ?');
 
-    			var m = str.match(/(.*)\s*(<>|>=|[^<]>|<=|<[^>]|[^<>]=|like|isnull|isnotnull)\s*(\?|@[a-z]+)/i);
+    			var m = str.match(/(.*)\s*(<>|>=|[^<]>|<=|<[^>]|[^<>]=|like|isnull|isnotnull|in)\s*(\?|@[a-z]+)/i);
     			if (m) {
     				var comparison = "eq",
     					macro  = "@param" + _parameters;
@@ -161,10 +157,12 @@
     				if (m[2] == '<') comparison = "lt";
     				if (m[2] == '<=') comparison = "lte";
     				if (m[2] == '==') comparison = "eq";
+                    
     				if (m[2] == '<>' || m[2] == "!=") comparison = "ne";
     				if (m[2].toLowerCase() == 'like') comparison = "like";
     				if (m[2].toLowerCase() == 'isnull') comparison = "null";
     				if (m[2].toLowerCase() == 'isnotnull') comparison = "notnull";
+                    if (m[2].toLowerCase() == 'in') comparison = "in";
 
     				if (comparison != "null" && comparison != "notnull") {
     					_parameters++; 

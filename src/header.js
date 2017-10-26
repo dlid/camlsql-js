@@ -1,3 +1,3 @@
-var caSql = (function(query, param )  {
+var camlsql = (function(query, param )  {
 
 

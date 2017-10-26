@@ -1,21 +1,21 @@
 {
-  "name": "casql",
+  "name": "camlsql-js",
   "version": "0.0.1",
-  "description": "Create CAML queries using SQL syntax",
+  "description": "Javascript utility to create CAML queries using SQL syntax",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dlid/caSql.git"
+    "url": "git+https://github.com/dlid/camlsql-js.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/dlid/caSql/issues"
+    "url": "https://github.com/dlid/camlsql-js/issues"
   },
-  "homepage": "https://github.com/dlid/caSql#readme",
+  "homepage": "https://github.com/dlid/camlsql-js#readme",
   "devDependencies": {
     "browser-sync": "^2.18.13",
     "gulp": "^3.9.1",

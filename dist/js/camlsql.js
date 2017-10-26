@@ -1,14 +1,14 @@
 /*! */
 
 
-	/* File: c:\git\caSql\src\header.js  */
-var caSql = (function(query, param )  {
+	/* File: c:\git\camlsql-js\src\header.js  */
+var camlsql = (function(query, param )  {
 
 
 
 
 
-	/* File: c:\git\caSql\src\where-parser.js  */
+	/* File: c:\git\camlsql-js\src\where-parser.js  */
 	var WhereParser = function(whereString) {
 		var blockOpen = '(',
 			blockClose = ')',
@@ -23,10 +23,6 @@ var caSql = (function(query, param )  {
 
     		function trim(str) {
     			return str.replace(/^\s+|\s+$/g, '');
-    		}
-
-    		function formatFieldName(name) {
-    			return trim(name).replace(/^\[|\]$/g, '');
     		}
 
     		function parse_blocks(str) {
@@ -162,7 +158,7 @@ var caSql = (function(query, param )  {
     			str = str.replace(/ is not null/i, ' isnotnull ?');
     			str = str.replace(/ is null/i, ' isnull ?');
 
-    			var m = str.match(/(.*)\s*(<>|>=|[^<]>|<=|<[^>]|[^<>]=|like|isnull|isnotnull)\s*(\?|@[a-z]+)/i);
+    			var m = str.match(/(.*)\s*(<>|>=|[^<]>|<=|<[^>]|[^<>]=|like|isnull|isnotnull|in)\s*(\?|@[a-z]+)/i);
     			if (m) {
     				var comparison = "eq",
     					macro  = "@param" + _parameters;
@@ -172,10 +168,12 @@ var caSql = (function(query, param )  {
     				if (m[2] == '<') comparison = "lt";
     				if (m[2] == '<=') comparison = "lte";
     				if (m[2] == '==') comparison = "eq";
+                    
     				if (m[2] == '<>' || m[2] == "!=") comparison = "ne";
     				if (m[2].toLowerCase() == 'like') comparison = "like";
     				if (m[2].toLowerCase() == 'isnull') comparison = "null";
     				if (m[2].toLowerCase() == 'isnotnull') comparison = "notnull";
+                    if (m[2].toLowerCase() == 'in') comparison = "in";
 
     				if (comparison != "null" && comparison != "notnull") {
     					_parameters++; 
@@ -212,7 +210,109 @@ var caSql = (function(query, param )  {
 	}
 
 
-	/* File: c:\git\caSql\src\index.js  */
+	/* File: c:\git\camlsql-js\src\sp-exec.js  */
+var executeQuery = function() {
+	var args = Array.prototype.slice.call(arguments),
+		spWeb = null,
+		execCallback = null,
+		clientContext,
+		spList = null,
+		listName = this.getListName(),
+		spListItems = null,
+		viewXml = this.getXml();
+
+	if (args.length > 1) {
+		if (typeof args[0] === "object") {
+			spWeb = args[0];
+			if (typeof args[1] == "function") {
+				execCallback = args[1];
+			}
+		}
+	} else if (args.length == 1) {
+		if (typeof args[0] === "object") {
+			spWeb = args[0];
+		 } else if (typeof args[0] == "function") {
+			execCallback = args[0];
+		}
+	}
+
+	if (typeof SP !== "undefined") {
+		
+		SP.SOD.executeFunc('sp.js','SP.ClientContext', function() {
+			clientContext = SP.ClientContext.get_current();
+			if (spWeb === null) {
+				spWeb  = clientContext.get_web();
+				spList = oWeb.get_lists().getByTitle(listName);
+
+				clientContext.load(spList);
+			    clientContext.executeQueryAsync(onListLoaded, function() {
+			    	execCallback({ 
+			    		status : "error", 
+			    		message : "Failed to load list", 
+			    		data : {
+			    			sql : getSql,
+			    			viewXml : viewXml,
+			    			listName : listName,
+			    			error : Array.prototype.slice.call(arguments)
+			    		}
+			    	}, null);
+			    });
+
+			}
+		});
+
+	} else {
+		execCallback({ 
+    		status : "error", 
+    		message : "SP is not defined", 
+    		data : null
+    	}, null);
+	}
+
+	function onListLoaded() {
+		var camlQuery = new SP.CamlQuery();
+	    var camlQueryString = viewXml;
+	    camlQuery.set_viewXml(camlQueryString);
+	    spListItems = companiesList.getItems(camlQuery);
+	    clientContext.load(allCompanies);
+	    clientContext.executeQueryAsync(camlQuerySuccess, function() {
+	    	execCallback({ 
+	    		status : "error", 
+	    		message : "Error executing the SP.CamlQuery", 
+	    		data : {
+	    			sql : getSql,
+	    			viewXml : viewXml,
+	    			listName : listName,
+	    			error : Array.prototype.slice.call(arguments)
+	    		}
+	    	}, null);
+	    });
+	}
+
+	function camlQuerySuccess() {
+		  var listItemEnumerator = spListItems.getEnumerator();
+		  while (listItemEnumerator.moveNext()) {
+		      var currentCompany = listItemEnumerator.get_current();
+		      // var thisCompanyId = currentCompany.get_item('ID');
+		      // var thisCompanyName = currentCompany.get_item('companyName');
+		      // companiesMarkupBlock += thisCompanyId;
+		      // companiesMarkupBlock += " : ";
+		      // companiesMarkupBlock += thisCompanyName;
+		      // companiesMarkupBlock += "<br />";
+	    }
+	}
+
+	console.log({
+		web : spWeb,
+		callback : execCallback
+	});
+
+	return this;
+}
+
+
+
+	/* File: c:\git\camlsql-js\src\index.js  */
 
 
 
@@ -225,6 +325,15 @@ var caSql = (function(query, param )  {
 	               .replace(/'/g, '&apos;');
 	  };
 	}
+
+	function formatFieldName(name) {
+		return trim(name).replace(/^\[|\]$/g, '');
+	}
+
+	function trim(str) {
+		return str.replace(/^\s+|\s+$/g, '');
+	}
+
 
 	function parseQuery(query) {
 		var m = query.match(/^SELECT (.*?) FROM (.*?)(?:\s(.*)$|$)/i),
@@ -241,34 +350,46 @@ var caSql = (function(query, param )  {
 					fields.push(t[i]);
 
 				}
-				listName = m[2];
+				listName = formatFieldName(m[2]);
 			}
 		}
 
 		if (fields.length == 1 && fields[0] == '*') fields = [];
 
  		return {
+ 			listName : listName,
 			viewFields : fields,
 			where : WhereParser(m[3])
 		};
 
 	}
 
+	function parseParameter(parameter) {
+		var ret = null;
+		if (parameter!==null && parameter.constructor === Array) {
+			ret = [];
+			for (var i=0; i < parameter.length;i++) {
+				ret.push(parseParameter(parameter[i]));
+			}
+		} else if (typeof parameter === "string") {
+			ret = camlsql.text(parameter);
+		} else if (typeof parameter == "number") {
+			ret = camlsql.number(parameter);
+		}
+		return ret;
+	}
 
 
 	var newParam = {};
 	if (param && param.length > 0) {
 		for (var i=0; i < param.length; i++) {
-			if (typeof param[i] === "string") {
-				param[i] = caSql.text(param[i]);
-			} else if (typeof param[i] == "number") {
-				param[i] = caSql.number(param[i]);
-			}
-			newParam["@param" + i] = param[i];
+			newParam["@param" + i] = parseParameter(param[i]);
 		}
 	}
 
-//	console.log("PARAMS", newParam);
+	console.log("PARAMS", newParam);
+
+
 
 	var parsedQuery = parseQuery(query),
 		viewXml = "<View>";
@@ -359,7 +480,7 @@ var caSql = (function(query, param )  {
 				xml += fieldRefValue(item, param, paramValue);
 				xml += "</"+elementName+">";
 			} else {
-				xml += "<NOT_IMPLEMENTED>" + item.field + "</NOT_IMPLEMENTED>";
+				xml += "<NOT_IMPLEMENTED>" + item.comparison + "</NOT_IMPLEMENTED>";
 			}
 		} else {
 			xml += andOrWhatnot(item.items);
@@ -402,28 +523,40 @@ var caSql = (function(query, param )  {
 
 	//console.log(query, param, parsedQuery);
 
+	function getListName() {
+		return parsedQuery.listName;
+	}
+
 	function getXml() {
 		return viewXml;
 	}
 
-	return {
-		getXml : getXml
+	function getSql() {
+		return query;
 	}
 
+	var returnValue = {
+		getXml : getXml,
+		getListName : getListName
+	};
+
+	if (typeof executeQuery !== "undefined")
+		returnValue.exec = executeQuery;
+
+	return returnValue;
 
 
-	/* File: c:\git\caSql\src\footer.js  */
+	/* File: c:\git\camlsql-js\src\footer.js  */
 });
 
 
-	/* File: c:\git\caSql\src\help-functions.js  */
+	/* File: c:\git\camlsql-js\src\help-functions.js  */
 /**
  * Helper functions for parameters
- *  https://joshmccarty.com/a-caml-query-quick-reference/
  */
 
 
-caSql.__proto__.text = function(value) {
+camlsql.__proto__.text = function(value) {
 	var multiline = value.indexOf("\n") != -1 || value.indexOf("\r") !== -1,
 		ret;
 
@@ -435,9 +568,9 @@ caSql.__proto__.text = function(value) {
 	return ret;
 }
 
-caSql.__proto__.number = function(value) {
+camlsql.__proto__.number = function(value) {
 	if (typeof value != "number") {
-		console.error("[casql] value was not a number", value);
+		console.error("[camlsql] value was not a number", value);
 		return null;
 	}
 	return {
@@ -446,7 +579,7 @@ caSql.__proto__.number = function(value) {
 	};
 }
 
-caSql.__proto__.lookup = function(value) {
+camlsql.__proto__.lookup = function(value) {
 	return {
 		type : 'Lookup',
 		value : value,
@@ -454,16 +587,16 @@ caSql.__proto__.lookup = function(value) {
 	};
 }
  
-caSql.__proto__.datetime = function(value) {
+camlsql.__proto__.datetime = function(value) {
 
 	if (typeof value !== "string") {
-		console.error("[casql] Bad type for datetime value");
+		console.error("[camlsql] Bad type for datetime value");
 		return null;
 	}
 
 	if (typeof value === "string" && 
 		(!value.match(/^\d{4}-\d\d-\d\d$/) && !value.match(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/) )) {
-		console.error("[casql] Bad format for datetime value");
+		console.error("[camlsql] Bad format for datetime value");
 		return null;
 	}
 
@@ -473,10 +606,10 @@ caSql.__proto__.datetime = function(value) {
 	};
 }
 
-caSql.__proto__.today = function(offset) {
+camlsql.__proto__.today = function(offset) {
 	if (typeof offset === "undefined") offset = 0;
 	if (typeof offset !== "number") {
-		console.error("[casql] Bad offset value for 'today'", offset);
+		console.error("[camlsql] Bad offset value for 'today'", offset);
 		return null;
 	}
 
@@ -487,10 +620,10 @@ caSql.__proto__.today = function(offset) {
 	};
 }
 
-caSql.__proto__.month = function(offset) {
+camlsql.__proto__.month = function(offset) {
 	if (typeof offset === "undefined") offset = 0;
 	if (typeof offset !== "number") {
-		console.error("[casql] Bad offset value for 'today'", offset);
+		console.error("[camlsql] Bad offset value for 'today'", offset);
 		return null;
 	}
 
@@ -502,23 +635,29 @@ caSql.__proto__.month = function(offset) {
 }
 
 
-caSql.__proto__.guid = function(value) {
+camlsql.__proto__.guid = function(value) {
 	return {
 		type : 'Guid',
 		value : value
 	};
 }
 
-caSql.__proto__.multichoice = function(value) {
+camlsql.__proto__.multichoice = function(value) {
 	return {
 		type : 'MultiChoice',
 		value : value
 	};
 }
 
-caSql.__proto__.url = function(value) {
+camlsql.__proto__.url = function(value) {
 	return {
 		type : 'URL',
 		value : value
 	};
+}
+
+camlsql.__proto__.prepare = function() {
+	var args = Array.prototype.slice.call(arguments);
+	args.unshift(null);
+	return new (Function.prototype.bind.apply(camlsql, args));
 }

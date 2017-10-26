@@ -1,32 +1,34 @@
-# caSql
+# camlsql
 
 Create CAML XML using SQL-like syntax. 
 
 -------
 
-***NOTE*** For now, caSql is limited to querying lists.
+***NOTE*** For now, camlsql is limited to querying lists.
 
 ------
 
 ## Parametermethods
-### caSql.text()
-### caSql.number()
-### caSql.guid()
-### caSql.datetime()
-### caSql.lookup()
-### caSql.today()
-### caSql.month()
-### caSql.url()
-### caSql.multichoice()
+### camlsql.text()
+### camlsql.number()
+### camlsql.guid()
+### camlsql.datetime()
+### camlsql.lookup()
+### camlsql.today()
+### camlsql.month()
+### camlsql.url()
+### camlsql.multichoice()
+### camlsql.membership()
+### camlsql.userid()
 
 ## Introduction
 
-`caSql` is my attempt to create SharePoint [CAML](https://msdn.microsoft.com/en-us/library/office/ms426449.aspx) queries using a syntax I am more familiar with: SQL.
+`camlsql` is my attempt to create SharePoint [CAML](https://msdn.microsoft.com/en-us/library/office/ms426449.aspx) queries using a syntax I am more familiar with: SQL.
 
 Of course the features are nowhere close to an actual SQL language, but I believe it will simplify most common queries.
 
 ```
-var query = new caSql("SELECT * FROM ListName WHERE [Title] = ?",  ["Hello"] );
+var query = new camlsql("SELECT * FROM ListName WHERE [Title] = ?",  ["Hello"] );
 console.log(query.getXml());
 
 // Result:
@@ -45,7 +47,7 @@ console.log(query.getXml());
 LIKE statements supporting CONTAINS and BeginsWith (EndsWith is not supported in SharePoint).
 
 ```
-var query = new caSql("SELECT Title, ImageUrl FROM ListName WHERE [Title] LIKE ?",  ["%Hello%"] );
+var query = new camlsql("SELECT Title, ImageUrl FROM ListName WHERE [Title] LIKE ?",  ["%Hello%"] );
 console.log(query.getXml());
 
 // Result:
@@ -68,10 +70,10 @@ console.log(query.getXml());
 More complex queries with groups and OR statements
 
 ```
-var query = new caSql("SELECT Title, ImageUrl FROM List WHERE Title LIKE ? AND ([StartDate] is null or [StartDate] >= ?)", 
+var query = new camlsql("SELECT Title, ImageUrl FROM List WHERE Title LIKE ? AND ([StartDate] is null or [StartDate] >= ?)", 
   [
    'test%', 
-   caSql.today()
+   camlsql.today()
   ]);
 
 console.log(query.getXml());

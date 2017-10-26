@@ -1,10 +1,9 @@
 /**
  * Helper functions for parameters
- *  https://joshmccarty.com/a-caml-query-quick-reference/
  */
 
 
-caSql.__proto__.text = function(value) {
+camlsql.__proto__.text = function(value) {
 	var multiline = value.indexOf("\n") != -1 || value.indexOf("\r") !== -1,
 		ret;
 
@@ -16,9 +15,9 @@ caSql.__proto__.text = function(value) {
 	return ret;
 }
 
-caSql.__proto__.number = function(value) {
+camlsql.__proto__.number = function(value) {
 	if (typeof value != "number") {
-		console.error("[casql] value was not a number", value);
+		console.error("[camlsql] value was not a number", value);
 		return null;
 	}
 	return {
@@ -27,7 +26,7 @@ caSql.__proto__.number = function(value) {
 	};
 }
 
-caSql.__proto__.lookup = function(value) {
+camlsql.__proto__.lookup = function(value) {
 	return {
 		type : 'Lookup',
 		value : value,
@@ -35,16 +34,16 @@ caSql.__proto__.lookup = function(value) {
 	};
 }
  
-caSql.__proto__.datetime = function(value) {
+camlsql.__proto__.datetime = function(value) {
 
 	if (typeof value !== "string") {
-		console.error("[casql] Bad type for datetime value");
+		console.error("[camlsql] Bad type for datetime value");
 		return null;
 	}
 
 	if (typeof value === "string" && 
 		(!value.match(/^\d{4}-\d\d-\d\d$/) && !value.match(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/) )) {
-		console.error("[casql] Bad format for datetime value");
+		console.error("[camlsql] Bad format for datetime value");
 		return null;
 	}
 
@@ -54,10 +53,10 @@ caSql.__proto__.datetime = function(value) {
 	};
 }
 
-caSql.__proto__.today = function(offset) {
+camlsql.__proto__.today = function(offset) {
 	if (typeof offset === "undefined") offset = 0;
 	if (typeof offset !== "number") {
-		console.error("[casql] Bad offset value for 'today'", offset);
+		console.error("[camlsql] Bad offset value for 'today'", offset);
 		return null;
 	}
 
@@ -68,10 +67,10 @@ caSql.__proto__.today = function(offset) {
 	};
 }
 
-caSql.__proto__.month = function(offset) {
+camlsql.__proto__.month = function(offset) {
 	if (typeof offset === "undefined") offset = 0;
 	if (typeof offset !== "number") {
-		console.error("[casql] Bad offset value for 'today'", offset);
+		console.error("[camlsql] Bad offset value for 'today'", offset);
 		return null;
 	}
 
@@ -83,23 +82,29 @@ caSql.__proto__.month = function(offset) {
 }
 
 
-caSql.__proto__.guid = function(value) {
+camlsql.__proto__.guid = function(value) {
 	return {
 		type : 'Guid',
 		value : value
 	};
 }
 
-caSql.__proto__.multichoice = function(value) {
+camlsql.__proto__.multichoice = function(value) {
 	return {
 		type : 'MultiChoice',
 		value : value
 	};
 }
 
-caSql.__proto__.url = function(value) {
+camlsql.__proto__.url = function(value) {
 	return {
 		type : 'URL',
 		value : value
 	};
+}
+
+camlsql.__proto__.prepare = function() {
+	var args = Array.prototype.slice.call(arguments);
+	args.unshift(null);
+	return new (Function.prototype.bind.apply(camlsql, args));
 }

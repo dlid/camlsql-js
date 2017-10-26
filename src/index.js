@@ -11,6 +11,15 @@
 	  };
 	}
 
+	function formatFieldName(name) {
+		return trim(name).replace(/^\[|\]$/g, '');
+	}
+
+	function trim(str) {
+		return str.replace(/^\s+|\s+$/g, '');
+	}
+
+
 	function parseQuery(query) {
 		var m = query.match(/^SELECT (.*?) FROM (.*?)(?:\s(.*)$|$)/i),
 			fields = [],
@@ -26,34 +35,46 @@
 					fields.push(t[i]);
 
 				}
-				listName = m[2];
+				listName = formatFieldName(m[2]);
 			}
 		}
 
 		if (fields.length == 1 && fields[0] == '*') fields = [];
 
  		return {
+ 			listName : listName,
 			viewFields : fields,
 			where : WhereParser(m[3])
 		};
 
 	}
 
+	function parseParameter(parameter) {
+		var ret = null;
+		if (parameter!==null && parameter.constructor === Array) {
+			ret = [];
+			for (var i=0; i < parameter.length;i++) {
+				ret.push(parseParameter(parameter[i]));
+			}
+		} else if (typeof parameter === "string") {
+			ret = camlsql.text(parameter);
+		} else if (typeof parameter == "number") {
+			ret = camlsql.number(parameter);
+		}
+		return ret;
+	}
 
 
 	var newParam = {};
 	if (param && param.length > 0) {
 		for (var i=0; i < param.length; i++) {
-			if (typeof param[i] === "string") {
-				param[i] = caSql.text(param[i]);
-			} else if (typeof param[i] == "number") {
-				param[i] = caSql.number(param[i]);
-			}
-			newParam["@param" + i] = param[i];
+			newParam["@param" + i] = parseParameter(param[i]);
 		}
 	}
 
-//	console.log("PARAMS", newParam);
+	console.log("PARAMS", newParam);
+
+
 
 	var parsedQuery = parseQuery(query),
 		viewXml = "<View>";
@@ -144,7 +165,7 @@
 				xml += fieldRefValue(item, param, paramValue);
 				xml += "</"+elementName+">";
 			} else {
-				xml += "<NOT_IMPLEMENTED>" + item.field + "</NOT_IMPLEMENTED>";
+				xml += "<NOT_IMPLEMENTED>" + item.comparison + "</NOT_IMPLEMENTED>";
 			}
 		} else {
 			xml += andOrWhatnot(item.items);
@@ -187,10 +208,24 @@
 
 	//console.log(query, param, parsedQuery);
 
+	function getListName() {
+		return parsedQuery.listName;
+	}
+
 	function getXml() {
 		return viewXml;
 	}
 
-	return {
-		getXml : getXml
+	function getSql() {
+		return query;
 	}
+
+	var returnValue = {
+		getXml : getXml,
+		getListName : getListName
+	};
+
+	if (typeof executeQuery !== "undefined")
+		returnValue.exec = executeQuery;
+
+	return returnValue;
