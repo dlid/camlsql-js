@@ -142,7 +142,7 @@
 			for (i=0; i < items.length; i++) { 
 				str += '<FieldRef Name="' + items[i][0].encodeHTML() + '"' + ( !items[i][1] ? ' Ascending="FALSE"' : '' ) + ' />';
 			}
-			str = "<OrderBy>" + str + "</OrderBy>";
+			if (str) str = "<OrderBy>" + str + "</OrderBy>";
 		} 
 		return str;
 	}
@@ -160,6 +160,10 @@
 
 		viewXml += "<Query>" + queryXml + orderXml + "</Query>";
 	}
+
+	if (parsedQuery.limit.rowLimit != -1)
+		viewXml += "<RowLimit>" + parsedQuery.limit.rowLimit + "</RowLimit>";
+
 
 	function andOrWhatnot(items) {
 		var xml = "";
@@ -299,13 +303,13 @@
 		return query;
 	}
 
-	var returnValue = {
+	var publicItems = {
 		getXml : getXml,
 		getListName : getListName,
 		_properties : _properties
 	};
 
 	if (typeof executeQuery !== "undefined")
-		returnValue.exec = executeQuery;
+		publicItems.exec = executeQuery;
 
-	return returnValue;
+	return publicItems;

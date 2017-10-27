@@ -1,5 +1,6 @@
 
 var gulp = require("gulp");
+var gutil = require("gulp-util");
 var concat = require("gulp-concat");
 var clean = require('gulp-clean');
 var inject = require('gulp-inject-string');
@@ -16,13 +17,17 @@ var copy = require('gulp-copy');
 var indent = require("gulp-indent");
 var reload      = browserSync.reload;
 var replace = require('gulp-string-replace');
+var moment = require('moment');
 var fs = require('fs');
+var ftp = require('gulp-ftp');
 var package = JSON.parse(fs.readFileSync('./package.json'));
+var ftpConfig = JSON.parse(fs.readFileSync('./ftp.json'));
 
-var script_header = function () 
-{    var headerComment = "/*! camlsql v" + package.version + " (https://github.com/dlid/camlsql-js) */\n",
-        containerStart = "",
-        containerEnd = "";
+console.log(ftpConfig);
+
+var script_header = function ()  {    var headerComment = "/*! camlsql v" +
+package.version + "@" + moment().format('YYYY-MM-DD HH:mm:ssZZ') + " (https://github.com/dlid/camlsql-js) */\n",         containerStart = "",
+containerEnd = "";
 
 
 
@@ -39,6 +44,15 @@ gulp.task('serve-watch', function() {
     gulp.watch('src/**/*.js' , ['build-js', 'build-app-js']);
     gulp.watch('src/**/*.html' , ['copy-html']);
     gulp.watch('src/less/*.less' , ['build-less']);
+});
+
+gulp.task('ftp-latest', function () {
+    return gulp.src('dist/js/camlsql.*')
+        .pipe(ftp(ftpConfig))
+        // you need to have some kind of stream after gulp-ftp to make sure it's flushed 
+        // this can be a gulp plugin, gulp.dest, or any kind of stream 
+        // here we use a passthrough stream 
+        .pipe(gutil.noop());
 });
 
 gulp.task('serve-serve', function () {
@@ -149,7 +163,25 @@ gulp.task('build-less', function() {
 
 
 gulp.task('default', function(cb) {
-  runSequence('build-clean', ['build-app-js', 'build-js', 'build-less', 'copy-html', 'copy-img'], cb);
+  runSequence('build-clean', ['build-app-js', 'build-js', 'build-less', 'copy-html', 'copy-img'], 'ftp-latest', cb);
 });
 
 gulp.task("serve", ['serve-watch', 'serve-serve']);
+
+
+/*
+
+UTILITY script to inject when testing.... this script will not be there forever though!!
+
+var x = document.querySelectorAll("script[src*=camlsql"); for (var i=0; i < x.length; i++) { x[i].parentNode.removeChild(x[i]); }var s = document.createElement('script'); s.setAttribute('src', "https://dlid.se/camlsql.js?" + (new Date().getTime())); s.setAttribute("type", "text/javascript"); document.querySelector('head').appendChild(s);s.onload = function() {
+
+ console.log("Sending query", camlsql.prepare("SELECT * FROM TestList WHERE Date_x0020_only_x0020_field = ?", 
+  [ camlsql.today() ])
+ .exec(function(err, rows) {
+   console.log(err,rows);
+ }).getXml());
+
+
+}
+
+ */

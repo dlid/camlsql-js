@@ -6,7 +6,9 @@ var executeQuery = function () {
             spList = null,
             listName = this.getListName(),
             spListItems = null,
-            viewXml = this.getXml();
+            viewXml = this.getXml(),
+            nextPage,
+            prevPage;
 
         if (args.length > 1) {
             if (typeof args[0] === "object") {
@@ -83,11 +85,23 @@ var executeQuery = function () {
                 items = [],
                 spListItem;
 
+            var listItemCollectionPosition = spListItems.get_listItemCollectionPosition();
+
+            if (listItemCollectionPosition) {
+                nextPage = x.get_pagingInfo();
+            }
+
             while (listItemEnumerator.moveNext()) {
                 spListItem = listItemEnumerator.get_current();
+                if (!prevPage) {
+                    prevPage = "PagedPrev=TRUE&Paged=TRUE&p_ID=" + spListItem ;
+                }
                 items.push(spListItem.get_fieldValues());
             }
-            execCallback(null, items);
+            execCallback(null, items, {
+                nextPage : nextPage,
+                prevPage : prevPage
+            });
         }
 
         console.log({
@@ -95,5 +109,5 @@ var executeQuery = function () {
             callback: execCallback
         });
 
-        return this;
+        return publicItems;
     }

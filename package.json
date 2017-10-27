@@ -24,6 +24,7 @@
     "gulp-concat": "^2.6.1",
     "gulp-copy": "^1.0.1",
     "gulp-cssmin": "^0.2.0",
+    "gulp-ftp": "^1.1.0",
     "gulp-indent": "^1.0.1",
     "gulp-inject-string": "^1.1.0",
     "gulp-jshint": "^2.0.4",
@@ -32,7 +33,9 @@
     "gulp-rename": "^1.2.2",
     "gulp-sourcemaps": "^2.6.1",
     "gulp-string-replace": "^0.4.0",
+    "gulp-util": "^3.0.8",
     "gulp-wrap": "^0.13.0",
+    "moment": "^2.19.1",
     "run-sequence": "^2.2.0"
   }
 }

@@ -1,14 +1,15 @@
-/*! camlsql v1.0.1 (https://github.com/dlid/camlsql-js) */
+/*! camlsql v1.0.1@2017-10-27 18:22:43+0200 (https://github.com/dlid/camlsql-js) */
 
 
-	/* File: c:\git\camlsql-js\src\camlsql-js\header.js  */
+	/* File: C:\git\camlsql-js\src\camlsql-js\header.js  */
 var camlsql = (function(query, param)  {
+	var camlsqlInstance = this;
 
 
 
 
 
-	/* File: c:\git\camlsql-js\src\camlsql-js\where-parser.js  */
+	/* File: C:\git\camlsql-js\src\camlsql-js\where-parser.js  */
 	var WhereParser = function(whereString, quiet) {
 		var blockOpen = '(',
 			blockClose = ')',
@@ -219,7 +220,7 @@ var camlsql = (function(query, param)  {
 	}
 
 
-	/* File: c:\git\camlsql-js\src\camlsql-js\orderby-parser.js  */
+	/* File: C:\git\camlsql-js\src\camlsql-js\orderby-parser.js  */
 	
 
     /**
@@ -251,7 +252,7 @@ var camlsql = (function(query, param)  {
     window.orderByParser = OrderByParser;  
 
 
-	/* File: c:\git\camlsql-js\src\camlsql-js\sp-exec.js  */
+	/* File: C:\git\camlsql-js\src\camlsql-js\sp-exec.js  */
 var executeQuery = function () {
         var args = Array.prototype.slice.call(arguments),
             spWeb = null,
@@ -260,7 +261,9 @@ var executeQuery = function () {
             spList = null,
             listName = this.getListName(),
             spListItems = null,
-            viewXml = this.getXml();
+            viewXml = this.getXml(),
+            nextPage,
+            prevPage;
 
         if (args.length > 1) {
             if (typeof args[0] === "object") {
@@ -337,11 +340,23 @@ var executeQuery = function () {
                 items = [],
                 spListItem;
 
+            var listItemCollectionPosition = spListItems.get_listItemCollectionPosition();
+
+            if (listItemCollectionPosition) {
+                nextPage = x.get_pagingInfo();
+            }
+
             while (listItemEnumerator.moveNext()) {
                 spListItem = listItemEnumerator.get_current();
+                if (!prevPage) {
+                    prevPage = "PagedPrev=TRUE&Paged=TRUE&p_ID=" + spListItem ;
+                }
                 items.push(spListItem.get_fieldValues());
             }
-            execCallback(null, items);
+            execCallback(null, items, {
+                nextPage : nextPage,
+                prevPage : prevPage
+            });
         }
 
         console.log({
@@ -349,11 +364,11 @@ var executeQuery = function () {
             callback: execCallback
         });
 
-        return this;
+        return publicItems;
     }
 
 
-	/* File: c:\git\camlsql-js\src\camlsql-js\index.js  */
+	/* File: C:\git\camlsql-js\src\camlsql-js\index.js  */
 	
 	var _properties = {
 		query : query,
@@ -498,7 +513,7 @@ var executeQuery = function () {
 			for (i=0; i < items.length; i++) { 
 				str += '<FieldRef Name="' + items[i][0].encodeHTML() + '"' + ( !items[i][1] ? ' Ascending="FALSE"' : '' ) + ' />';
 			}
-			str = "<OrderBy>" + str + "</OrderBy>";
+			if (str) str = "<OrderBy>" + str + "</OrderBy>";
 		} 
 		return str;
 	}
@@ -516,6 +531,10 @@ var executeQuery = function () {
 
 		viewXml += "<Query>" + queryXml + orderXml + "</Query>";
 	}
+
+	if (parsedQuery.limit.rowLimit != -1)
+		viewXml += "<RowLimit>" + parsedQuery.limit.rowLimit + "</RowLimit>";
+
 
 	function andOrWhatnot(items) {
 		var xml = "";
@@ -655,23 +674,23 @@ var executeQuery = function () {
 		return query;
 	}
 
-	var returnValue = {
+	var publicItems = {
 		getXml : getXml,
 		getListName : getListName,
 		_properties : _properties
 	};
 
 	if (typeof executeQuery !== "undefined")
-		returnValue.exec = executeQuery;
+		publicItems.exec = executeQuery;
 
-	return returnValue;
+	return publicItems;
 
 
-	/* File: c:\git\camlsql-js\src\camlsql-js\footer.js  */
+	/* File: C:\git\camlsql-js\src\camlsql-js\footer.js  */
 });
 
 
-	/* File: c:\git\camlsql-js\src\camlsql-js\help-functions.js  */
+	/* File: C:\git\camlsql-js\src\camlsql-js\help-functions.js  */
 /**
  * Helper functions for parameters
  */
