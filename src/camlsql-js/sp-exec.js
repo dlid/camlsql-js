@@ -10,6 +10,8 @@ var executeQuery = function () {
             nextPage,
             prevPage;
 
+        generateViewXml();
+
         if (args.length > 1) {
             if (typeof args[0] === "object") {
                 spWeb = args[0];
@@ -64,6 +66,7 @@ var executeQuery = function () {
 
 
             camlQuery.set_viewXml(camlQueryString);
+            console.log("camlQuery", camlQuery);
             spListItems = spList.getItems(camlQuery);
             clientContext.load(spListItems);
             clientContext.executeQueryAsync(camlQuerySuccess, function () {
@@ -88,13 +91,13 @@ var executeQuery = function () {
             var listItemCollectionPosition = spListItems.get_listItemCollectionPosition();
 
             if (listItemCollectionPosition) {
-                nextPage = x.get_pagingInfo();
+                nextPage = listItemCollectionPosition.get_pagingInfo();
             }
 
             while (listItemEnumerator.moveNext()) {
                 spListItem = listItemEnumerator.get_current();
                 if (!prevPage) {
-                    prevPage = "PagedPrev=TRUE&Paged=TRUE&p_ID=" + spListItem ;
+                    prevPage = "PagedPrev=TRUE&Paged=TRUE&p_ID=" + encodeURIComponent(spListItem.get_id());
                 }
                 items.push(spListItem.get_fieldValues());
             }

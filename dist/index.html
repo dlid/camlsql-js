@@ -38,14 +38,9 @@
 			<h1>Try it out</h1>
 			 
 			<div class="live">
-					<strong>camlsql statement:<span v-show="liveTimeout">*</span> </strong>
+					<strong>camlsql statement:<span v-show="liveTimeout">*</span> </strong> 
 					<textarea  spellcheck="false" style="width:100%; padding: 8px;    box-sizing: border-box;" auto-resize v-model="liveQuery">m</textarea>
-					<!-- <input
-
-					 type="text" style="padding: 10px; font-size: 1.25em; font-weight: 300; width:100%;    box-sizing: border-box; " placeholder="Enter your SQL statement here" v-model="liveQuery" /> -->
-	
-					<div>
-
+			
 						<div class="parameters" v-for="param in parameters">
 							<div class="parameters__row" :class="{'parameters__row--invalid' : paramError(param)}">
 								<div class="parameters__cell parameters__cell--name">
@@ -58,7 +53,10 @@
 										<option>Guid</option>
 										<option>Lookup</option>
 										<option>DateTime</option>
-										<option>Month</option>
+										<option>Date</option>
+										<!-- <option>Month</option> -->
+										<option>Now</option>
+										<option>Now (With time)</option>
 										<option>Today</option>
 										<option>Multichoice</option>
 										<option>In</option>
@@ -67,8 +65,11 @@
 									</select>
 								</div>
 								<div class="parameters__cell parameters__cell--value">
-									<input type="text" v-model="param.value" @keydown="triggerRefresh" style="width: 100%; padding:6px;display:block;" />
+									<input v-show="showParamTextInput(param)" type="text" v-model="param.value" @keydown="triggerRefresh" style="width: 100%; padding:6px;display:block;" />
 									<p style="color:red">{{paramError(param)}}</p>
+
+
+
 								</div>
 							</div>
 							

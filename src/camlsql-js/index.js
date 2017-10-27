@@ -1,7 +1,8 @@
 	
 	var _properties = {
 		query : query,
-		limit : [0, -1]
+		limit : [0, -1],
+		viewScope : null
 	},
 	quiet = false;
 
@@ -36,7 +37,16 @@
 			limitOffset = 0,
 			limitRows = -1;
 
-		// Extract ORDER BY statement
+		if (m = query.match(/^(select\s+)(scope (defaultvalue|recursive|recursiveall|filesonly)\s+)/i)) {
+			m[3] = m[3].toLowerCase();
+			if (m[3] == "defaultvalue") _properties.viewScope = "DefaultValue";
+			if (m[3] == "recursive") _properties.viewScope = "Recursive";
+			if (m[3] == "recursiveall") _properties.viewScope = "RecursiveAll";
+			if (m[3] == "filesonly") _properties.viewScope = "FilesOnly";
+			query = m[1] + query.substr(m[1].length + m[2].length);
+			console.warn("scope", m[3]);
+		}
+
 		if (m = query.match(/ LIMIT (\d+,|)(\d+).*$/i)) {
 			limitString = m[0];
 			query = query.substr(0, query.length - m[0].length );
@@ -126,43 +136,58 @@
 		_properties.param = newParam;
 	}
 
-	var parsedQuery = parseQuery(query),
-		viewXml = "<View>";
-	if (parsedQuery.viewFields.length > 0) {
-		viewXml += "<ViewFields>";
-		for (var i=0; i < parsedQuery.viewFields.length; i++) {
-			viewXml += '<FieldRef Name="' + parsedQuery.viewFields[i].encodeHTML() + '" />';
+	var parsedQuery,
+		viewXml = "";
+
+	function generateViewXml() {
+		parsedQuery = parseQuery(query),
+		viewXml = "<View";
+
+		if (_properties.viewScope) viewXml += ' Scope="' + _properties.viewScope.encodeHTML() + '"';
+
+		viewXml += ">"; 
+
+		if (parsedQuery.viewFields.length > 0) {
+			viewXml += "<ViewFields>";
+			for (var i=0; i < parsedQuery.viewFields.length; i++) {
+				viewXml += '<FieldRef Name="' + parsedQuery.viewFields[i].encodeHTML() + '" />';
+			}
+			viewXml += "</ViewFields>";
 		}
-		viewXml += "</ViewFields>";
+
+		_properties.macroType = parsedQuery.macroType;
+		_properties.macroCount = parsedQuery.macroCount;
+		_properties.macros = parsedQuery.macros;
+
+		var queryXml = andOrWhatnot(parsedQuery.where),
+			orderXml = createOrderXml(parsedQuery.sort)
+
+		if (queryXml || orderXml) {
+
+			if (queryXml) queryXml = '<Where>' + queryXml + '</Where>';
+
+			viewXml += "<Query>" + queryXml + orderXml + "</Query>";
+		}
+
+		if (parsedQuery.limit.rowLimit != -1)
+			viewXml += "<RowLimit>" + parsedQuery.limit.rowLimit + "</RowLimit>";
+
+		viewXml += "</View>";
 	}
 
+	
+
 	function createOrderXml(items) {
-		var str = "", i;
+		var str = "", i, dataType = "";
 		if (typeof items !== "undefined") {
 			for (i=0; i < items.length; i++) { 
-				str += '<FieldRef Name="' + items[i][0].encodeHTML() + '"' + ( !items[i][1] ? ' Ascending="FALSE"' : '' ) + ' />';
+				if (items[i][2]) dataType = ' Type="' + items[i][2].encodeHTML() +'"';
+				str += '<FieldRef Name="' + items[i][0].encodeHTML() + '"' + dataType + ( !items[i][1] ? ' Ascending="FALSE"' : '' ) + ' />';
 			}
 			if (str) str = "<OrderBy>" + str + "</OrderBy>";
 		} 
 		return str;
 	}
-
-	_properties.macroType = parsedQuery.macroType;
-	_properties.macroCount = parsedQuery.macroCount;
-	_properties.macros = parsedQuery.macros;
-
-	var queryXml = andOrWhatnot(parsedQuery.where),
-		orderXml = createOrderXml(parsedQuery.sort)
-
-	if (queryXml || orderXml) {
-
-		if (queryXml) queryXml = '<Where>' + queryXml + '</Where>';
-
-		viewXml += "<Query>" + queryXml + orderXml + "</Query>";
-	}
-
-	if (parsedQuery.limit.rowLimit != -1)
-		viewXml += "<RowLimit>" + parsedQuery.limit.rowLimit + "</RowLimit>";
 
 
 	function andOrWhatnot(items) {
@@ -195,7 +220,7 @@
 				}
 			}
 
-			var simpleMappings = {'eq' : 'Eq', 'gt' : 'Gt', 'gte' : 'Geq', 'lte' : 'Leq', 'lt' : 'lt', 'ne' : 'Neq'};
+			var simpleMappings = {'eq' : 'Eq', 'gt' : 'Gt', 'gte' : 'Geq', 'lte' : 'Leq', 'lt' : 'Lt', 'ne' : 'Neq'};
 
 			if (typeof simpleMappings[item.comparison] !== "undefined") {
 				elementName = simpleMappings[item.comparison];
@@ -215,20 +240,25 @@
 				xml += '<FieldRef Name="' + item.field.encodeHTML() + '" />'
 				xml += "</IsNotNull>";
 			} else if (item.comparison == "like") {
-				var elementName = "Contains",
-					paramValue = null;
-				if (param.value.indexOf('%') === 0 && param.value[param.value.length-1] === "%") {
-					paramValue = param.value.replace(/^%?|%?$/g, '');
-				} else if (param.value.indexOf('%') === 0) {
-					console.warn("[casql] SharePoint does not support an 'EndsWith' statement. Contains will be used instead. (Field '" + item.field + "')");
-					paramValue = param.value.replace(/^%?/, '');
-				} else if (param.value.indexOf('%') === param.value.length -1) {
-					paramValue = param.value.replace(/%?$/, '');
-					elementName = "BeginsWith"
+
+				if (param.type == "Text") {
+					var elementName = "Contains",
+						paramValue = null;
+					if (param.value.indexOf('%') === 0 && param.value[param.value.length-1] === "%") {
+						paramValue = param.value.replace(/^%?|%?$/g, '');
+					} else if (param.value.indexOf('%') === 0) {
+						console.warn("[casql] SharePoint does not support an 'EndsWith' statement. Contains will be used instead. (Field '" + item.field + "')");
+						paramValue = param.value.replace(/^%?/, '');
+					} else if (param.value.indexOf('%') === param.value.length -1) {
+						paramValue = param.value.replace(/%?$/, '');
+						elementName = "BeginsWith"
+					}
+					xml += "<"+elementName+">";
+					xml += fieldRefValue(item, param, paramValue);
+					xml += "</"+elementName+">";
+				} else {
+					xml += "<casql:Error>LIKE statements must use a text parameter. " + param.type + " was used.</casql:Error>";
 				}
-				xml += "<"+elementName+">";
-				xml += fieldRefValue(item, param, paramValue);
-				xml += "</"+elementName+">";
 			} else {
 				xml += "<NOT_IMPLEMENTED>" + item.comparison + "</NOT_IMPLEMENTED>";
 			}
@@ -239,16 +269,23 @@
 	}
 
 	function createValueElement(item, param, paramValue) {
-		var xml = "";
+		var xml = "",
+			valueAttributes = "";
 		if (param.type == "DateTime") {
+			if (param.includeTime == true) 
+				valueAttributes+= ' IncludeTimeValue="TRUE"';
 			if (param.today === true) {
 				xml = "<Today";
 				if (paramValue) {
 					xml += ' OffsetDays="' + paramValue + '"';
 				}
 				xml += " />";
+			} else if (param.isNow === true) {
+				xml += "<Now />";
+			} else {
+				xml += paramValue.encodeHTML();
 			}
-		} else if (param.type == "Text") {
+		} else if (param.type == "Text" || param.type == "Guid") {
 			if (param.multiline === true) {
 				xml = "<<![CDATA[";
 				xml += paramValue;
@@ -259,7 +296,7 @@
 		} else if (param.type == "Number") {
 			xml += paramValue;
 		}
-		xml = '<Value Type="' + param.type + '">' + xml +'</Value>';
+		xml = '<Value Type="' + param.type + '"'+valueAttributes+'>' + xml +'</Value>';
 		return xml;
 	}
 
@@ -287,7 +324,6 @@
 
 
 
-	viewXml += "</View>";
 
 	//console.log(query, param, parsedQuery);
 
@@ -296,6 +332,7 @@
 	}
 
 	function getXml() {
+		generateViewXml();
 		return viewXml;
 	}
 
@@ -311,5 +348,27 @@
 
 	if (typeof executeQuery !== "undefined")
 		publicItems.exec = executeQuery;
+
+	// publicItems.defaultScope = function() {
+	// 	_properties.viewScope = null
+	// 	return this;
+	// }
+
+	// publicItems.recursive = function() {
+	// 	_properties.viewScope = 'Recursive';
+	// 	return this;
+	// }
+
+	// publicItems.recursiveAll = function() {
+	// 	_properties.viewScope = 'RecursiveAll';
+	// 	return this;
+	// }
+
+	// publicItems.filesOnly = function() {
+	// 	_properties.viewScope = 'FilesOnly';
+	// 	return this;
+	// }
+
+	generateViewXml();
 
 	return publicItems;

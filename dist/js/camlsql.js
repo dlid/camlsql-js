@@ -1,4 +1,4 @@
-/*! camlsql v1.0.1@2017-10-27 18:22:43+0200 (https://github.com/dlid/camlsql-js) */
+/*! camlsql v1.0.1@2017-10-27 23:26:29+0200 (https://github.com/dlid/camlsql-js) */
 
 
 	/* File: C:\git\camlsql-js\src\camlsql-js\header.js  */
@@ -233,17 +233,34 @@ var camlsql = (function(query, param)  {
 		var orderValues = [],
             match,
             fieldName,
+            dataType,
             asc,
-            re = new RegExp("(\\[?[a-zA-Z_\\d]+?\\]?)(\\,\\s+|\\s+asc|\\s+desc|$)", "ig");
+            re = new RegExp("(\\[?[a-z:A-Z_\\d]+?\\]?)(\\,\\s+|\\s+asc|\\s+desc|$)", "ig");
         if (typeof orderByString !== "undefined" && orderByString !== null) {
             while (match = re.exec(orderByString)) {
                 asc = true;
+                dataType = null;
+                if (match[1].indexOf(':') > 0) {
+                    t = match[1].split(':');
+                    if (t.length == 2) {
+                        t[0] = t[0].toLowerCase();
+                        switch(t[0]) {
+                            case "datetime": t[0] = "DateTime"; break;
+                            case "text": t[0] = "Text"; break;
+                            case "number": t[0] = "Number"; break;
+                            case "datetime": t[0] = "DateTime"; break;
+                        }
+                        dataType = t[0];
+                        match[1] = t[1];
+                    } else 
+                        return [];
+                }
                 fieldName = formatFieldName(match[1]);
                 if (match.length == 3) {
                     order = typeof match[2] !== "undefined" ? trim(match[2].toLowerCase()) : null;
-                    order = order == "desc" ? false : true 
+                    asc = order == "desc" ? false : true 
                 }
-                orderValues.push([fieldName, order]);
+                orderValues.push([fieldName, asc, dataType]);
             }
         }
     	return orderValues; 
@@ -264,6 +281,8 @@ var executeQuery = function () {
             viewXml = this.getXml(),
             nextPage,
             prevPage;
+
+        generateViewXml();
 
         if (args.length > 1) {
             if (typeof args[0] === "object") {
@@ -319,6 +338,7 @@ var executeQuery = function () {
 
 
             camlQuery.set_viewXml(camlQueryString);
+            console.log("camlQuery", camlQuery);
             spListItems = spList.getItems(camlQuery);
             clientContext.load(spListItems);
             clientContext.executeQueryAsync(camlQuerySuccess, function () {
@@ -343,13 +363,13 @@ var executeQuery = function () {
             var listItemCollectionPosition = spListItems.get_listItemCollectionPosition();
 
             if (listItemCollectionPosition) {
-                nextPage = x.get_pagingInfo();
+                nextPage = listItemCollectionPosition.get_pagingInfo();
             }
 
             while (listItemEnumerator.moveNext()) {
                 spListItem = listItemEnumerator.get_current();
                 if (!prevPage) {
-                    prevPage = "PagedPrev=TRUE&Paged=TRUE&p_ID=" + spListItem ;
+                    prevPage = "PagedPrev=TRUE&Paged=TRUE&p_ID=" + encodeURIComponent(spListItem.get_id());
                 }
                 items.push(spListItem.get_fieldValues());
             }
@@ -372,7 +392,8 @@ var executeQuery = function () {
 	
 	var _properties = {
 		query : query,
-		limit : [0, -1]
+		limit : [0, -1],
+		viewScope : null
 	},
 	quiet = false;
 
@@ -407,7 +428,16 @@ var executeQuery = function () {
 			limitOffset = 0,
 			limitRows = -1;
 
-		// Extract ORDER BY statement
+		if (m = query.match(/^(select\s+)(scope (defaultvalue|recursive|recursiveall|filesonly)\s+)/i)) {
+			m[3] = m[3].toLowerCase();
+			if (m[3] == "defaultvalue") _properties.viewScope = "DefaultValue";
+			if (m[3] == "recursive") _properties.viewScope = "Recursive";
+			if (m[3] == "recursiveall") _properties.viewScope = "RecursiveAll";
+			if (m[3] == "filesonly") _properties.viewScope = "FilesOnly";
+			query = m[1] + query.substr(m[1].length + m[2].length);
+			console.warn("scope", m[3]);
+		}
+
 		if (m = query.match(/ LIMIT (\d+,|)(\d+).*$/i)) {
 			limitString = m[0];
 			query = query.substr(0, query.length - m[0].length );
@@ -497,43 +527,58 @@ var executeQuery = function () {
 		_properties.param = newParam;
 	}
 
-	var parsedQuery = parseQuery(query),
-		viewXml = "<View>";
-	if (parsedQuery.viewFields.length > 0) {
-		viewXml += "<ViewFields>";
-		for (var i=0; i < parsedQuery.viewFields.length; i++) {
-			viewXml += '<FieldRef Name="' + parsedQuery.viewFields[i].encodeHTML() + '" />';
+	var parsedQuery,
+		viewXml = "";
+
+	function generateViewXml() {
+		parsedQuery = parseQuery(query),
+		viewXml = "<View";
+
+		if (_properties.viewScope) viewXml += ' Scope="' + _properties.viewScope.encodeHTML() + '"';
+
+		viewXml += ">"; 
+
+		if (parsedQuery.viewFields.length > 0) {
+			viewXml += "<ViewFields>";
+			for (var i=0; i < parsedQuery.viewFields.length; i++) {
+				viewXml += '<FieldRef Name="' + parsedQuery.viewFields[i].encodeHTML() + '" />';
+			}
+			viewXml += "</ViewFields>";
 		}
-		viewXml += "</ViewFields>";
+
+		_properties.macroType = parsedQuery.macroType;
+		_properties.macroCount = parsedQuery.macroCount;
+		_properties.macros = parsedQuery.macros;
+
+		var queryXml = andOrWhatnot(parsedQuery.where),
+			orderXml = createOrderXml(parsedQuery.sort)
+
+		if (queryXml || orderXml) {
+
+			if (queryXml) queryXml = '<Where>' + queryXml + '</Where>';
+
+			viewXml += "<Query>" + queryXml + orderXml + "</Query>";
+		}
+
+		if (parsedQuery.limit.rowLimit != -1)
+			viewXml += "<RowLimit>" + parsedQuery.limit.rowLimit + "</RowLimit>";
+
+		viewXml += "</View>";
 	}
 
+	
+
 	function createOrderXml(items) {
-		var str = "", i;
+		var str = "", i, dataType = "";
 		if (typeof items !== "undefined") {
 			for (i=0; i < items.length; i++) { 
-				str += '<FieldRef Name="' + items[i][0].encodeHTML() + '"' + ( !items[i][1] ? ' Ascending="FALSE"' : '' ) + ' />';
+				if (items[i][2]) dataType = ' Type="' + items[i][2].encodeHTML() +'"';
+				str += '<FieldRef Name="' + items[i][0].encodeHTML() + '"' + dataType + ( !items[i][1] ? ' Ascending="FALSE"' : '' ) + ' />';
 			}
 			if (str) str = "<OrderBy>" + str + "</OrderBy>";
 		} 
 		return str;
 	}
-
-	_properties.macroType = parsedQuery.macroType;
-	_properties.macroCount = parsedQuery.macroCount;
-	_properties.macros = parsedQuery.macros;
-
-	var queryXml = andOrWhatnot(parsedQuery.where),
-		orderXml = createOrderXml(parsedQuery.sort)
-
-	if (queryXml || orderXml) {
-
-		if (queryXml) queryXml = '<Where>' + queryXml + '</Where>';
-
-		viewXml += "<Query>" + queryXml + orderXml + "</Query>";
-	}
-
-	if (parsedQuery.limit.rowLimit != -1)
-		viewXml += "<RowLimit>" + parsedQuery.limit.rowLimit + "</RowLimit>";
 
 
 	function andOrWhatnot(items) {
@@ -566,7 +611,7 @@ var executeQuery = function () {
 				}
 			}
 
-			var simpleMappings = {'eq' : 'Eq', 'gt' : 'Gt', 'gte' : 'Geq', 'lte' : 'Leq', 'lt' : 'lt', 'ne' : 'Neq'};
+			var simpleMappings = {'eq' : 'Eq', 'gt' : 'Gt', 'gte' : 'Geq', 'lte' : 'Leq', 'lt' : 'Lt', 'ne' : 'Neq'};
 
 			if (typeof simpleMappings[item.comparison] !== "undefined") {
 				elementName = simpleMappings[item.comparison];
@@ -586,20 +631,25 @@ var executeQuery = function () {
 				xml += '<FieldRef Name="' + item.field.encodeHTML() + '" />'
 				xml += "</IsNotNull>";
 			} else if (item.comparison == "like") {
-				var elementName = "Contains",
-					paramValue = null;
-				if (param.value.indexOf('%') === 0 && param.value[param.value.length-1] === "%") {
-					paramValue = param.value.replace(/^%?|%?$/g, '');
-				} else if (param.value.indexOf('%') === 0) {
-					console.warn("[casql] SharePoint does not support an 'EndsWith' statement. Contains will be used instead. (Field '" + item.field + "')");
-					paramValue = param.value.replace(/^%?/, '');
-				} else if (param.value.indexOf('%') === param.value.length -1) {
-					paramValue = param.value.replace(/%?$/, '');
-					elementName = "BeginsWith"
+
+				if (param.type == "Text") {
+					var elementName = "Contains",
+						paramValue = null;
+					if (param.value.indexOf('%') === 0 && param.value[param.value.length-1] === "%") {
+						paramValue = param.value.replace(/^%?|%?$/g, '');
+					} else if (param.value.indexOf('%') === 0) {
+						console.warn("[casql] SharePoint does not support an 'EndsWith' statement. Contains will be used instead. (Field '" + item.field + "')");
+						paramValue = param.value.replace(/^%?/, '');
+					} else if (param.value.indexOf('%') === param.value.length -1) {
+						paramValue = param.value.replace(/%?$/, '');
+						elementName = "BeginsWith"
+					}
+					xml += "<"+elementName+">";
+					xml += fieldRefValue(item, param, paramValue);
+					xml += "</"+elementName+">";
+				} else {
+					xml += "<casql:Error>LIKE statements must use a text parameter. " + param.type + " was used.</casql:Error>";
 				}
-				xml += "<"+elementName+">";
-				xml += fieldRefValue(item, param, paramValue);
-				xml += "</"+elementName+">";
 			} else {
 				xml += "<NOT_IMPLEMENTED>" + item.comparison + "</NOT_IMPLEMENTED>";
 			}
@@ -610,16 +660,23 @@ var executeQuery = function () {
 	}
 
 	function createValueElement(item, param, paramValue) {
-		var xml = "";
+		var xml = "",
+			valueAttributes = "";
 		if (param.type == "DateTime") {
+			if (param.includeTime == true) 
+				valueAttributes+= ' IncludeTimeValue="TRUE"';
 			if (param.today === true) {
 				xml = "<Today";
 				if (paramValue) {
 					xml += ' OffsetDays="' + paramValue + '"';
 				}
 				xml += " />";
+			} else if (param.isNow === true) {
+				xml += "<Now />";
+			} else {
+				xml += paramValue.encodeHTML();
 			}
-		} else if (param.type == "Text") {
+		} else if (param.type == "Text" || param.type == "Guid") {
 			if (param.multiline === true) {
 				xml = "<<![CDATA[";
 				xml += paramValue;
@@ -630,7 +687,7 @@ var executeQuery = function () {
 		} else if (param.type == "Number") {
 			xml += paramValue;
 		}
-		xml = '<Value Type="' + param.type + '">' + xml +'</Value>';
+		xml = '<Value Type="' + param.type + '"'+valueAttributes+'>' + xml +'</Value>';
 		return xml;
 	}
 
@@ -658,7 +715,6 @@ var executeQuery = function () {
 
 
 
-	viewXml += "</View>";
 
 	//console.log(query, param, parsedQuery);
 
@@ -667,6 +723,7 @@ var executeQuery = function () {
 	}
 
 	function getXml() {
+		generateViewXml();
 		return viewXml;
 	}
 
@@ -683,6 +740,28 @@ var executeQuery = function () {
 	if (typeof executeQuery !== "undefined")
 		publicItems.exec = executeQuery;
 
+	// publicItems.defaultScope = function() {
+	// 	_properties.viewScope = null
+	// 	return this;
+	// }
+
+	// publicItems.recursive = function() {
+	// 	_properties.viewScope = 'Recursive';
+	// 	return this;
+	// }
+
+	// publicItems.recursiveAll = function() {
+	// 	_properties.viewScope = 'RecursiveAll';
+	// 	return this;
+	// }
+
+	// publicItems.filesOnly = function() {
+	// 	_properties.viewScope = 'FilesOnly';
+	// 	return this;
+	// }
+
+	generateViewXml();
+
 	return publicItems;
 
 
@@ -695,6 +774,11 @@ var executeQuery = function () {
  * Helper functions for parameters
  */
 
+camlsql.__proto__._padString = function(str, size) {
+  var s = String(str);
+  while (s.length < (size || 2)) {s = "0" + s;}
+  return s;
+}
 
 camlsql.__proto__.text = function(value) {
 	var multiline = value.indexOf("\n") != -1 || value.indexOf("\r") !== -1,
@@ -726,8 +810,40 @@ camlsql.__proto__.lookup = function(value) {
 		byId : typeof value == "number"
 	};
 }
+
+camlsql.__proto__.now = function(includeTime) {
+	return {
+		type : 'DateTime',
+		isNow : true,
+		includeTime : includeTime == true ? true : false 
+	};
+}
+
+camlsql.__proto__.date = function() {
+	var args = Array.prototype.slice.call(arguments),o;
+		o = camlsql.datetime.apply(this, args);
+	o.includeTime = false;
+	return o;
+}
  
 camlsql.__proto__.datetime = function(value) {
+
+	if (typeof value == "string") {
+		if (value == "month start") {
+			var d = new Date();
+			value = d.getFullYear() + "-" + camlsql._padString(d.getMonth()+ 1) + "-01T00:00:00Z";
+		} else if (value == "month end") {
+			var d = new Date();
+			var d2 = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+			value = d2.getFullYear() + "-" + camlsql._padString(d2.getMonth()+1) + "-" + camlsql._padString(d2.getDate()) + "T23:59:59Z";
+		} else if (value == "this morning") {
+			var d = new Date();
+			value = d.getFullYear() + "-" + camlsql._padString(d.getMonth()+1) + "-" + camlsql._padString(d.getDate()) + "T00:00:00Z";
+		} else if (value == "tonight") {
+			var d = new Date();
+			value = d.getFullYear() + "-" + camlsql._padString(d.getMonth()+1) + "-" + camlsql._padString(d.getDate()) + "T23:59:59Z";
+		}
+	}
 
 	if (typeof value !== "string") {
 		console.error("[camlsql] Bad type for datetime value");
@@ -742,7 +858,8 @@ camlsql.__proto__.datetime = function(value) {
 
 	return {
 		type : 'DateTime',
-		value : value
+		value : value,
+		includeTime : true
 	};
 }
 
@@ -760,19 +877,22 @@ camlsql.__proto__.today = function(offset) {
 	};
 }
 
-camlsql.__proto__.month = function(offset) {
-	if (typeof offset === "undefined") offset = 0;
-	if (typeof offset !== "number") {
-		console.error("[camlsql] Bad offset value for 'today'", offset);
-		return null;
-	}
 
-	return {
-		type : 'DateTime',
-		month : true,
-		value : offset
-	};
-}
+
+
+// camlsql.__proto__.month = function(offset) {
+// 	if (typeof offset === "undefined") offset = 0;
+// 	if (typeof offset !== "number") {
+// 		console.error("[camlsql] Bad offset value for 'today'", offset);
+// 		return null;
+// 	}
+
+// 	return {
+// 		type : 'DateTime',
+// 		month : true,
+// 		value : offset
+// 	};
+// }
 
 
 camlsql.__proto__.guid = function(value) {

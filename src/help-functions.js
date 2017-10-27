@@ -110,6 +110,13 @@ camlsql.__proto__.url = function(value) {
 	};
 }
 
+camlsql.__proto__.user = function(value) {
+	return {
+		type : 'User',
+		value : value
+	};
+}
+
 camlsql.__proto__.prepare = function() {
 	var args = Array.prototype.slice.call(arguments);
 	args.unshift(null);
