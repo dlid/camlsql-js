@@ -96,13 +96,6 @@ camlsql.__proto__.multichoice = function(value) {
 	};
 }
 
-camlsql.__proto__.choice = function(value) {
-	return {
-		type : 'Choice',
-		value : value
-	};
-}
-
 camlsql.__proto__.url = function(value) {
 	return {
 		type : 'URL',
@@ -115,4 +108,3 @@ camlsql.__proto__.prepare = function() {
 	args.unshift(null);
 	return new (Function.prototype.bind.apply(camlsql, args));
 }
-   

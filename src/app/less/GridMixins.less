@@ -1,0 +1,63 @@
+// https://webdesign.tutsplus.com/tutorials/a-simple-mixin-alternative-to-standard-css-grids--webdesign-16958
+// Variables for em / rem use
+//
+
+@base_px: 16; //set to the most common base px size used in browsers, should generally be left at default
+
+@toRems: (1 / @base_px) + 0rem; //allows you to set values as the default px size to target, which is then converted into scalable rem values.
+
+@toEms: (1 / @base_px) + 0em; //same as above, but with em values
+
+//
+// Grid mixins
+//
+
+
+@default-width: 1200 * @toRems;
+
+@default-padding: 0;
+
+@default-row_margin: 0 auto;
+
+.Row ( @width : @default-width; @padding: @default-padding; @margin: @default-row_margin; ) {
+	max-width: @width;
+	width: 100%;
+	margin: @margin;
+	padding: @padding;
+	// clear at the end of container
+	&:before,
+	&:after {
+		content:"";
+		display:table;
+	}
+	&:after {
+		clear:both;
+	}
+}
+
+@default-colspan: 1;
+
+@default-total_cols: 6;
+
+@default-gutter: 0;
+
+@default-margin_top: 0;
+
+@default-margin_bottom: 0;
+
+.Cols ( @colspan : @default-colspan; @total_cols : @default-total_cols; @padding: @default-padding; @gutter: @default-gutter; @edge: false; @margin_top : @default-margin_top; @margin_bottom : @default-margin_bottom; ){
+	@total_gutter: (@total_cols - 1) * @gutter;
+	@spanned_gutters: (@colspan - 1) * @gutter;
+	width: ( @colspan * ( (100 - @total_gutter) / @total_cols) ) + @spanned_gutters + 0%;
+	float: left;
+	padding: @padding;
+	.IfEdge (@edge; @gutter; @margin_top; @margin_bottom; );
+}
+
+.IfEdge ( @edge; @gutter; @margin_top; @margin_bottom;  ) when (@edge = false) {
+	margin: @margin_top @gutter + 0% @margin_bottom 0;
+}
+
+.IfEdge ( @edge; @gutter; @margin_top; @margin_bottom;  ) when (@edge = true) {
+	margin: @margin_top 0 @margin_bottom 0;
+}

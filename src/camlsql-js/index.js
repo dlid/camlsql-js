@@ -1,6 +1,7 @@
 	
 	var _properties = {
-		query : query
+		query : query,
+		limit : [0, -1]
 	},
 	quiet = false;
 
@@ -29,11 +30,42 @@
 
 
 	function parseQuery(query) {
-		var m = query.match(/^SELECT (.*?) FROM (.*?)(?:\s(.*)$|$)/i),
+
+		var orderByString,
+			limitString,
+			limitOffset = 0,
+			limitRows = -1;
+
+		// Extract ORDER BY statement
+		if (m = query.match(/ LIMIT (\d+,|)(\d+).*$/i)) {
+			limitString = m[0];
+			query = query.substr(0, query.length - m[0].length );
+			if (m[1] == "") {
+				limitRows = parseInt(m[2], 10);
+			} else {
+				limitOffset = parseInt(m[1], 10);
+				limitRows = parseInt(m[2], 10);
+			}
+		}
+
+		// Extract ORDER BY statement
+		if (m = query.match(/ ORDER BY (.*?)$/i)) {
+
+			orderByString = m[1];
+			query = query.substr(0, query.length - m[0].length );
+		}
+
+		var m = query.match(/^SELECT (.*?) FROM (.*?)(?:\s+(where.*)$|$)/i),
 			fields = [],
 			listName,
 			t, 
-			i;
+			i,
+			w = {
+				statements : [],
+				macroType : null,
+				macroCount : 0,
+				macros : []
+			};
 
 		if (m) {
 			if (m.length == 4) {
@@ -44,12 +76,11 @@
 
 				}
 				listName = formatFieldName(m[2]);
+				w = WhereParser(m[3], quiet);
 			}
 		}
 
 		if (fields.length == 1 && fields[0] == '*') fields = [];
-
-		var w = WhereParser(m[3], quiet);
 
  		return { 
  			listName : listName,
@@ -57,13 +88,19 @@
 			where : w.statements,
 			macroType : w.macroType,
 			macroCount : w.macroCount,
-			macros : w.macros
+			macros : w.macros,
+			sort : OrderByParser(orderByString, quiet),
+			limit : {
+				offset : limitOffset,
+				rowLimit : limitRows
+			}
 		}; 
 
 	}
 
 	function parseParameter(parameter) {
 		var ret = null;
+		if (parameter == null) return null;
 		if (parameter!==null && parameter.constructor === Array) {
 			ret = [];
 			for (var i=0; i < parameter.length;i++) {
@@ -99,13 +136,29 @@
 		viewXml += "</ViewFields>";
 	}
 
+	function createOrderXml(items) {
+		var str = "", i;
+		if (typeof items !== "undefined") {
+			for (i=0; i < items.length; i++) { 
+				str += '<FieldRef Name="' + items[i][0].encodeHTML() + '"' + ( !items[i][1] ? ' Ascending="FALSE"' : '' ) + ' />';
+			}
+			str = "<OrderBy>" + str + "</OrderBy>";
+		} 
+		return str;
+	}
+
 	_properties.macroType = parsedQuery.macroType;
 	_properties.macroCount = parsedQuery.macroCount;
 	_properties.macros = parsedQuery.macros;
 
-	var queryXml = andOrWhatnot(parsedQuery.where);
-	if (queryXml) {
-		viewXml += "<Query><Where>" + queryXml + "</Where></Query>";
+	var queryXml = andOrWhatnot(parsedQuery.where),
+		orderXml = createOrderXml(parsedQuery.sort)
+
+	if (queryXml || orderXml) {
+
+		if (queryXml) queryXml = '<Where>' + queryXml + '</Where>';
+
+		viewXml += "<Query>" + queryXml + orderXml + "</Query>";
 	}
 
 	function andOrWhatnot(items) {
@@ -129,7 +182,7 @@
 		var xml = "";
 		if (item.type == "statement") {
 			var param = newParam[item.macro];
-
+			console.warn("", item.macro, item);
 			if (item.comparison !== "null" && item.comparison !== "notnull") {
 				if (typeof param === "undefined") {
 					xml += "<casql:Error>" + ("Parameter not found ("+item.macro+")").encodeHTML() + "</casql:Error>";
@@ -224,7 +277,7 @@
 		}
 		
 		xml += '<FieldRef Name="' + item.field.encodeHTML() + '" />'
-		xml += '<Value Type="' + param.type + '">' + value +'</Value>';
+		xml += value; //'<Value Type="' + param.type + '">' + value +'</Value>';
 		return xml;
 	}
 
