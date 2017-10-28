@@ -4,7 +4,7 @@ describe("padString", function() {
 
   it("'2' should return '02'", function() {
     var result = camlsql.__testonly__.padString("2");
-    expect(result).toEqual("022");
+    expect(result).toEqual("02");
   });
 
   it("number 8 should return '08'", function() {
