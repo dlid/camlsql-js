@@ -4,9 +4,10 @@ var gutil = require("gulp-util");
 var concat = require("gulp-concat");
 var clean = require('gulp-clean');
 var inject = require('gulp-inject-string');
-var minify = require('gulp-minify');
+var uglify = require('gulp-uglify');
 var wrap = require('gulp-wrap');
 var path = require('path');
+var pump = require('pump');
 var runSequence = require('run-sequence');
 var sourcemaps = require('gulp-sourcemaps');
 var browserSync = require('browser-sync').create();
@@ -18,19 +19,25 @@ var indent = require("gulp-indent");
 var reload      = browserSync.reload;
 var replace = require('gulp-string-replace');
 var moment = require('moment');
+var jasmine = require('gulp-jasmine');
+var reporters = require('jasmine-reporters');
 var fs = require('fs');
+
+var jshint = require('gulp-jshint');
+//var jslint = require('gulp-jslint'); 
+
 var ftp = require('gulp-ftp');
+
 var package = JSON.parse(fs.readFileSync('./package.json'));
-var ftpConfig = JSON.parse(fs.readFileSync('./ftp.json'));
-
-console.log(ftpConfig);
-
-var script_header = function ()  {    var headerComment = "/*! camlsql v" +
-package.version + "@" + moment().format('YYYY-MM-DD HH:mm:ssZZ') + " (https://github.com/dlid/camlsql-js) */\n",         containerStart = "",
-containerEnd = "";
+var ftpConfig;
 
 
+// Quickly ftp latest build to an ftp server if a ftp.json exists
+try {ftpConfig = JSON.parse(fs.readFileSync('./ftp.json'));} catch(e) { ftpConfig = null;}
 
+var script_header = function (isRelease)  {    var headerComment = "/*! camlsqj-js v" + package.version + " | (c) dlid.se | camlsqljs.dlid.se/license */",         
+    containerStart = "",
+    containerEnd = "";
     return [headerComment + containerStart, containerEnd];
 }
  
@@ -46,14 +53,23 @@ gulp.task('serve-watch', function() {
     gulp.watch('src/less/*.less' , ['build-less']);
 });
 
-gulp.task('ftp-latest', function () {
-    return gulp.src('dist/js/camlsql.*')
-        .pipe(ftp(ftpConfig))
-        // you need to have some kind of stream after gulp-ftp to make sure it's flushed 
-        // this can be a gulp plugin, gulp.dest, or any kind of stream 
-        // here we use a passthrough stream 
-        .pipe(gutil.noop());
+gulp.task('ftp-latest', function (cb) {
+
+    var operations = [
+        gulp.src('dist/js/camlsql.*')
+    ];
+    if (ftpConfig != null) operations.push(ftp(ftpConfig));
+    operations.push(gutil.noop());
+    pump(operations, cb);
 });
+
+gulp.task('run-tests', () =>
+    gulp.src('spec/*.spec.js')
+        .pipe(jasmine({
+            consolidateAll : true,
+            includeStackTrace : true
+        }))
+);
 
 gulp.task('serve-serve', function () {
  
@@ -69,41 +85,68 @@ gulp.task('serve-serve', function () {
      gulp.watch("./dist/**/*.js").on('change', reload);
 });
 
-gulp.task('build-js',  function () { //['build-clean'],
-    return gulp.src([
-        'src/camlsql-js/header.js',
-        'src/camlsql-js/where-parser.js',
-        'src/camlsql-js/orderby-parser.js',
-        'src/camlsql-js/sp-exec.js',
+function getCamlsqlFiles(isRelease) {
+    var files = [
+        'src/camlsql-js/core/header.js',
+        'src/camlsql-js/util/*.js',
+        'src/camlsql-js/parsers/*.js',
         'src/camlsql-js/index.js',
-        'src/camlsql-js/footer.js',
-        'src/camlsql-js/help-functions.js'
-    ])
-   // .pipe(sourcemaps.init())
-    .pipe(wrap("\n\n\t/* File: <%= file.path %>  */\n<%= contents %>\n"))
-    .pipe(concat('camlsql.js'))
-    .pipe(inject.wrap(script_header()[0], script_header()[1]))
-    // .pipe(jshint())
-   //  .pipe(jshint.reporter('default'))
+        'src/camlsql-js/core/footer.js',
+    ];
+    if (!isRelease)
+        files.splice(files.length - 1, 0, 'src/camlsql-js/tests/*.js');
 
-    // .pipe(indent({
-    //     tabs: false,
-    //     amount: 2
-    // }))
-     .pipe(gulp.dest('dist/js'))
-    //.pipe(gulp.dest('releases/' + package.version))
-    .pipe(minify({
-        ext: {
-            min: '.min.js'
-        }
-    }))
-    // //.pipe(sourcemaps.write("dist/js"))
-    .pipe(gulp.dest('dist/js'));
-    //.pipe(gulp.dest('releases/' + package.version));
+    return files;
+}
+
+gulp.task('build-js',  function (cb) {
+
+    var files = getCamlsqlFiles(false);
+
+    pump([
+       gulp.src(files),
+        wrap("\n// BEGIN <%= file.path %>*/\n<%= contents %>\n// END <%= file.path %>"),
+        concat('camlsql.js'),
+        inject.wrap(script_header()[0], script_header()[1]),
+        gulp.dest('dist/js'),
+        jshint(),
+        jshint.reporter('default'),
+        uglify().on('error', function(uglify) {
+            console.error("\n\nJS Minification error\n  ");
+                console.error( "> " + uglify.cause.filename + ":" + uglify.cause.line + ":" + uglify.cause.col + " - " +  uglify.cause.message + "\n");
+            this.emit('end');
+        }),
+        rename({ suffix: '.min' }),
+        gulp.dest('dist/js')
+    ], cb);
+
 });
 
-gulp.task('build-app-js',  function () { //['build-clean'],
-    return gulp.src([
+gulp.task('build-release-js',  function (cb) {
+
+    var files = getCamlsqlFiles(true);
+
+    pump([
+       gulp.src(files),
+        concat('camlsql.js'),
+        inject.wrap(script_header()[0], script_header()[1]),
+        gulp.dest('releases/' + package.version),
+        jshint(),
+        jshint.reporter('default'),
+        uglify().on('error', function(uglify) {
+            console.error("\n\nJS Minification error\n  ");
+                console.error( "> " + uglify.cause.filename + ":" + uglify.cause.line + ":" + uglify.cause.col + " - " +  uglify.cause.message + "\n");
+            this.emit('end');
+        }),
+        rename({ suffix: '.min' }),
+        gulp.dest('releases/' + package.version)
+    ], cb);
+
+});
+
+gulp.task('build-app-js',  function (cb) { 
+
+    var files = [
         'src/app/js/vendor/q-1.5.1/q.js',
         'node_modules/clipboard/dist/clipboard.min.js',
         'src/app/js/vendor/vkbeautify/vkbeautify.0.99.00.beta.js',
@@ -114,26 +157,26 @@ gulp.task('build-app-js',  function () { //['build-clean'],
         'src/app/js/vue/directives/*.js',
         'src/app/js/vue/components/*.js',
         'src/app/js/start.js'
-    ])
-   // .pipe(sourcemaps.init())
-    .pipe(wrap("\n\n\t/* File: <%= file.path %>  */\n<%= contents %>\n"))
-    .pipe(concat('app.js'))
-    .pipe(inject.wrap(script_header()[0], script_header()[1]))
-    // .pipe(jshint())
-   //  .pipe(jshint.reporter('default'))
+    ];
 
-    .pipe(indent({
-        tabs: false,
-        amount: 2
-    }))
-     .pipe(gulp.dest('dist/js'))
-    .pipe(minify({
-        ext: {
-            min: '.min.js'
-        }
-    }))
-    // //.pipe(sourcemaps.write("dist/js"))
-    .pipe(gulp.dest('dist/js'));
+     pump([
+       gulp.src(files),
+        wrap("\n// BEGIN <%= file.path %>*/\n<%= contents %>\n// END <%= file.path %>"),
+        concat('app.js'),
+        inject.wrap(script_header()[0], script_header()[1]),
+        indent({
+            tabs: false,
+            amount: 2
+        }),
+        gulp.dest('dist/js'),
+        uglify().on('error', function(uglify) {
+            console.error("\n\nJS Minification error\n  ");
+                console.error( "> " + uglify.cause.filename + ":" + uglify.cause.line + ":" + uglify.cause.col + " - " +  uglify.cause.message + "\n");
+            this.emit('end');
+        }),
+        rename({ suffix: '.min' }),
+        gulp.dest('dist/js')
+    ], cb);
 });
 gulp.task('copy-html', function () {
     return gulp.src(['src/app/*.html'])

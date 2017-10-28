@@ -34,8 +34,10 @@
 				this.activeTab = "other"; 
 			} else if (route == "start-about") {
 				this.activeTab = "about"; 
+			} else if (route == "start-license") {
+				this.activeTab = "license"; 
 			}
-		}
+		} 
 	},
 
 	watch: {

@@ -1,31 +1,22 @@
-var executeQuery = function () {
-        var args = Array.prototype.slice.call(arguments),
-            spWeb = null,
-            execCallback = null,
+
+ /**
+ * The parsed query
+ * @typedef {Object} CamlSql~execOptions
+ * @property {CamlSql~ParsedQuery} query - The parsed query to execute
+ * @property {function} callback - The callback function
+ * @where {Array.<CamlSql~Condition>}
+ */
+
+function executeSPQuery(options) {
+        var spWeb = options.spWeb,
+            execCallback = options.callback,
             clientContext,
             spList = null,
-            listName = this.getListName(),
+            listName = options.query.getListName(),
             spListItems = null,
-            viewXml = this.getXml(),
+            viewXml = options.query.getXml(),
             nextPage,
             prevPage;
-
-        generateViewXml();
-
-        if (args.length > 1) {
-            if (typeof args[0] === "object") {
-                spWeb = args[0];
-                if (typeof args[1] == "function") {
-                    execCallback = args[1];
-                }
-            }
-        } else if (args.length == 1) {
-            if (typeof args[0] === "object") {
-                spWeb = args[0];
-            } else if (typeof args[0] == "function") {
-                execCallback = args[0];
-            }
-        }
 
         if (typeof SP !== "undefined") {
 

@@ -6,6 +6,7 @@ var routes = [
   { path: '/start', name : 'start', component: StartTabComponent },
   { path: '/start/other', name : 'start-other', component: StartTabComponent },
   { path: '/start/about', name : 'start-about', component: StartTabComponent },
+  { path: '/start/license', name : 'start-license', component: StartTabComponent },
   { path: '/get-started', name : 'get-started', component: GetStartedTabComponent },
   { path: '/examples', name : 'examples', component: ExamplesTabComponent },
   { path: '/examples/find/:query', component: ExamplesTabComponent },
