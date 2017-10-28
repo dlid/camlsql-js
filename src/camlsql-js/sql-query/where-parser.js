@@ -10,9 +10,15 @@ var WhereParser = function(whereString, quiet) {
         blockClose = ')',
         conjunction = ['and', 'or', '&&', '||'],
         operators = ['=', '<', '>', '!'],
-        prevMacro = null;
+        prevMacro = null,
+        result = {
+            statements : [], 
+            macroType : null,
+            macroCount : 0,
+            macros : []
+        };
 
-        if (typeof whereString === "undefined") return [];
+        if (typeof whereString === "undefined") return result;
 
         whereString = whereString.replace(/^.*?(WHERE\s)/i, '');
         whereString = whereString.replace(/(.*?)\s?ORDER\sBY.*$/i, '$1');
@@ -127,7 +133,7 @@ var WhereParser = function(whereString, quiet) {
                             s.comparison = p.comparison;
                             statements.push(s);
                         } else {
-                            if(!quiet) console.error("[casql] Could not parse statement", "'" + sp[j] + "'");
+                            if(!quiet) throw "[casql] Could not parse statement: " +sp[j];
                         }
                     }
                     if (statements.length > 1) {
@@ -207,14 +213,16 @@ var WhereParser = function(whereString, quiet) {
         }
 
         var parsed = parse_blocks(whereString);
+        if (typeof parsed !== "undefined") {
+            result.statements = parsed;
+        }
         //console.log("PARSED", whereString, parsed);
 
-    return {
-        statements : parsed, 
-        macroType : prevMacro,
-        macroCount : _numMacros,
-        macros : _macros
-    };
+        result.macroType = prevMacro;
+        result.macroCount = _numMacros;
+        result.macros = _macros;
+
+    return result;
 
 
 

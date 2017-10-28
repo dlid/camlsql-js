@@ -3,7 +3,9 @@
  */
 
  function createTextParameter(value) {
-  var multiline = value.indexOf("\n") != -1 || value.indexOf("\r") !== -1,
+  if (typeof value !== "string" && typeof value !== "undefined") throw "[camlsql] Value was not a string";
+  var value = typeof value !== "undefined" && value != null && typeof value == "string" ? value : "",
+      multiline = value.indexOf("\n") != -1 || value.indexOf("\r") !== -1,
       ret;
 
   ret = {
@@ -16,10 +18,10 @@
 
 
  function createNumberParameter(value) {
-  if (typeof value != "number") {
-    console.error("[camlsql] value was not a number", value);
-    return null;
+  if (typeof value != "number" && typeof value !== "undefined")  {
+    throw "[camlsql] Value was not a number";
   }
+  value = value ? value : 0;
   return {
     type : 'Number',
     value : value
@@ -44,7 +46,9 @@
 
  function createDateParameter(value) {
   var o = createDateTimeParameter(value);
-  o.includeTime = false;
+  if (o) {
+    o.includeTime = false;
+  }
   return o;
  }
 

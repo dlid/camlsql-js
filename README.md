@@ -1,36 +1,16 @@
 # camlsql
 
-Create CAML XML using SQL-like syntax. 
+Create List CAML XML using SQL-like syntax. 
 
 [![Build Status](https://travis-ci.org/dlid/camlsql-js.svg?branch=master)](https://travis-ci.org/dlid/camlsql-js)
 
--------
-
-***NOTE*** For now, camlsql is limited to querying lists.
-
-------
-
-## Parametermethods
-### camlsql.text()
-### camlsql.number()
-### camlsql.guid()
-### camlsql.datetime()
-### camlsql.lookup()
-### camlsql.today()
-### camlsql.month()
-### camlsql.url()
-### camlsql.multichoice()
-### camlsql.membership()
-### camlsql.userid()
 
 ## Introduction
 
 `camlsql` is my attempt to create SharePoint [CAML](https://msdn.microsoft.com/en-us/library/office/ms426449.aspx) queries using a syntax I am more familiar with: SQL.
 
-Of course the features are nowhere close to an actual SQL language, but I believe it will simplify most common queries.
-
 ```
-var query = new camlsql("SELECT * FROM ListName WHERE [Title] = ?",  ["Hello"] );
+var query = camlsql.prepare("SELECT * FROM ListName WHERE [Title] = ?",  ["Hello"] );
 console.log(query.getXml());
 
 // Result:
@@ -49,7 +29,7 @@ console.log(query.getXml());
 LIKE statements supporting CONTAINS and BeginsWith (EndsWith is not supported in SharePoint).
 
 ```
-var query = new camlsql("SELECT Title, ImageUrl FROM ListName WHERE [Title] LIKE ?",  ["%Hello%"] );
+var query = camlsql.prepare("SELECT Title, ImageUrl FROM ListName WHERE [Title] LIKE ?",  ["%Hello%"] );
 console.log(query.getXml());
 
 // Result:
@@ -72,7 +52,7 @@ console.log(query.getXml());
 More complex queries with groups and OR statements
 
 ```
-var query = new camlsql("SELECT Title, ImageUrl FROM List WHERE Title LIKE ? AND ([StartDate] is null or [StartDate] >= ?)", 
+var query = camlsql.prepare("SELECT Title, ImageUrl FROM List WHERE Title LIKE ? AND ([StartDate] is null or [StartDate] >= ?)", 
   [
    'test%', 
    camlsql.today()

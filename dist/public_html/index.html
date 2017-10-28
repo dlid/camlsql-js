@@ -199,9 +199,16 @@
 
 	<script type="text/x-template" id="StartTab-template">
 		<div class="searchtab">
-			<h1>CAML from SQL</h1>
+			<h1>CAML from SQL
 
-		
+        <!-- Place this tag where you want the button to render. -->
+<div style="float:right; margin-left: 8px;" ><a class="github-button" href="https://github.com/dlid" aria-label="Follow @dlid on GitHub">Follow @dlid</a><a  class="github-button" href="https://github.com/dlid/camlsql-js/issues" data-show-count="true" aria-label="Issue dlid/camlsql-js on GitHub">Issue</a> <!-- Place this tag where you want the button to render. -->
+</div>
+      <a  style="float:right;" href="https://travis-ci.org/dlid/camlsql-js" target="_blank"><img src="https://travis-ci.org/dlid/camlsql-js.svg?branch=master" alt="[Travis CI]" />
+
+      </a>
+
+      </h1>
 
 		
 		<div class="ctabs2">
@@ -214,8 +221,7 @@
 			<div class="ctabs2__content">
 				<div v-show="activeTab == 'start'">
 
-					<p>This is how your life could be when using <code>camlsql</code>.</p>
-					<p>camlsql will use the current ClientContext and its web by default.</p>
+					<p>This is how your life could be when using <code>camlsql</code>. The current ClientContext and its web by default.</p>
 
 					 <pre class='prettyprint'><code>camlsql
  .prepare("SELECT [Title], [ImageURL] FROM [Pages] WHERE [Title] LIKE ? AND ([StartDate] IS NULL OR [StartDate] >= ?)", [
@@ -400,6 +406,8 @@ SOFTWARE.</pre>
     	<script src="js/camlsql.js"></script>
 		<script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
 	<script src="js/app.js"></script>
+  <!-- Place this tag in your head or just before your close body tag. -->
+<script async defer src="https://buttons.github.io/buttons.js"></script>
 
 <footer style="margin-top: 30px; min-height: 160px; background-color: #f2f2f2">
 </footer>

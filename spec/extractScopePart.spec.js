@@ -1,4 +1,7 @@
-var testonly = require("../dist/js/camlsql.js").__testonly__;
+/**
+ * Tests of the extractScopePart method
+ */
+var testonly = require("../dist/public_html/js/camlsql.js").__testonly__;
 
 describe("extractScopePart", function() {
 

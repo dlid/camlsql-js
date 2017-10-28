@@ -35,28 +35,29 @@ var ftpConfig;
 // Quickly ftp latest build to an ftp server if a ftp.json exists
 try {ftpConfig = JSON.parse(fs.readFileSync('./ftp.json'));} catch(e) { ftpConfig = null;}
 
-var script_header = function (isRelease)  {    var headerComment = "/*! camlsqj-js v" + package.version + " | (c) dlid.se | camlsqljs.dlid.se/license */",         
+var script_header = function (isRelease)  {    var headerComment = "/*! camlsqj-js v" + package.version + " | (c) dlid.se | https://camlsqljs.dlid.se/license */\n",         
     containerStart = "",
     containerEnd = "";
     return [headerComment + containerStart, containerEnd];
 }
  
 gulp.task('build-clean', function () {
-    return gulp.src('./dist/**/*.*')
+    return gulp.src('./dist/**')
         .pipe(clean());
 });
 
  
-gulp.task('serve-watch', function() {  
-    gulp.watch('src/**/*.js' , ['build-js', 'build-app-js']);
-    gulp.watch('src/**/*.html' , ['copy-html']);
-    gulp.watch('src/less/*.less' , ['build-less']);
+gulp.task('serve-watch', function() { 
+    gulp.watch('./src/camlsql-js/**/*.js' , ['build-js']);
+    gulp.watch('src/app/**/*.js' , ['build-app-js']);
+    gulp.watch('src/app/**/*.html' , ['copy-html']);
+    gulp.watch('src/app/less/*.less' , ['build-less']);
 });
 
 gulp.task('ftp-latest', function (cb) {
 
     var operations = [
-        gulp.src('dist/js/camlsql.*')
+        gulp.src('dist/public_html/js/camlsql.*')
     ];
     if (ftpConfig != null) operations.push(ftp(ftpConfig));
     operations.push(gutil.noop());
@@ -76,27 +77,32 @@ gulp.task('serve-serve', function () {
     // Serve files from the root of this project
     browserSync.init({
         server: {
-            baseDir: "./dist/"
+            baseDir: "./dist/public_html/"
         },
         reloadDelay : 2000
     }); 
-     gulp.watch("./dist/css/*.css").on('change', reload);
-     gulp.watch("./dist/*.html").on('change', reload);
-     gulp.watch("./dist/**/*.js").on('change', reload);
+     gulp.watch("./dist/public_html/css/*.css").on('change', reload);
+     gulp.watch("./dist/public_html/*.html").on('change', reload);
+     gulp.watch("./dist/public_html/**/*.js").on('change', reload);
 });
-
+ 
 function getCamlsqlFiles(isRelease) {
     var files = [
         'src/camlsql-js/core/header.js',
         'src/camlsql-js/util/*.js',
-        'src/camlsql-js/parsers/*.js',
+        'src/camlsql-js/sql-query/*.js', 
+        'src/camlsql-js/xml-builder/*.js', 
         'src/camlsql-js/index.js',
         'src/camlsql-js/core/footer.js',
     ];
     if (!isRelease)
-        files.splice(files.length - 1, 0, 'src/camlsql-js/tests/*.js');
+        files.splice(files.length - 1, 0, 'src/camlsql-js/__testonly__.js');
+
+
+    console.log("FILES", files);
 
     return files;
+
 }
 
 gulp.task('build-js',  function (cb) {
@@ -108,7 +114,7 @@ gulp.task('build-js',  function (cb) {
         wrap("\n// BEGIN <%= file.path %>*/\n<%= contents %>\n// END <%= file.path %>"),
         concat('camlsql.js'),
         inject.wrap(script_header()[0], script_header()[1]),
-        gulp.dest('dist/js'),
+        gulp.dest('dist/public_html/js'),
         jshint(),
         jshint.reporter('default'),
         uglify().on('error', function(uglify) {
@@ -117,20 +123,18 @@ gulp.task('build-js',  function (cb) {
             this.emit('end');
         }),
         rename({ suffix: '.min' }),
-        gulp.dest('dist/js')
+        gulp.dest('dist/public_html/js')
     ], cb);
 
 });
 
 gulp.task('build-release-js',  function (cb) {
-
     var files = getCamlsqlFiles(true);
-
     pump([
        gulp.src(files),
         concat('camlsql.js'),
         inject.wrap(script_header()[0], script_header()[1]),
-        gulp.dest('releases/' + package.version),
+        gulp.dest('dist/public_html/js/release'),
         jshint(),
         jshint.reporter('default'),
         uglify().on('error', function(uglify) {
@@ -138,8 +142,9 @@ gulp.task('build-release-js',  function (cb) {
                 console.error( "> " + uglify.cause.filename + ":" + uglify.cause.line + ":" + uglify.cause.col + " - " +  uglify.cause.message + "\n");
             this.emit('end');
         }),
+        inject.wrap(script_header()[0], script_header()[1]),
         rename({ suffix: '.min' }),
-        gulp.dest('releases/' + package.version)
+        gulp.dest('dist/public_html/js/release')
     ], cb);
 
 });
@@ -168,25 +173,25 @@ gulp.task('build-app-js',  function (cb) {
             tabs: false,
             amount: 2
         }),
-        gulp.dest('dist/js'),
+        gulp.dest('dist/public_html/js'),
         uglify().on('error', function(uglify) {
             console.error("\n\nJS Minification error\n  ");
                 console.error( "> " + uglify.cause.filename + ":" + uglify.cause.line + ":" + uglify.cause.col + " - " +  uglify.cause.message + "\n");
             this.emit('end');
         }),
         rename({ suffix: '.min' }),
-        gulp.dest('dist/js')
+        gulp.dest('dist/public_html/js')
     ], cb);
 });
 gulp.task('copy-html', function () {
     return gulp.src(['src/app/*.html'])
     .pipe(replace(/<%package.version%>/, package.version))
-    .pipe(gulp.dest('./dist/'));
+    .pipe(gulp.dest('dist/public_html/'));
 });
 gulp.task('copy-img', function () {
     return gulp.src(['src/app/img/*.*'])
     .pipe(replace(/<%package.version%>/, package.version))
-    .pipe(gulp.dest('./dist/img'));
+    .pipe(gulp.dest('dist/public_html/img'));
 });
 
 
@@ -196,18 +201,23 @@ gulp.task('build-less', function() {
     .pipe(sourcemaps.init())
     .pipe(less())
     .pipe(sourcemaps.write())
-    .pipe(gulp.dest('./dist/css/'))
+    .pipe(gulp.dest('./dist/public_html/css/'))
      .pipe(cssmin().on('error', function(err) {
         console.log(err);
     }))
      .pipe(rename({suffix: '.min'}))
-    .pipe(gulp.dest('./dist/css/'));
+    .pipe(gulp.dest('./dist/public_html/css/'));
 }); 
 
 
 gulp.task('default', function(cb) {
-  runSequence('build-clean', ['build-app-js', 'build-js', 'build-less', 'copy-html', 'copy-img'], 'ftp-latest', cb);
+  runSequence('build-clean', 'build-app-js', 'build-js', 'build-release-js', 'build-less', 'copy-html', 'copy-img', 'ftp-latest', cb);
 });
+
+gulp.task('release', function(cb) {
+  runSequence('build-release-js', cb);
+});
+
 
 gulp.task("serve", ['serve-watch', 'serve-serve']);
 

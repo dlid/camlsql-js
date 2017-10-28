@@ -1,4 +1,5 @@
-/*! camlsqj-js v1.0.1 | (c) dlid.se | camlsqljs.dlid.se/license */
+/*! camlsqj-js v1.0.1 | (c) dlid.se | https://camlsqljs.dlid.se/license */
+
 // BEGIN c:\git\camlsql-js\src\camlsql-js\core\header.js*/
 (function (global, factory) {
   'use strict';
@@ -10,27 +11,15 @@
   var publicData; 
 // END c:\git\camlsql-js\src\camlsql-js\core\header.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\util\caml-xmlbuilder.js*/
-function CamlXmlBuilder() {
-  
-
-
-
-  return {
-    xml : null,
-    errors : null
-  };
-
-}
-// END c:\git\camlsql-js\src\camlsql-js\util\caml-xmlbuilder.js
-
 // BEGIN c:\git\camlsql-js\src\camlsql-js\util\parameter-functions.js*/
 /**
  * Helper functions for parameters
  */
 
  function createTextParameter(value) {
-  var multiline = value.indexOf("\n") != -1 || value.indexOf("\r") !== -1,
+  if (typeof value !== "string" && typeof value !== "undefined") throw "[camlsql] Value was not a string";
+  var value = typeof value !== "undefined" && value != null && typeof value == "string" ? value : "",
+      multiline = value.indexOf("\n") != -1 || value.indexOf("\r") !== -1,
       ret;
 
   ret = {
@@ -43,10 +32,10 @@ function CamlXmlBuilder() {
 
 
  function createNumberParameter(value) {
-  if (typeof value != "number") {
-    console.error("[camlsql] value was not a number", value);
-    return null;
+  if (typeof value != "number" && typeof value !== "undefined")  {
+    throw "[camlsql] Value was not a number";
   }
+  value = value ? value : 0;
   return {
     type : 'Number',
     value : value
@@ -71,7 +60,9 @@ function CamlXmlBuilder() {
 
  function createDateParameter(value) {
   var o = createDateTimeParameter(value);
-  o.includeTime = false;
+  if (o) {
+    o.includeTime = false;
+  }
   return o;
  }
 
@@ -341,7 +332,97 @@ function formatFieldName(name) {
 
 // END c:\git\camlsql-js\src\camlsql-js\util\string-utilities.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\parsers\query-parser--limit.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\CamlSqlQuery.js*/
+function CamlSqlQuery(query, param) {
+    
+    var currentQuery = this;
+
+ 
+    var parameters = parseParameters(param);
+    console.log("parameters", parameters);
+
+
+    this.exec = function() {
+      var args = Array.prototype.slice.call(arguments),
+          spWeb,
+          execCallback;
+
+      if (args.length > 1) {
+          if (typeof args[0] === "object") {
+              spWeb = args[0];
+              if (typeof args[1] == "function") {
+                  execCallback = args[1];
+              }
+          }
+      } else if (args.length == 1) {
+          if (typeof args[0] === "object") {
+              spWeb = args[0];
+          } else if (typeof args[0] == "function") {
+              execCallback = args[0];
+          }
+      }
+
+      return executeSPQuery({
+        query : this,
+        callback : execCallback,
+        spWeb : spWeb
+      });
+    };
+    
+    function getXml() {
+      var builder = new CamlXmlBuilder(currentQuery);
+      return builder;
+    }
+
+
+    this.getXml = getXml;
+    this.$options = {
+      parsedQuery : parseSqlQuery(query)
+    };
+
+  }
+
+// END c:\git\camlsql-js\src\camlsql-js\sql-query\CamlSqlQuery.js
+
+// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\parameter-parser.js*/
+
+// var ParameterBase = {
+
+// };
+
+function parseParameters(param) {
+  var i, newParam = {}, p;
+  if (param && param.length > 0) {
+   for (i=0; i < param.length; i++) {
+     p = parseParameter(param[i]);
+     if (p) {
+      newParam["@param" + i] = p;
+     }
+   }
+ }
+ return newParam;
+}
+
+function parseParameter(parameter) {
+  var ret = null, i;
+  if (parameter == null) return null;
+  if (parameter!==null && parameter.constructor === Array) {
+   ret = [];
+   for (i=0; i < parameter.length;i++) {
+     ret.push(parseParameter(parameter[i]));
+   }
+ } else if (typeof parameter === "string") {
+   ret = createTextParameter(parameter);
+ } else if (typeof parameter == "number") {
+   ret = camlsql.number(parameter);
+ } else if (typeof parameter == "object" && parameter.type !== "undefined") {
+   return parameter;
+ }
+ return ret;
+}
+// END c:\git\camlsql-js\src\camlsql-js\sql-query\parameter-parser.js
+
+// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--limit.js*/
 function extractLimitPart(workingObject) {
   var match, limitString;
   if ((match = workingObject.query.match(/\sLIMIT\s(\d+).*$/i))) {
@@ -349,9 +430,9 @@ function extractLimitPart(workingObject) {
     workingObject.rowLimit = parseInt(match[1], 10);
   }
 }
-// END c:\git\camlsql-js\src\camlsql-js\parsers\query-parser--limit.js
+// END c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--limit.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\parsers\query-parser--list-and-fieldnames.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--list-and-fieldnames.js*/
 /**
  * Extract the chosen Field and the list name from the query.
  * The query part of the workingObject will remain only with the SELECT statement (if found)
@@ -398,9 +479,9 @@ function parseFieldNames(fieldNameString) {
   if (fields.length == 1 && fields[0] == '*') fields = [];
   return fields;
 }
-// END c:\git\camlsql-js\src\camlsql-js\parsers\query-parser--list-and-fieldnames.js
+// END c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--list-and-fieldnames.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\parsers\query-parser--orderby.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--orderby.js*/
 /**
  * Parse the ORDER BY string
  * @param {[type]} orderByString [description]
@@ -457,9 +538,9 @@ function extractOrderByPart(workingObject, quiet) {
     }
     workingObject.sort = orderValues;
 }
-// END c:\git\camlsql-js\src\camlsql-js\parsers\query-parser--orderby.js
+// END c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--orderby.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\parsers\query-parser--viewscope.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--viewscope.js*/
 function extractScopePart(workingObject) {
   var m, query = workingObject.query, scope;
     if ((m = query.match(/^(select\s+)(scope\s+([a-z]+)\s+)/i))) {
@@ -479,9 +560,9 @@ function extractScopePart(workingObject) {
       workingObject.viewScope = null;
     }
 }
-// END c:\git\camlsql-js\src\camlsql-js\parsers\query-parser--viewscope.js
+// END c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--viewscope.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\parsers\query-parser.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser.js*/
  /**
  * The parsed query
  * @typedef {Object} CamlSql~ParsedQuery
@@ -501,11 +582,7 @@ function extractScopePart(workingObject) {
  */
  function parseSqlQuery(query, quiet) {
 
-  var orderByString,
-  limitString,
-  limitOffset = 0,
-  limitRows = -1,
-  workingObject = {
+  var workingObject = {
     query : query,
     rowLimit : 0,
     fields : [],
@@ -531,25 +608,10 @@ function extractScopePart(workingObject) {
   workingObject.query = query;
 
   return workingObject;
+}
+// END c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser.js
 
-      // return {
-      //   listName : listName,
-      //   viewFields : fields,
-      //   where : w.statements,
-      //   macroType : w.macroType,
-      //   macroCount : w.macroCount,
-      //   macros : w.macros,
-      //   sort : OrderByParser(orderByString, quiet),
-      //   limit : {
-      //     offset : limitOffset,
-      //     rowLimit : limitRows
-      //   }
-      // };
-    }
-
-// END c:\git\camlsql-js\src\camlsql-js\parsers\query-parser.js
-
-// BEGIN c:\git\camlsql-js\src\camlsql-js\parsers\where-parser.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\where-parser.js*/
 /**
  * Parse the WHERE statements
  * @param {[type]} whereString [description]
@@ -562,9 +624,15 @@ var WhereParser = function(whereString, quiet) {
         blockClose = ')',
         conjunction = ['and', 'or', '&&', '||'],
         operators = ['=', '<', '>', '!'],
-        prevMacro = null;
+        prevMacro = null,
+        result = {
+            statements : [], 
+            macroType : null,
+            macroCount : 0,
+            macros : []
+        };
 
-        if (typeof whereString === "undefined") return [];
+        if (typeof whereString === "undefined") return result;
 
         whereString = whereString.replace(/^.*?(WHERE\s)/i, '');
         whereString = whereString.replace(/(.*?)\s?ORDER\sBY.*$/i, '$1');
@@ -679,7 +747,7 @@ var WhereParser = function(whereString, quiet) {
                             s.comparison = p.comparison;
                             statements.push(s);
                         } else {
-                            if(!quiet) console.error("[casql] Could not parse statement", "'" + sp[j] + "'");
+                            if(!quiet) throw "[casql] Could not parse statement: " +sp[j];
                         }
                     }
                     if (statements.length > 1) {
@@ -759,19 +827,35 @@ var WhereParser = function(whereString, quiet) {
         }
 
         var parsed = parse_blocks(whereString);
+        if (typeof parsed !== "undefined") {
+            result.statements = parsed;
+        }
         //console.log("PARSED", whereString, parsed);
 
-    return {
-        statements : parsed, 
-        macroType : prevMacro,
-        macroCount : _numMacros,
-        macros : _macros
-    };
+        result.macroType = prevMacro;
+        result.macroCount = _numMacros;
+        result.macros = _macros;
+
+    return result;
 
 
 
 }; 
-// END c:\git\camlsql-js\src\camlsql-js\parsers\where-parser.js
+// END c:\git\camlsql-js\src\camlsql-js\sql-query\where-parser.js
+
+// BEGIN c:\git\camlsql-js\src\camlsql-js\xml-builder\CamlXmlBuilder.js*/
+function CamlXmlBuilder() {
+  
+
+
+
+  return {
+    xml : null,
+    errors : null
+  };
+
+}
+// END c:\git\camlsql-js\src\camlsql-js\xml-builder\CamlXmlBuilder.js
 
 // BEGIN c:\git\camlsql-js\src\camlsql-js\index.js*/
   
@@ -796,10 +880,6 @@ var WhereParser = function(whereString, quiet) {
     url : createUrlParameter,
     user : createUserParameter
   }; 
-
-  
-
-
   // var _properties = {
   //  query : query,
   //  limit : [0, -1],
@@ -1131,7 +1211,7 @@ var WhereParser = function(whereString, quiet) {
   // return publicItems;
 // END c:\git\camlsql-js\src\camlsql-js\index.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\tests\test-of-test.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\__testonly__.js*/
 /*!
  *
  * This will expose private methods publicly so tests can be run
@@ -1161,7 +1241,7 @@ publicData.__testonly__.encodeHTML = encodeHTML;
 publicData.__testonly__.trim = trim;
 publicData.__testonly__.formatFieldName = formatFieldName;
 
-// END c:\git\camlsql-js\src\camlsql-js\tests\test-of-test.js
+// END c:\git\camlsql-js\src\camlsql-js\__testonly__.js
 
 // BEGIN c:\git\camlsql-js\src\camlsql-js\core\footer.js*/
   return publicData;

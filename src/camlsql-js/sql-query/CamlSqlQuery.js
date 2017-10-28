@@ -1,4 +1,11 @@
 function CamlSqlQuery(query, param) {
+    
+    var currentQuery = this;
+
+ 
+    var parameters = parseParameters(param);
+    console.log("parameters", parameters);
+
 
     this.exec = function() {
       var args = Array.prototype.slice.call(arguments),
@@ -26,10 +33,10 @@ function CamlSqlQuery(query, param) {
         spWeb : spWeb
       });
     };
-
+    
     function getXml() {
-      var builder = new CamlXmlBuilder(this);
-
+      var builder = new CamlXmlBuilder(currentQuery);
+      return builder;
     }
 
 

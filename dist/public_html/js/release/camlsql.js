@@ -1,5 +1,4 @@
-/*! camlsql v1.0.1@2017-10-28 16:15:41+0200 (https://github.com/dlid/camlsql-js) */
-
+/*! camlsqj-js v1.0.1 | (c) dlid.se | https://camlsqljs.dlid.se/license */
 (function (global, factory) {
   'use strict';
   typeof exports === 'object' && typeof module !== 'undefined' ? (module.exports = factory()) :
@@ -7,24 +6,15 @@
   (global.camlsql = factory()); // jshint ignore:line
 }(this, function() {
   'use strict';
-
-function CamlXmlBuilder() {
-  
-
-
-
-  return {
-    xml : null,
-    errors : null
-  };
-
-}
+  var publicData; 
 /**
  * Helper functions for parameters
  */
 
  function createTextParameter(value) {
-  var multiline = value.indexOf("\n") != -1 || value.indexOf("\r") !== -1,
+  if (typeof value !== "string" && typeof value !== "undefined") throw "[camlsql] Value was not a string";
+  var value = typeof value !== "undefined" && value != null && typeof value == "string" ? value : "",
+      multiline = value.indexOf("\n") != -1 || value.indexOf("\r") !== -1,
       ret;
 
   ret = {
@@ -37,10 +27,10 @@ function CamlXmlBuilder() {
 
 
  function createNumberParameter(value) {
-  if (typeof value != "number") {
-    console.error("[camlsql] value was not a number", value);
-    return null;
+  if (typeof value != "number" && typeof value !== "undefined")  {
+    throw "[camlsql] value was not a number";
   }
+  value = value ? value : 0;
   return {
     type : 'Number',
     value : value
@@ -65,7 +55,9 @@ function CamlXmlBuilder() {
 
  function createDateParameter(value) {
   var o = createDateTimeParameter(value);
-  o.includeTime = false;
+  if (o) {
+    o.includeTime = false;
+  }
   return o;
  }
 
@@ -327,7 +319,90 @@ function formatFieldName(name) {
  return trim(name).replace(/^\[|\]$/g, '');
 }
 
+function CamlSqlQuery(query, param) {
+    
+    var currentQuery = this;
+
  
+    var parameters = parseParameters(param);
+    console.log("parameters", parameters);
+
+
+    this.exec = function() {
+      var args = Array.prototype.slice.call(arguments),
+          spWeb,
+          execCallback;
+
+      if (args.length > 1) {
+          if (typeof args[0] === "object") {
+              spWeb = args[0];
+              if (typeof args[1] == "function") {
+                  execCallback = args[1];
+              }
+          }
+      } else if (args.length == 1) {
+          if (typeof args[0] === "object") {
+              spWeb = args[0];
+          } else if (typeof args[0] == "function") {
+              execCallback = args[0];
+          }
+      }
+
+      return executeSPQuery({
+        query : this,
+        callback : execCallback,
+        spWeb : spWeb
+      });
+    };
+    
+    function getXml() {
+      var builder = new CamlXmlBuilder(currentQuery);
+      return builder;
+    }
+
+
+    this.getXml = getXml;
+    this.$options = {
+      parsedQuery : parseSqlQuery(query)
+    };
+
+  }
+
+
+// var ParameterBase = {
+
+// };
+
+function parseParameters(param) {
+  var i, newParam = {}, p;
+  if (param && param.length > 0) {
+   for (i=0; i < param.length; i++) {
+     p = parseParameter(param[i]);
+     if (p) {
+      newParam["@param" + i] = p;
+     }
+   }
+ }
+ return newParam;
+}
+
+function parseParameter(parameter) {
+  var ret = null, i;
+  if (parameter == null) return null;
+  if (parameter!==null && parameter.constructor === Array) {
+   ret = [];
+   for (i=0; i < parameter.length;i++) {
+     ret.push(parseParameter(parameter[i]));
+   }
+ } else if (typeof parameter === "string") {
+   ret = createTextParameter(parameter);
+ } else if (typeof parameter == "number") {
+   ret = camlsql.number(parameter);
+ } else if (typeof parameter == "object" && parameter.type !== "undefined") {
+   return parameter;
+ }
+ return ret;
+}
 function extractLimitPart(workingObject) {
   var match, limitString;
   if ((match = workingObject.query.match(/\sLIMIT\s(\d+).*$/i))) {
@@ -447,9 +522,13 @@ function extractScopePart(workingObject) {
         case "recursiveall": scope = "RecursiveAll"; break;
         case "filesonly": scope = "FilesOnly"; break;
       }
-      if (!scope && console.error) console.error("[camlsql] Unknown scope '" + m[3] + "'");
-      workingObject.viewScope = scope;
+      if (!scope && console.error) throw "[camlsql] Unknown scope '" + m[3] + "'";
+      if (typeof scope !== "undefined") {
+        workingObject.viewScope = scope;
+      }
       workingObject.query = m[1] + query.substr(m[1].length + m[2].length);
+    } else {
+      workingObject.viewScope = null;
     }
 }
  /**
@@ -464,8 +543,6 @@ function extractScopePart(workingObject) {
  * @property {Array.<string>} macros - The list of macros in the where statement
  */
 
- window.parseSqlQuery = parseSqlQuery;
-
 /**
  * Will attempt to parse a SQL string into objects
  * @param {[type]} query The "SQL" string to parse
@@ -473,11 +550,7 @@ function extractScopePart(workingObject) {
  */
  function parseSqlQuery(query, quiet) {
 
-  var orderByString,
-  limitString,
-  limitOffset = 0,
-  limitRows = -1,
-  workingObject = {
+  var workingObject = {
     query : query,
     rowLimit : 0,
     fields : [],
@@ -503,22 +576,7 @@ function extractScopePart(workingObject) {
   workingObject.query = query;
 
   return workingObject;
-
-      // return {
-      //   listName : listName,
-      //   viewFields : fields,
-      //   where : w.statements,
-      //   macroType : w.macroType,
-      //   macroCount : w.macroCount,
-      //   macros : w.macros,
-      //   sort : OrderByParser(orderByString, quiet),
-      //   limit : {
-      //     offset : limitOffset,
-      //     rowLimit : limitRows
-      //   }
-      // };
-    }
-
+}
 /**
  * Parse the WHERE statements
  * @param {[type]} whereString [description]
@@ -531,9 +589,15 @@ var WhereParser = function(whereString, quiet) {
         blockClose = ')',
         conjunction = ['and', 'or', '&&', '||'],
         operators = ['=', '<', '>', '!'],
-        prevMacro = null;
+        prevMacro = null,
+        result = {
+            statements : [], 
+            macroType : null,
+            macroCount : 0,
+            macros : []
+        };
 
-        if (typeof whereString === "undefined") return [];
+        if (typeof whereString === "undefined") return result;
 
         whereString = whereString.replace(/^.*?(WHERE\s)/i, '');
         whereString = whereString.replace(/(.*?)\s?ORDER\sBY.*$/i, '$1');
@@ -648,7 +712,7 @@ var WhereParser = function(whereString, quiet) {
                             s.comparison = p.comparison;
                             statements.push(s);
                         } else {
-                            if(!quiet) console.error("[casql] Could not parse statement", "'" + sp[j] + "'");
+                            if(!quiet) throw "[casql] Could not parse statement: " +sp[j];
                         }
                     }
                     if (statements.length > 1) {
@@ -728,21 +792,37 @@ var WhereParser = function(whereString, quiet) {
         }
 
         var parsed = parse_blocks(whereString);
+        if (typeof parsed !== "undefined") {
+            result.statements = parsed;
+        }
         //console.log("PARSED", whereString, parsed);
 
-    return {
-        statements : parsed, 
-        macroType : prevMacro,
-        macroCount : _numMacros,
-        macros : _macros
-    };
+        result.macroType = prevMacro;
+        result.macroCount = _numMacros;
+        result.macros = _macros;
+
+    return result;
 
 
 
 }; 
+function CamlXmlBuilder() {
   
-  
+
+
+
   return {
+    xml : null,
+    errors : null
+  };
+
+}
+  
+  /**
+   * These are the methods that should be public in the camlsql object
+   * @type {Object}
+   */
+  publicData = {
     prepare : function(query, param) {
       return new CamlSqlQuery(query, param);
     },
@@ -758,9 +838,7 @@ var WhereParser = function(whereString, quiet) {
     choice : createChoiceParameter,
     url : createUrlParameter,
     user : createUserParameter
-  };
-
-
+  }; 
   // var _properties = {
   //  query : query,
   //  limit : [0, -1],
@@ -1090,4 +1168,5 @@ var WhereParser = function(whereString, quiet) {
   // generateViewXml();
 
   // return publicItems;
+  return publicData;
 }));

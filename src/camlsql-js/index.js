@@ -20,10 +20,6 @@
     url : createUrlParameter,
     user : createUserParameter
   }; 
-
-  
-
-
   // var _properties = {
   //  query : query,
   //  limit : [0, -1],

@@ -17,11 +17,7 @@
  */
  function parseSqlQuery(query, quiet) {
 
-  var orderByString,
-  limitString,
-  limitOffset = 0,
-  limitRows = -1,
-  workingObject = {
+  var workingObject = {
     query : query,
     rowLimit : 0,
     fields : [],
@@ -47,18 +43,4 @@
   workingObject.query = query;
 
   return workingObject;
-
-      // return {
-      //   listName : listName,
-      //   viewFields : fields,
-      //   where : w.statements,
-      //   macroType : w.macroType,
-      //   macroCount : w.macroCount,
-      //   macros : w.macros,
-      //   sort : OrderByParser(orderByString, quiet),
-      //   limit : {
-      //     offset : limitOffset,
-      //     rowLimit : limitRows
-      //   }
-      // };
-    }
+}

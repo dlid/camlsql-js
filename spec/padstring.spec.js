@@ -1,4 +1,7 @@
-var camlsql = require("../dist/js/camlsql.js");
+/**
+ * Tests of the padString method
+ */
+var camlsql = require("../dist/public_html/js/camlsql.js");
 
 describe("padString", function() {
 
