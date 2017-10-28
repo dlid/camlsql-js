@@ -2,6 +2,8 @@
 
 Create CAML XML using SQL-like syntax. 
 
+[![Build Status](https://travis-ci.org/dlid/camlsql-js.svg?branch=master)](https://travis-ci.org/dlid/camlsql-js)
+
 -------
 
 ***NOTE*** For now, camlsql is limited to querying lists.
