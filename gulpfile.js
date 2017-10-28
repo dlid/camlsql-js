@@ -63,13 +63,13 @@ gulp.task('ftp-latest', function (cb) {
     pump(operations, cb);
 });
 
-gulp.task('run-tests', () =>
+gulp.task('run-tests',  function (cb) {
     gulp.src('spec/*.spec.js')
         .pipe(jasmine({
             consolidateAll : true,
             includeStackTrace : true
         }))
-);
+});
 
 gulp.task('serve-serve', function () {
  
