@@ -17,9 +17,11 @@
  */
 
  function createTextParameter(value) {
-  if (typeof value !== "string" && typeof value !== "undefined") throw "[camlsql] Value was not a string";
-  var value = typeof value !== "undefined" && value != null && typeof value == "string" ? value : "",
-      multiline = value.indexOf("\n") != -1 || value.indexOf("\r") !== -1,
+  if (typeof value !== "string" && typeof value !== "undefined") {
+    throw "[camlsql] Value was not a string";
+  }
+  value = typeof value !== "undefined" && value != null && typeof value == "string" ? value : "";
+  var multiline = value.indexOf("\n") != -1 || value.indexOf("\r") !== -1,
       ret;
 
   ret = {
@@ -50,13 +52,13 @@
   };
  }
 
- function createNowParameter(includeTime) {
-  return {
-    type : 'DateTime',
-    isNow : true,
-    includeTime : includeTime == true ? true : false
-  };
- }
+ // function createNowParameter(includeTime) {
+ //  return {
+ //    type : 'DateTime',
+ //    isNow : true,
+ //    includeTime : includeTime == true ? true : false
+ //  };
+ // }
 
  function createDateParameter(value) {
   var o = createDateTimeParameter(value);
@@ -68,6 +70,8 @@
 
  function createDateTimeParameter(value) {
   var date, date2;
+
+  if (arguments.length == 0) return createTodayParameter(0, true);
 
   if (typeof value == "string") {
     if (value == "month start") {
@@ -104,17 +108,17 @@
  };
 }
 
-function createTodayParameter(offset) {
+function createTodayParameter(offset, includeTime) {
   if (typeof offset === "undefined") offset = 0;
   if (typeof offset !== "number") {
-    console.error("[camlsql] Bad offset value for 'today'", offset);
-    return null;
+    throw "[camlsql] Bad offset value for 'today'";
   }
 
   return {
     type : 'DateTime',
     today : true,
-    value : offset
+    value : offset,
+    includeTime : includeTime === true ? true : false
   };
 }
 
@@ -871,7 +875,7 @@ function CamlXmlBuilder() {
     guid : createGuidParameter,
     number : createNumberParameter,
     lookup : createLookupParameter,
-    now : createNowParameter,
+   // now : createNowParameter,
     date : createDateParameter,
     datetime : createDateTimeParameter,
     today : createTodayParameter,
@@ -1228,7 +1232,7 @@ publicData.__testonly__.extractScopePart = extractScopePart;
 publicData.__testonly__.extractLimitPart = extractLimitPart;
 publicData.__testonly__.parseSqlQuery = parseSqlQuery;
 publicData.__testonly__.whereParser = WhereParser;
-publicData.__testonly__.createNowParameter = createNowParameter;
+//publicData.__testonly__.createNowParameter = createNowParameter;
 publicData.__testonly__.createDateParameter = createDateParameter;
 publicData.__testonly__.createDateTimeParameter = createDateTimeParameter;
 publicData.__testonly__.createTodayParameter = createTodayParameter;

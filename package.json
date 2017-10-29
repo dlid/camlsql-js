@@ -4,14 +4,15 @@
   "description": "Javascript utility to create CAML queries using SQL syntax",
   "main": "index.js",
   "scripts": {
-    "test": "jasmine-node --verbose spec/"
+    "test": "istanbul cover node_modules/jasmine/bin/jasmine.js JASMINE_CONFIG_PATH=./jasmine.json",
+    "report-coverage" : "codecov ./coverage/lcov.info"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dlid/camlsql-js.git"
+    "url": "https://github.com/dlid/camlsql-js.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "dlid.se",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/dlid/camlsql-js/issues"
   },
@@ -19,6 +20,8 @@
   "devDependencies": {
     "browser-sync": "^2.18.13",
     "clipboard": "^1.7.1",
+    "codecov": "^3.0.0",
+    "git": "^0.1.5",
     "gulp": "^3.9.1",
     "gulp-clean": "^0.3.2",
     "gulp-concat": "^2.6.1",

@@ -11,7 +11,7 @@
     guid : createGuidParameter,
     number : createNumberParameter,
     lookup : createLookupParameter,
-    now : createNowParameter,
+   // now : createNowParameter,
     date : createDateParameter,
     datetime : createDateTimeParameter,
     today : createTodayParameter,
