@@ -48,7 +48,7 @@ gulp.task('build-clean', function () {
 
  
 gulp.task('serve-watch', function() { 
-    gulp.watch('./src/camlsql-js/**/*.js' , ['build-js']);
+    gulp.watch('./src/camlsql-js/**/*.js' , ['build-js', 'test']);
     gulp.watch('src/app/**/*.js' , ['build-app-js']);
     gulp.watch('src/app/**/*.html' , ['copy-html']);
     gulp.watch('src/app/less/*.less' , ['build-less']);
@@ -64,13 +64,14 @@ gulp.task('ftp-latest', function (cb) {
     pump(operations, cb);
 });
 
-gulp.task('run-tests',  function (cb) {
+gulp.task('test',  function (cb) {
     gulp.src('spec/*.spec.js')
-        .pipe(jasmine({
-            verbose : true,
+        .pipe(jasmine({ 
             consolidateAll : true,
-            includeStackTrace : true
+            includeStackTrace : true,
+            errorOnFail : false
         }))
+        
 });
 
 gulp.task('serve-serve', function () {
@@ -98,9 +99,6 @@ function getCamlsqlFiles(isRelease) {
     ];
     if (!isRelease)
         files.splice(files.length - 1, 0, 'src/camlsql-js/__testonly__.js');
-
-
-    console.log("FILES", files);
 
     return files;
 
@@ -221,7 +219,6 @@ gulp.task('release', function(cb) {
 
 
 gulp.task("serve", ['serve-watch', 'serve-serve']);
-
 
 /*
 

@@ -49,70 +49,38 @@
  function createDateParameter(value) {
   var o = createDateTimeParameter(value);
   if (o) {
-    o.includeTime = false;
+    o._includeTime = false;
   }
   return o;
  }
 
  function createDateTimeParameter(date) {
-  var date2, isToday = false;
-
-  if (date && date.__proto__ == CamlSqlDateParameter) {
+  var date2, isToday = false, stringValue;
+  if (typeof date !== "undefined" && CamlSqlDateParameter.isPrototypeOf(date)) {
     date = date.value;
+  } 
+
+  // If the user pass in a string, use it - no questions asked
+  if (typeof date === "string") {
+    stringValue = date + "";
+    date = null;
+  } else {
+    if (!date) isToday = true;
+    date = date ? new Date(+date) : new Date();
   }
-
-
-  if (!date) isToday = true;
-  date = date ? new Date(+date) : new Date();
 
   return Object.create(CamlSqlDateParameter, {
     type : {value : 'DateTime'},
     value : {value : date, writable : true}, 
-    includeTime : {value : true, writable : true},
+    _includeTime : {value : true, writable : true},
     today : {value : isToday, writable : true},
-    storageTZ : {value : true, writable : true}
+    _storageTZ : {value : true, writable : true},
+    stringValue : {value : stringValue, writable : false}
   });
 
-
-
-  if (arguments.length == 0) return createTodayParameter(0, true);
-
-  if (typeof value == "string") {
-    if (value == "month start") {
-      date= new Date();
-      value = d.getFullYear() + "-" + padString(d.getMonth()+ 1) + "-01T00:00:00Z";
-    } else if (value == "month end") {
-      date= new Date();
-      date2 = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-      value = date2.getFullYear() + "-" + padString(date2.getMonth()+1) + "-" + padString(date2.getDate()) + "T23:59:59Z";
-    } else if (value == "this morning") {
-      date= new Date();
-      value = d.getFullYear() + "-" + padString(d.getMonth()+1) + "-" + padString(d.getDate()) + "T00:00:00Z";
-    } else if (value == "tonight") {
-      date= new Date();
-      value = d.getFullYear() + "-" + padString(d.getMonth()+1) + "-" + padString(d.getDate()) + "T23:59:59Z";
-    }
-  }
-
-  if (typeof value !== "string") {
-    console.error("[camlsql] Bad type for datetime value");
-    return null;
-  }
-
-  if (typeof value === "string" &&
-    (!value.match(/^\d{4}-\d\d-\d\d$/) && !value.match(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/) )) {
-    console.error("[camlsql] Bad format for datetime value");
-  return null;
- }
-
- return {
-  type : 'DateTime',
-  value : value,
-  includeTime : true
- };
 }
 
-function createTodayParameter(offset, includeTime) {
+function createTodayParameter(offset, _includeTime) {
   if (typeof offset === "undefined") offset = 0;
   if (typeof offset !== "number") {
     throw "[camlsql] Bad offset value for 'today'";
@@ -122,54 +90,68 @@ function createTodayParameter(offset, includeTime) {
     type : 'DateTime',
     today : true,
     value : offset,
-    includeTime : includeTime === true ? true : false
+    _includeTime : includeTime === true ? true : false
   };
-}
+}  
 
 
 
 var CamlSqlDateParameter = {
   type : 'DateTime',
   today : false,
-  includeTime : false,
+  _includeTime : false,
   value : null,
-  storageTZ : true,
+  _storageTZ : true,
+  stringValue : '',
   startOfWeek : function(startOnSunday) {
+    this.errstr();
     this.value = getDateFromTextualRepresentation('week start' + (!startOnSunday ? ' monday' : ''));
-    this.isToday = false;
+    this.today = false;
     return this;
   },
   endOfWeek : function(startOnSunday) {
+    this.errstr();
     this.value = getDateFromTextualRepresentation('week end' + (!startOnSunday ? ' monday' : ''));
-    this.isToday = false;
+    this.today = false;
     return this;
   },
   startOfMonth : function() {
+    this.errstr();
     this.value = getDateFromTextualRepresentation('month start');
-    this.isToday = false;
+    this.today = false;
     return this;
   },
   endOfMonth : function() {
+    this.errstr();
     this.value = getDateFromTextualRepresentation('month end');
-    this.isToday = false;
+    this.today = false;
     return this;
   },
   endOfDay : function(){
+    this.errstr();
     this.value = getDateFromTextualRepresentation('day end');
-    this.isToday = false;
+    this.today = false;
     return this;
   },
   startOfDay : function() {
+    this.errstr();
     this.value = getDateFromTextualRepresentation('day start');
-    this.isToday = false;
+    this.today = false;
     return this;
   },
   storageTZ : function(enabled) {
-    this.storageTZ = enabled ? true : false;
-    this.isToday = false;
+    this._storageTZ = enabled ? true : false;
+    this.today = false;
     return this;
+  },
+  includeTime : function(enabled) {
+    this._includeTime = enabled ? true : false;
+    return this;
+  },
+  errstr : function() {
+    if (this.stringValue) throw "[camlsql] You can't do that when DateTime was set as a string";
   }
-}
+};
 
 
 

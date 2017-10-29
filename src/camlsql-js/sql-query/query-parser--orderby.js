@@ -41,8 +41,6 @@ function extractOrderByPart(workingObject, quiet) {
                     match[1] = m[1];
                 } else
                     return [];
-            } else {
-              if (console.error) console.error("[camlsql] Error in ORDER BY statement: " + match[1]);
             }
             fieldName = formatFieldName(match[1]);
             if (match.length == 3) {

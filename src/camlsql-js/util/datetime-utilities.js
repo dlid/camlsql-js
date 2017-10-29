@@ -13,8 +13,9 @@ function getIntervalStringAsMs(val) {
       seconds = 0;
 
   if (typeof val  !== "string") throw "[camlsql] Interval value must be a string";
+  val = val.toLowerCase();
 
-  if ((m = val.match(/^(\d+) (month|day|hour|minute|second|ms|millisecond)s?$/))) {
+  if ((m = val.match(/^(\d+) (month|day|hour|minute|second|ms|millisecond)s?$/i))) {
     val = parseInt(val, 10);
     switch (m[2]) {
       case "month": seconds = (((24 * 60) * 60) * 30) * val; break;
@@ -41,17 +42,13 @@ function getDateFromTextualRepresentation(text, date) {
   } else if (text == "month end") {
     value = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23,59,59,999);
   } else if (text == "week start") {
-    date2 = getStartOfWeek(new Date());
-    value = date2.getFullYear() + "-" + padString(date2.getMonth()+1) + "-" + padString(date2.getDate()) + "T00:00:00Z";
+    value = getStartOfWeek(new Date());
   } else if (text == "week start monday") {
-    date2 = getStartOfWeek(new Date(), true);
-    value = date2.getFullYear() + "-" + padString(date2.getMonth()+1) + "-" + padString(date2.getDate()) + "T00:00:00Z";
+    value = getStartOfWeek(new Date(), true);
   } else if (text == "week end monday") {
-    date2 = getEndOfWeek(new Date(), true);
-    value = date2.getFullYear() + "-" + padString(date2.getMonth()+1) + "-" + padString(date2.getDate()) + "T00:00:00Z";
+    value = getEndOfWeek(new Date(), true);
   } else if (text == "week end") {
-    date2 = getEndOfWeek(new Date());
-    value = date2.getFullYear() + "-" + padString(date2.getMonth()+1) + "-" + padString(date2.getDate()) + "T00:00:00Z";
+    value = getEndOfWeek(date);
   } else if (text == "day start") {
     value = new Date(date.setHours(0,0,0,0));
   } else if (text == "day end") {
@@ -81,6 +78,7 @@ function getEndOfWeek(date, startWeekWithMonday) {
   var d;
   date = getStartOfWeek(date, startWeekWithMonday);
   d = date.getDay();
+
   date.setDate(date.getDate() + 6);
-  return date; 
+  return new Date(date.setHours(23,59,59,999)); 
 }

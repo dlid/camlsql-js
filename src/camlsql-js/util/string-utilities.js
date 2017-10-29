@@ -17,6 +17,7 @@ function padString(str, size) {
  * @return {string}                The encoded string
  */
 function encodeHTML(stringToEncode) {
+  if (typeof stringToEncode !== "string") return stringToEncode;
   return stringToEncode.replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')

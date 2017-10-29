@@ -24,7 +24,8 @@
     sort : [],
     viewScope : null,
     macros : [],
-    statements : []
+    statements : [],
+    parameters : []
   },
   where;
 
