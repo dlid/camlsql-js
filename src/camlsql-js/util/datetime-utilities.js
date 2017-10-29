@@ -31,33 +31,40 @@ function getIntervalStringAsMs(val) {
   }
 }
 
-function getDateFromTextualRepresentation(text) {
-  var date, date2, value;
+
+function getDateFromTextualRepresentation(text, date) {
+  var date2, value;
   text = trim(text.toLowerCase());
-  date= new Date();
+  date = date? new Date(+date) : new Date();
   if (text == "month start") {
-    value = date.getFullYear() + "-" + padString(date.getMonth()+ 1) + "-01T00:00:00Z";
+    value = new Date(date.getFullYear(), date.getMonth(), 1, 0,0,0,0);
   } else if (text == "month end") {
-    date2 = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-    value = date2.getFullYear() + "-" + padString(date2.getMonth()+1) + "-" + padString(date2.getDate()) + "T23:59:59Z";
+    value = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23,59,59,999);
   } else if (text == "week start") {
     date2 = getStartOfWeek(new Date());
     value = date2.getFullYear() + "-" + padString(date2.getMonth()+1) + "-" + padString(date2.getDate()) + "T00:00:00Z";
   } else if (text == "week start monday") {
     date2 = getStartOfWeek(new Date(), true);
     value = date2.getFullYear() + "-" + padString(date2.getMonth()+1) + "-" + padString(date2.getDate()) + "T00:00:00Z";
+  } else if (text == "week end monday") {
+    date2 = getEndOfWeek(new Date(), true);
+    value = date2.getFullYear() + "-" + padString(date2.getMonth()+1) + "-" + padString(date2.getDate()) + "T00:00:00Z";
+  } else if (text == "week end") {
+    date2 = getEndOfWeek(new Date());
+    value = date2.getFullYear() + "-" + padString(date2.getMonth()+1) + "-" + padString(date2.getDate()) + "T00:00:00Z";
+  } else if (text == "day start") {
+    value = new Date(date.setHours(0,0,0,0));
+  } else if (text == "day end") {
+    value = new Date(date.setHours(23,59,59,999));
   }
   return value;
 
 }
 
 function getStartOfWeek(date, startWeekWithMonday) {
-  startWeekWithMonday = startWeekWithMonday ? true : false;
-
-  // Copy date if provided, or use current date if not
   date = date? new Date(+date) : new Date();
   date.setHours(0,0,0,0);
-  
+  startWeekWithMonday = startWeekWithMonday ? true : false;
   var d = date.getDay();
   if (startWeekWithMonday === true) {
     if (d == 0) {
@@ -68,4 +75,12 @@ function getStartOfWeek(date, startWeekWithMonday) {
   }
   date.setDate(date.getDate() - d);
   return date;
+}
+
+function getEndOfWeek(date, startWeekWithMonday) {
+  var d;
+  date = getStartOfWeek(date, startWeekWithMonday);
+  d = date.getDay();
+  date.setDate(date.getDate() + 6);
+  return date; 
 }

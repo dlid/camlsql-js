@@ -54,8 +54,24 @@
   return o;
  }
 
- function createDateTimeParameter(value) {
-  var date, date2;
+ function createDateTimeParameter(date) {
+  var date2;
+
+  if (date && date.__proto__ == CamlSqlDateParameter) {
+    date = date.value;
+  }
+
+  date = date ? new Date(+date) : new Date();
+
+  return Object.create(CamlSqlDateParameter, {
+    type : {value : 'DateTime'},
+    value : {value : date, writable : true}, 
+    includeTime : {value : true, writable : true},
+    today : {value : false, writable : true},
+    storageTZ : {value : true, writable : true}
+  });
+
+
 
   if (arguments.length == 0) return createTodayParameter(0, true);
 
@@ -108,6 +124,43 @@ function createTodayParameter(offset, includeTime) {
   };
 }
 
+
+
+var CamlSqlDateParameter = {
+  type : 'DateTime',
+  today : false,
+  includeTime : false,
+  value : null,
+  storageTZ : true,
+  startOfWeek : function(startOnSunday) {
+    this.value = getDateFromTextualRepresentation('week start' + (!startOnSunday ? ' monday' : ''));
+    return this;
+  },
+  endOfWeek : function(startOnSunday) {
+    this.value = getDateFromTextualRepresentation('week end' + (!startOnSunday ? ' monday' : ''));
+    return this;
+  },
+  startOfMonth : function() {
+    this.value = getDateFromTextualRepresentation('month start');
+    return this;
+  },
+  endOfMonth : function() {
+    this.value = getDateFromTextualRepresentation('month end');
+    return this;
+  },
+  endOfDay : function(){
+    this.value = getDateFromTextualRepresentation('day end');
+    return this;
+  },
+  startOfDay : function() {
+    this.value = getDateFromTextualRepresentation('day start');
+    return this;
+  },
+  storageTZ : function(enabled) {
+    this.storageTZ = enabled ? true : false;
+    return this;
+  }
+}
 
 
 

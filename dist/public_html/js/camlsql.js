@@ -45,33 +45,40 @@ function getIntervalStringAsMs(val) {
   }
 }
 
-function getDateFromTextualRepresentation(text) {
-  var date, date2, value;
+
+function getDateFromTextualRepresentation(text, date) {
+  var date2, value;
   text = trim(text.toLowerCase());
-  date= new Date();
+  date = date? new Date(+date) : new Date();
   if (text == "month start") {
-    value = date.getFullYear() + "-" + padString(date.getMonth()+ 1) + "-01T00:00:00Z";
+    value = new Date(date.getFullYear(), date.getMonth(), 1, 0,0,0,0);
   } else if (text == "month end") {
-    date2 = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-    value = date2.getFullYear() + "-" + padString(date2.getMonth()+1) + "-" + padString(date2.getDate()) + "T23:59:59Z";
+    value = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23,59,59,999);
   } else if (text == "week start") {
     date2 = getStartOfWeek(new Date());
     value = date2.getFullYear() + "-" + padString(date2.getMonth()+1) + "-" + padString(date2.getDate()) + "T00:00:00Z";
   } else if (text == "week start monday") {
     date2 = getStartOfWeek(new Date(), true);
     value = date2.getFullYear() + "-" + padString(date2.getMonth()+1) + "-" + padString(date2.getDate()) + "T00:00:00Z";
+  } else if (text == "week end monday") {
+    date2 = getEndOfWeek(new Date(), true);
+    value = date2.getFullYear() + "-" + padString(date2.getMonth()+1) + "-" + padString(date2.getDate()) + "T00:00:00Z";
+  } else if (text == "week end") {
+    date2 = getEndOfWeek(new Date());
+    value = date2.getFullYear() + "-" + padString(date2.getMonth()+1) + "-" + padString(date2.getDate()) + "T00:00:00Z";
+  } else if (text == "day start") {
+    value = new Date(date.setHours(0,0,0,0));
+  } else if (text == "day end") {
+    value = new Date(date.setHours(23,59,59,999));
   }
   return value;
 
 }
 
 function getStartOfWeek(date, startWeekWithMonday) {
-  startWeekWithMonday = startWeekWithMonday ? true : false;
-
-  // Copy date if provided, or use current date if not
   date = date? new Date(+date) : new Date();
   date.setHours(0,0,0,0);
-  
+  startWeekWithMonday = startWeekWithMonday ? true : false;
   var d = date.getDay();
   if (startWeekWithMonday === true) {
     if (d == 0) {
@@ -82,6 +89,14 @@ function getStartOfWeek(date, startWeekWithMonday) {
   }
   date.setDate(date.getDate() - d);
   return date;
+}
+
+function getEndOfWeek(date, startWeekWithMonday) {
+  var d;
+  date = getStartOfWeek(date, startWeekWithMonday);
+  d = date.getDay();
+  date.setDate(date.getDate() + 6);
+  return date; 
 }
 // END c:\git\camlsql-js\src\camlsql-js\util\datetime-utilities.js
 
@@ -142,8 +157,24 @@ function getStartOfWeek(date, startWeekWithMonday) {
   return o;
  }
 
- function createDateTimeParameter(value) {
-  var date, date2;
+ function createDateTimeParameter(date) {
+  var date2;
+
+  if (date && date.__proto__ == CamlSqlDateParameter) {
+    date = date.value;
+  }
+
+  date = date ? new Date(+date) : new Date();
+
+  return Object.create(CamlSqlDateParameter, {
+    type : {value : 'DateTime'},
+    value : {value : date, writable : true}, 
+    includeTime : {value : true, writable : true},
+    today : {value : false, writable : true},
+    storageTZ : {value : true, writable : true}
+  });
+
+
 
   if (arguments.length == 0) return createTodayParameter(0, true);
 
@@ -196,6 +227,43 @@ function createTodayParameter(offset, includeTime) {
   };
 }
 
+
+
+var CamlSqlDateParameter = {
+  type : 'DateTime',
+  today : false,
+  includeTime : false,
+  value : null,
+  storageTZ : true,
+  startOfWeek : function(startOnSunday) {
+    this.value = getDateFromTextualRepresentation('week start' + (!startOnSunday ? ' monday' : ''));
+    return this;
+  },
+  endOfWeek : function(startOnSunday) {
+    this.value = getDateFromTextualRepresentation('week end' + (!startOnSunday ? ' monday' : ''));
+    return this;
+  },
+  startOfMonth : function() {
+    this.value = getDateFromTextualRepresentation('month start');
+    return this;
+  },
+  endOfMonth : function() {
+    this.value = getDateFromTextualRepresentation('month end');
+    return this;
+  },
+  endOfDay : function(){
+    this.value = getDateFromTextualRepresentation('day end');
+    return this;
+  },
+  startOfDay : function() {
+    this.value = getDateFromTextualRepresentation('day start');
+    return this;
+  },
+  storageTZ : function(enabled) {
+    this.storageTZ = enabled ? true : false;
+    return this;
+  }
+}
 
 
 
@@ -455,7 +523,8 @@ function CamlSqlQuery(query, param) {
 
     this.getXml = getXml;
     this.$options = {
-      parsedQuery : parseSqlQuery(query)
+      parsedQuery : parseSqlQuery(query),
+      parameters : parameters
     };
 
   }
@@ -922,16 +991,74 @@ var WhereParser = function(whereString, quiet) {
 // END c:\git\camlsql-js\src\camlsql-js\sql-query\where-parser.js
 
 // BEGIN c:\git\camlsql-js\src\camlsql-js\xml-builder\CamlXmlBuilder.js*/
-function CamlXmlBuilder() {
-  
+
+var XML_FIELD_VIEW = 'View',
+    XML_FIELD_VIEWFIELDS = 'ViewFields',
+    XML_FIELD_FIELDREF = 'FieldRef';
+
+function CamlXmlBuilder(query) {
+  var viewXml ="",
+      parsedQuery = query.$options.parsedQuery,
+      parameters = parsedQuery.$options, parameters,
+      i;
+  // remember https://yieldreturnpost.wordpress.com/2012/10/26/caml-query-utc-date-comparisons-in-sharepoint/
+  // <Value Type='DateTime' IncludeTimeValue='TRUE' StorageTZ='TRUE'>
+  //    2012-10-24T21:30:46Z
+  //  </Value>
 
 
+
+  viewXml += xmlBeginElement(XML_FIELD_VIEW, {Scope : parsedQuery.viewScope});
+  viewXml += createViewFieldsElement(parsedQuery.fields);
+  viewXml += createQueryElement(parsedQuery.statements, parameters)
+  viewXml += xmlEndElement('View');
+
+
+  console.log("query", query);
 
   return {
-    xml : null,
+    xml : viewXml,
     errors : null
   };
 
+}
+
+function createQueryElement(statements, parameters) {
+  console.warn("CREATE QUERY ELEMENT", statements, parameters);
+
+  return "<Query />";
+}
+
+function createViewFieldsElement(fields) {
+  var xml = "", i;
+  if (fields.length > 0) {
+    for (i = 0; i < fields.length; i++) {
+      xml += xmlBeginElement(XML_FIELD_VIEWFIELDS);
+      xml += xmlBeginElement(XML_FIELD_FIELDREF, {Name : fields[i]}, true);
+      xml += xmlEndElement(XML_FIELD_VIEWFIELDS);
+    }
+  }
+  return xml;
+}
+
+
+
+function xmlBeginElement(name, attributes, close) {
+  var xml = "<" + name,
+      keys = attributes ? Object.keys(attributes) : [],
+      i;
+
+  for (i = 0; i < keys.length; i++) {
+    if (typeof attributes[keys[i]] !== "undefined" && attributes[keys[i]] !== null) {
+      xml += ' ' + keys[i] + '="' + encodeHTML(attributes[keys[i]]) + '"';
+    }
+  }
+
+  return xml + (close?' /':'') + ">";
+}
+
+function xmlEndElement(name) {
+  return "</" + name + ">";
 }
 // END c:\git\camlsql-js\src\camlsql-js\xml-builder\CamlXmlBuilder.js
 

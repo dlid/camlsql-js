@@ -42,7 +42,8 @@ function CamlSqlQuery(query, param) {
 
     this.getXml = getXml;
     this.$options = {
-      parsedQuery : parseSqlQuery(query)
+      parsedQuery : parseSqlQuery(query),
+      parameters : parameters
     };
 
   }
