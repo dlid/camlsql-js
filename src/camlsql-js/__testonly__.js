@@ -26,3 +26,6 @@ publicData.__testonly__.createUserParameter = createUserParameter;
 publicData.__testonly__.encodeHTML = encodeHTML;
 publicData.__testonly__.trim = trim;
 publicData.__testonly__.formatFieldName = formatFieldName;
+publicData.__testonly__.getIntervalStringAsMs = getIntervalStringAsMs;
+publicData.__testonly__.createDateWithIntervalString = createDateWithIntervalString;
+

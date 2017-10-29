@@ -1,6 +1,7 @@
 language: node_js
 sudo: false
 install:
+  - npm install -g jasmine
+  - npm install -g istanbul
   - npm install -g codecov
   - npm install
-  

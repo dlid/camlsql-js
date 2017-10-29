@@ -1,28 +1,34 @@
-function normalizeExpiration(val) {
+
+
+
+function createDateWithIntervalString(val) {
+  var msToAdd = getIntervalStringAsMs(val);
+  console.log("add", msToAdd);
+  msToAdd += (new Date()).getTime();
+  return Date(msToAdd);
+}
+
+
+function getIntervalStringAsMs(val) {
   var msToAdd = 0,
       m,
-      val = val + "",
-      seconds;
+      seconds = 0;
 
-  if (val.match(/^\d+$/)) {
-    // Number only. Default to days
-    msToAdd = (((parseInt(val, 10) * 24) * 60) * 60) * 1000;  
-  } else if (m = val.match(/^(\d+) (month|day|hour|minute|second|ms|millisecond)s?$/)) {
-  val = parseInt(val, 10);
-  switch (m[2]) {
-    case "month": seconds = (((24 * 60) * 60) * 30) * val; break;
-    case "day": seconds = (((val * 24) * 60) * 60); break;
-    case "hour": seconds = ((val * 60) * 60); break;
-    case "minute": seconds = (val * 60); break;
-    case "second": seconds = val; break;
-    case "ms": case "millisecond": seconds = val / 1000; break;
+  if (typeof val  !== "string") throw "[camlsql] Interval value must be a string";
+
+  if ((m = val.match(/^(\d+) (month|day|hour|minute|second|ms|millisecond)s?$/))) {
+    val = parseInt(val, 10);
+    switch (m[2]) {
+      case "month": seconds = (((24 * 60) * 60) * 30) * val; break;
+      case "day": seconds = (((val * 24) * 60) * 60); break;
+      case "hour": seconds = ((val * 60) * 60); break;
+      case "minute": seconds = (val * 60); break;
+      case "second": seconds = val; break;
+      case "ms": case "millisecond": seconds = val / 1000; break;
+    }
+    msToAdd = seconds * 1000; 
+    return msToAdd;
+  } else {
+    throw "[camlsql] Interval string was not recognized: " + val;
   }
-  if (seconds) msToAdd = seconds * 1000;
-}
-
-if (msToAdd > 0) {
-  return new Date((new Date()).getTime() + msToAdd);
-}
-
-return null;
 }
