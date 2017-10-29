@@ -67,6 +67,7 @@ gulp.task('ftp-latest', function (cb) {
 gulp.task('run-tests',  function (cb) {
     gulp.src('spec/*.spec.js')
         .pipe(jasmine({
+            verbose : true,
             consolidateAll : true,
             includeStackTrace : true
         }))

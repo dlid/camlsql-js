@@ -7,14 +7,44 @@
 }(this, function() {
   'use strict';
   var publicData; 
+function normalizeExpiration(val) {
+  var msToAdd = 0,
+      m,
+      val = val + "",
+      seconds;
+
+  if (val.match(/^\d+$/)) {
+    // Number only. Default to days
+    msToAdd = (((parseInt(val, 10) * 24) * 60) * 60) * 1000;  
+  } else if (m = val.match(/^(\d+) (month|day|hour|minute|second|ms|millisecond)s?$/)) {
+  val = parseInt(val, 10);
+  switch (m[2]) {
+    case "month": seconds = (((24 * 60) * 60) * 30) * val; break;
+    case "day": seconds = (((val * 24) * 60) * 60); break;
+    case "hour": seconds = ((val * 60) * 60); break;
+    case "minute": seconds = (val * 60); break;
+    case "second": seconds = val; break;
+    case "ms": case "millisecond": seconds = val / 1000; break;
+  }
+  if (seconds) msToAdd = seconds * 1000;
+}
+
+if (msToAdd > 0) {
+  return new Date((new Date()).getTime() + msToAdd);
+}
+
+return null;
+}
 /**
  * Helper functions for parameters
  */
 
  function createTextParameter(value) {
-  if (typeof value !== "string" && typeof value !== "undefined") throw "[camlsql] Value was not a string";
-  var value = typeof value !== "undefined" && value != null && typeof value == "string" ? value : "",
-      multiline = value.indexOf("\n") != -1 || value.indexOf("\r") !== -1,
+  if (typeof value !== "string" && typeof value !== "undefined") {
+    throw "[camlsql] Value was not a string";
+  }
+  value = typeof value !== "undefined" ? value : "";
+  var multiline = value.indexOf("\n") != -1 || value.indexOf("\r") !== -1,
       ret;
 
   ret = {
@@ -28,7 +58,7 @@
 
  function createNumberParameter(value) {
   if (typeof value != "number" && typeof value !== "undefined")  {
-    throw "[camlsql] value was not a number";
+    throw "[camlsql] Value was not a number";
   }
   value = value ? value : 0;
   return {
@@ -45,13 +75,13 @@
   };
  }
 
- function createNowParameter(includeTime) {
-  return {
-    type : 'DateTime',
-    isNow : true,
-    includeTime : includeTime == true ? true : false
-  };
- }
+ // function createNowParameter(includeTime) {
+ //  return {
+ //    type : 'DateTime',
+ //    isNow : true,
+ //    includeTime : includeTime == true ? true : false
+ //  };
+ // }
 
  function createDateParameter(value) {
   var o = createDateTimeParameter(value);
@@ -63,6 +93,8 @@
 
  function createDateTimeParameter(value) {
   var date, date2;
+
+  if (arguments.length == 0) return createTodayParameter(0, true);
 
   if (typeof value == "string") {
     if (value == "month start") {
@@ -99,17 +131,17 @@
  };
 }
 
-function createTodayParameter(offset) {
+function createTodayParameter(offset, includeTime) {
   if (typeof offset === "undefined") offset = 0;
   if (typeof offset !== "number") {
-    console.error("[camlsql] Bad offset value for 'today'", offset);
-    return null;
+    throw "[camlsql] Bad offset value for 'today'";
   }
 
   return {
     type : 'DateTime',
     today : true,
-    value : offset
+    value : offset,
+    includeTime : includeTime === true ? true : false
   };
 }
 
@@ -830,7 +862,7 @@ function CamlXmlBuilder() {
     guid : createGuidParameter,
     number : createNumberParameter,
     lookup : createLookupParameter,
-    now : createNowParameter,
+   // now : createNowParameter,
     date : createDateParameter,
     datetime : createDateTimeParameter,
     today : createTodayParameter,

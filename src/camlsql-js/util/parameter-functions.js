@@ -6,7 +6,7 @@
   if (typeof value !== "string" && typeof value !== "undefined") {
     throw "[camlsql] Value was not a string";
   }
-  value = typeof value !== "undefined" && value != null && typeof value == "string" ? value : "";
+  value = typeof value !== "undefined" ? value : "";
   var multiline = value.indexOf("\n") != -1 || value.indexOf("\r") !== -1,
       ret;
 

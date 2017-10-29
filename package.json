@@ -4,8 +4,8 @@
   "description": "Javascript utility to create CAML queries using SQL syntax",
   "main": "index.js",
   "scripts": {
-    "test": "istanbul cover node_modules/jasmine/bin/jasmine.js JASMINE_CONFIG_PATH=./jasmine.json",
-    "report-coverage" : "codecov ./coverage/lcov.info"
+    "test": "istanbul cover node_modules/jasmine/bin/jasmine.js -verbose JASMINE_CONFIG_PATH=./jasmine.json",
+    "report-coverage": "codecov ./coverage/lcov.info"
   },
   "repository": {
     "type": "git",
@@ -40,6 +40,7 @@
     "gulp-uglify": "^3.0.0",
     "gulp-util": "^3.0.8",
     "gulp-wrap": "^0.13.0",
+    "istanbul": "^0.4.5",
     "jasmine-node": "^1.14.5",
     "jasmine-reporters": "^2.2.1",
     "jshint": "^2.9.5",
