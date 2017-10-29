@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "istanbul cover node_modules/jasmine/bin/jasmine.js -verbose JASMINE_CONFIG_PATH=./jasmine.json",
-    "report-coverage": "codecov ./coverage/lcov.info"
+    "report-coverage": "codecov"
   },
   "repository": {
     "type": "git",
