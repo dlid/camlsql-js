@@ -56,11 +56,11 @@ function getDateFromTextualRepresentation(text, date) {
   } else if (text == "month end") {
     value = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23,59,59,999);
   } else if (text == "week start") {
-    value = getStartOfWeek(new Date());
+    value = getStartOfWeek(date);
   } else if (text == "week start monday") {
-    value = getStartOfWeek(new Date(), true);
+    value = getStartOfWeek(date, true);
   } else if (text == "week end monday") {
-    value = getEndOfWeek(new Date(), true);
+    value = getEndOfWeek(date, true);
   } else if (text == "week end") {
     value = getEndOfWeek(date);
   } else if (text == "day start") {

@@ -92,6 +92,53 @@ describe("camlsql.datetime", function() {
   });
 
 
+  it("getDateFromTextualRepresentation month start", function() {
+    var date = camlsql.__testonly__.getDateFromTextualRepresentation("month start", new Date(1980, 03, 04))
+    expect(date.toDateString()).toEqual("Tue Apr 01 1980");
+    expect(date.toTimeString().substr(0,8)).toEqual("00:00:00");
+  });
+
+   it("getDateFromTextualRepresentation day start", function() {
+    var date = camlsql.__testonly__.getDateFromTextualRepresentation("day start", new Date(1980, 03, 04, 13, 13))
+    expect(date.toDateString()).toEqual("Fri Apr 04 1980");
+    expect(date.toTimeString().substr(0,8)).toEqual("00:00:00");
+  });
+
+   it("getDateFromTextualRepresentation day end", function() {
+    var date = camlsql.__testonly__.getDateFromTextualRepresentation("day end", new Date(1980, 03, 02, 13, 13))
+    expect(date.toDateString()).toEqual("Wed Apr 02 1980");
+    expect(date.toTimeString().substr(0,8)).toEqual("23:59:59");
+  });
+
+
+  it("getDateFromTextualRepresentation month end", function() {
+    var date = camlsql.__testonly__.getDateFromTextualRepresentation("month end", new Date(1980, 03, 04))
+    expect(date.toDateString()).toEqual("Wed Apr 30 1980");
+    expect(date.toTimeString().substr(0,8)).toEqual("23:59:59");
+  });
+
+
+  it("getDateFromTextualRepresentation month end leap year", function() {
+    var date = camlsql.__testonly__.getDateFromTextualRepresentation("month end", new Date(1980, 01, 04))
+    expect(date.toDateString()).toEqual("Fri Feb 29 1980");
+    expect(date.toTimeString().substr(0,8)).toEqual("23:59:59");
+  });
+
+  // it("getDateFromTextualRepresentation week start", function() {
+  //   var date = camlsql.__testonly__.getDateFromTextualRepresentation("month end", new Date(1980, 03, 04))
+  //   expect(date.toDateString()).toEqual("Wed Apr 30 1980");
+  //   expect(date.toTimeString().substr(0,8)).toEqual("23:59:59");
+  // });
+
+
+
+  // var d = camlsql.__testonly__.getDateFromTextualRepresentation("week start", new Date(1980, 03, 04)); d
+  // supposed to be 31st 00:00:00 but returns
+  // Sun Mar 30 1980 00:00:00 GMT+0100 (Central Europe Standard Time)
+  // same with week end
+  // var d = camlsql.__testonly__.getDateFromTextualRepresentation("week end", new Date(1980, 03, 04)); d
+
+  
 
 
 }); 
