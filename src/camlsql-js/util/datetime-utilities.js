@@ -4,6 +4,7 @@
 function createDateWithIntervalString(val) {
   var msToAdd = getIntervalStringAsMs(val);
   console.log("add", msToAdd);
+  console.log(msToAdd, (new Date().getTime()));
   msToAdd += (new Date()).getTime();
   return Date(msToAdd);
 }
