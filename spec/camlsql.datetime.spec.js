@@ -26,7 +26,7 @@ describe("camlsql.datetime", function() {
 
     it("getIntervalStringAsMs (1 hour)", function() {
     var result = camlsql.__testonly__.getIntervalStringAsMs("1 hour");
-    expect(result).toEqual(600000);
+    expect(result).toEqual(3600000);
   });
 
   it("getIntervalStringAsMs (6 hours)", function() {
