@@ -5,7 +5,7 @@
  * @property {CamlSql~ParsedQuery} query - The parsed query to execute
  * @property {function} callback - The callback function
  * @where {Array.<CamlSql~Condition>}
- */
+ */ 
 
 function executeSPQuery(options) {
         var spWeb = options.spWeb,
@@ -18,6 +18,8 @@ function executeSPQuery(options) {
             nextPage,
             prevPage;
 
+        if (typeof execCallback !== "function") execCallback = null;
+
         if (typeof SP !== "undefined") {
 
             SP.SOD.executeFunc('sp.js', 'SP.ClientContext', function () {
@@ -28,6 +30,9 @@ function executeSPQuery(options) {
 
                     clientContext.load(spList);
                     clientContext.executeQueryAsync(onListLoaded, function () {
+                        if (execCallback == null) {
+                            throw "[camlsql] Failed to load list";
+                        }
                         execCallback({
                             status: "error",
                             message: "Failed to load list",
@@ -44,6 +49,9 @@ function executeSPQuery(options) {
             });
 
         } else {
+            if (execCallback == null) {
+                throw "[camlsql] SP is not defined";
+            }
             execCallback({
                 status: "error",
                 message: "SP is not defined",
@@ -54,10 +62,7 @@ function executeSPQuery(options) {
         function onListLoaded() {
             var camlQuery = new SP.CamlQuery();
             var camlQueryString = viewXml;
-
-
             camlQuery.set_viewXml(camlQueryString);
-            console.log("camlQuery", camlQuery);
             spListItems = spList.getItems(camlQuery);
             clientContext.load(spListItems);
             clientContext.executeQueryAsync(camlQuerySuccess, function () {
@@ -97,11 +102,4 @@ function executeSPQuery(options) {
                 prevPage : prevPage
             });
         }
-
-        console.log({
-            web: spWeb,
-            callback: execCallback
-        });
-
-        return publicItems;
     }

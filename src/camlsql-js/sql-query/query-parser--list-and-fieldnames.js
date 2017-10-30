@@ -20,7 +20,7 @@ function extractListAndFieldNameParts(workingObject) {
         }
       }
       workingObject.fields = fields;
-      listName = formatFieldName(m[2]);
+      workingObject.listName = formatFieldName(m[2]);
       workingObject.query = m[3];
     } else {
       workingObject.query = "";

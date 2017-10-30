@@ -317,7 +317,7 @@ function createUserParameter(value) {
  * @property {CamlSql~ParsedQuery} query - The parsed query to execute
  * @property {function} callback - The callback function
  * @where {Array.<CamlSql~Condition>}
- */
+ */ 
 
 function executeSPQuery(options) {
         var spWeb = options.spWeb,
@@ -330,6 +330,8 @@ function executeSPQuery(options) {
             nextPage,
             prevPage;
 
+        if (typeof execCallback !== "function") execCallback = null;
+
         if (typeof SP !== "undefined") {
 
             SP.SOD.executeFunc('sp.js', 'SP.ClientContext', function () {
@@ -340,6 +342,9 @@ function executeSPQuery(options) {
 
                     clientContext.load(spList);
                     clientContext.executeQueryAsync(onListLoaded, function () {
+                        if (execCallback == null) {
+                            throw "[camlsql] Failed to load list";
+                        }
                         execCallback({
                             status: "error",
                             message: "Failed to load list",
@@ -356,6 +361,9 @@ function executeSPQuery(options) {
             });
 
         } else {
+            if (execCallback == null) {
+                throw "[camlsql] SP is not defined";
+            }
             execCallback({
                 status: "error",
                 message: "SP is not defined",
@@ -366,10 +374,7 @@ function executeSPQuery(options) {
         function onListLoaded() {
             var camlQuery = new SP.CamlQuery();
             var camlQueryString = viewXml;
-
-
             camlQuery.set_viewXml(camlQueryString);
-            console.log("camlQuery", camlQuery);
             spListItems = spList.getItems(camlQuery);
             clientContext.load(spListItems);
             clientContext.executeQueryAsync(camlQuerySuccess, function () {
@@ -409,13 +414,6 @@ function executeSPQuery(options) {
                 prevPage : prevPage
             });
         }
-
-        console.log({
-            web: spWeb,
-            callback: execCallback
-        });
-
-        return publicItems;
     }
 // END c:\git\camlsql-js\src\camlsql-js\util\sharepoint-exec-function.js
 
@@ -510,7 +508,11 @@ function CamlSqlQuery(query, param) {
       return builder.xml;
     }
 
+    function getListName() {
+      return currentQuery.$options.parsedQuery.listName;
+    }
 
+    this.getListName = getListName;
     this.getXml = getXml;
     this.$options = {
       parsedQuery : parseSqlQuery(query),
@@ -592,7 +594,7 @@ function extractListAndFieldNameParts(workingObject) {
         }
       }
       workingObject.fields = fields;
-      listName = formatFieldName(m[2]);
+      workingObject.listName = formatFieldName(m[2]);
       workingObject.query = m[3];
     } else {
       workingObject.query = "";
@@ -725,7 +727,8 @@ function extractScopePart(workingObject) {
     viewScope : null,
     macros : [],
     statements : [],
-    parameters : []
+    parameters : [],
+    listName : null
   },
   where;
 
@@ -1005,11 +1008,13 @@ function CamlXmlBuilder(query) {
 
 
 
-  viewXml += xmlBeginElement(XML_FIELD_VIEW, {Scope : parsedQuery.viewScope});
   viewXml += createViewFieldsElement(parsedQuery.fields);
   viewXml += createQueryElement(parsedQuery.statements, parsedQuery.sort, parameters, log);
-  viewXml += xmlEndElement('View');
+  
 
+  if (viewXml) {
+    viewXml = xmlBeginElement(XML_FIELD_VIEW, {Scope : parsedQuery.viewScope}) + viewXml + xmlEndElement('View');
+  }
 
   console.log("query", query);
 

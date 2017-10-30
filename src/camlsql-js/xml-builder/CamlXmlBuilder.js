@@ -23,11 +23,13 @@ function CamlXmlBuilder(query) {
 
 
 
-  viewXml += xmlBeginElement(XML_FIELD_VIEW, {Scope : parsedQuery.viewScope});
   viewXml += createViewFieldsElement(parsedQuery.fields);
   viewXml += createQueryElement(parsedQuery.statements, parsedQuery.sort, parameters, log);
-  viewXml += xmlEndElement('View');
+  
 
+  if (viewXml) {
+    viewXml = xmlBeginElement(XML_FIELD_VIEW, {Scope : parsedQuery.viewScope}) + viewXml + xmlEndElement('View');
+  }
 
   console.log("query", query);
 

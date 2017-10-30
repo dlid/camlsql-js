@@ -39,7 +39,11 @@ function CamlSqlQuery(query, param) {
       return builder.xml;
     }
 
+    function getListName() {
+      return currentQuery.$options.parsedQuery.listName;
+    }
 
+    this.getListName = getListName;
     this.getXml = getXml;
     this.$options = {
       parsedQuery : parseSqlQuery(query),

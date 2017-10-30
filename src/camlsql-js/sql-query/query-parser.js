@@ -25,7 +25,8 @@
     viewScope : null,
     macros : [],
     statements : [],
-    parameters : []
+    parameters : [],
+    listName : null
   },
   where;
 
