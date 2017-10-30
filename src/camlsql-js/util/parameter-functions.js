@@ -19,7 +19,17 @@
  }
 
 
- function createNumberParameter(value) {
+ function createBooleanParameter(value) {
+  if (typeof value != "boolean" && typeof value !== "undefined")  {
+    throw "[camlsql] Value was not boolean";
+  }
+  return {
+    type : 'Boolean',
+    value : value
+  };
+ }
+
+  function createNumberParameter(value) {
   if (typeof value != "number" && typeof value !== "undefined")  {
     throw "[camlsql] Value was not a number";
   }
@@ -34,6 +44,7 @@
   return {
     type : 'Lookup',
     value : value,
+    lookupid : typeof value == "number",
     byId : typeof value == "number"
   };
  }
@@ -107,12 +118,14 @@ var CamlSqlDateParameter = {
     this.errstr();
     var diff = getIntervalStringAsMs(intervalString)
     this.value = new Date( this.value.getTime() + diff );
+    this.today = false;
     return this;
   },
   sub : function(intervalString){
     this.errstr();
     var diff = getIntervalStringAsMs(intervalString)
     this.value = new Date( this.value.getTime() - diff );
+    this.today = false;
     return this;
   },
   startOfWeek : function(startOnSunday) {
@@ -203,17 +216,24 @@ function createChoiceParameter(value) {
   };
 }
 
-function createUrlParameter(value) {
-  return {
-    type : 'URL',
-    value : value
-  };
-}
+// function createUrlParameter(value) {
+//   return {
+//     type : 'Url',
+//     value : value
+//   };
+// }
 
 
 function createUserParameter(value) {
+  if (typeof value === "number") {
+     return {
+      type : 'User',
+      value : value,
+      lookupid : true
+    };
+  }
+
   return {
-    type : 'User',
-    value : value
+    type : 'User'
   };
 }

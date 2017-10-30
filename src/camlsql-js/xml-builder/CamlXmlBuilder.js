@@ -153,9 +153,15 @@ function createQueryElement(statements, sort, parameters, log) {
   }
 
   function createFieldRefValue(statement, parameter, isWhereClause) {
-    var xml = "";
+    var xml = "", LookupId = null;
 
-    xml += xmlBeginElement(XML_FIELD_FIELDREF, { Name : statement.field }, true);
+    if (parameter) {
+      if (parameter.lookupid) {
+        LookupId = "True";
+      }
+    }
+
+    xml += xmlBeginElement(XML_FIELD_FIELDREF, { Name : statement.field, LookupId : LookupId }, true);
 
     if (parameter) {
       if (statement.comparison == "in") {
@@ -191,6 +197,8 @@ function createQueryElement(statements, sort, parameters, log) {
           innerXml = parameter.value.toISOString();
         }
       }
+    // } else if (parameter.type == "Url") {
+    //     innerXml = encodeHTML(parameter.value);
     } else if (parameter.type == "Text") {
       if (parameter.multiline == true) {
         innerXml = "<![CDATA[" + encodeHTML(parameter.value) + "]]>";
@@ -199,6 +207,20 @@ function createQueryElement(statements, sort, parameters, log) {
       }
     } else if (parameter.type == "Number") {
       innerXml = parameter.value;
+    } else if (parameter.type == "User") {
+      if (typeof parameter.value === "number") {
+          valueAttributes.Type = "Number";
+          valueAttributes.LookupId = 'True';
+          innerXml = encodeHTML(parameter.value + "");
+      } else {
+        valueAttributes.Type = "Number";
+        innerXml = "<UserID />";
+      } 
+    } else if (parameter.type == "Lookup") {
+      if (parameter.byId == true) valueAttributes.LookupId = 'True';
+      innerXml = encodeHTML(parameter.value + "");
+    } else if (parameter.type == "Boolean") {
+      innerXml = parameter.value ? 1 : 0;
     } else {
       innerXml = xmlBeginElement('NotImplemented',{}, true);
     }

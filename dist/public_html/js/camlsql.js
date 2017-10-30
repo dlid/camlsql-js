@@ -1,6 +1,6 @@
 /*! camlsqj-js v1.0.1 | (c) dlid.se | https://camlsqljs.dlid.se/license */
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\core\header.js*/
+// BEGIN C:\git\camlsql-js\src\camlsql-js\core\header.js*/
 (function (global, factory) {
   'use strict';
   typeof exports === 'object' && typeof module !== 'undefined' ? (module.exports = factory()) :
@@ -9,9 +9,9 @@
 }(this, function() {
   'use strict';
   var publicData; 
-// END D:\git\camlsql-js\src\camlsql-js\core\header.js
+// END C:\git\camlsql-js\src\camlsql-js\core\header.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\util\datetime-utilities.js*/
+// BEGIN C:\git\camlsql-js\src\camlsql-js\util\datetime-utilities.js*/
 
 
 
@@ -95,9 +95,9 @@ function getEndOfWeek(date, startWeekWithMonday) {
   date.setDate(date.getDate() + 6);
   return new Date(date.setHours(23,59,59,999)); 
 }
-// END D:\git\camlsql-js\src\camlsql-js\util\datetime-utilities.js
+// END C:\git\camlsql-js\src\camlsql-js\util\datetime-utilities.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\util\parameter-functions.js*/
+// BEGIN C:\git\camlsql-js\src\camlsql-js\util\parameter-functions.js*/
 /**
  * Helper functions for parameters
  */
@@ -119,7 +119,17 @@ function getEndOfWeek(date, startWeekWithMonday) {
  }
 
 
- function createNumberParameter(value) {
+ function createBooleanParameter(value) {
+  if (typeof value != "boolean" && typeof value !== "undefined")  {
+    throw "[camlsql] Value was not boolean";
+  }
+  return {
+    type : 'Boolean',
+    value : value
+  };
+ }
+
+  function createNumberParameter(value) {
   if (typeof value != "number" && typeof value !== "undefined")  {
     throw "[camlsql] Value was not a number";
   }
@@ -134,6 +144,7 @@ function getEndOfWeek(date, startWeekWithMonday) {
   return {
     type : 'Lookup',
     value : value,
+    lookupid : typeof value == "number",
     byId : typeof value == "number"
   };
  }
@@ -207,12 +218,14 @@ var CamlSqlDateParameter = {
     this.errstr();
     var diff = getIntervalStringAsMs(intervalString)
     this.value = new Date( this.value.getTime() + diff );
+    this.today = false;
     return this;
   },
   sub : function(intervalString){
     this.errstr();
     var diff = getIntervalStringAsMs(intervalString)
     this.value = new Date( this.value.getTime() - diff );
+    this.today = false;
     return this;
   },
   startOfWeek : function(startOnSunday) {
@@ -303,24 +316,31 @@ function createChoiceParameter(value) {
   };
 }
 
-function createUrlParameter(value) {
-  return {
-    type : 'URL',
-    value : value
-  };
-}
+// function createUrlParameter(value) {
+//   return {
+//     type : 'Url',
+//     value : value
+//   };
+// }
 
 
 function createUserParameter(value) {
+  if (typeof value === "number") {
+     return {
+      type : 'User',
+      value : value,
+      lookupid : true
+    };
+  }
+
   return {
-    type : 'User',
-    value : value
+    type : 'User'
   };
 }
 
-// END D:\git\camlsql-js\src\camlsql-js\util\parameter-functions.js
+// END C:\git\camlsql-js\src\camlsql-js\util\parameter-functions.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\util\sharepoint-exec-function.js*/
+// BEGIN C:\git\camlsql-js\src\camlsql-js\util\sharepoint-exec-function.js*/
 
  /**
  * The parsed query
@@ -439,9 +459,9 @@ function executeSPQuery(options) {
             });
         }
     }
-// END D:\git\camlsql-js\src\camlsql-js\util\sharepoint-exec-function.js
+// END C:\git\camlsql-js\src\camlsql-js\util\sharepoint-exec-function.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\util\string-utilities.js*/
+// BEGIN C:\git\camlsql-js\src\camlsql-js\util\string-utilities.js*/
 
 /**
  * Add zero padding to a string
@@ -488,9 +508,9 @@ function formatFieldName(name) {
  return trim(name).replace(/^\[|\]$/g, '');
 }
 
-// END D:\git\camlsql-js\src\camlsql-js\util\string-utilities.js
+// END C:\git\camlsql-js\src\camlsql-js\util\string-utilities.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\sql-query\CamlSqlQuery.js*/
+// BEGIN C:\git\camlsql-js\src\camlsql-js\sql-query\CamlSqlQuery.js*/
 function CamlSqlQuery(query, param) {
     
     var currentQuery = this;
@@ -548,9 +568,9 @@ function CamlSqlQuery(query, param) {
 
   }
 
-// END D:\git\camlsql-js\src\camlsql-js\sql-query\CamlSqlQuery.js
+// END C:\git\camlsql-js\src\camlsql-js\sql-query\CamlSqlQuery.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\sql-query\parameter-parser.js*/
+// BEGIN C:\git\camlsql-js\src\camlsql-js\sql-query\parameter-parser.js*/
 
 // var ParameterBase = {
 
@@ -579,6 +599,8 @@ function parseParameter(parameter) {
    }
  } else if (typeof parameter === "string") {
    ret = createTextParameter(parameter);
+ } else if (typeof parameter === "boolean") {
+   ret = createBooleanParameter(parameter);
  } else if (typeof parameter == "number") {
    ret = createNumberParameter(parameter);
  } else if (typeof parameter == "object" && parameter.type !== "undefined") {
@@ -586,9 +608,61 @@ function parseParameter(parameter) {
  }
  return ret;
 }
-// END D:\git\camlsql-js\src\camlsql-js\sql-query\parameter-parser.js
+// END C:\git\camlsql-js\src\camlsql-js\sql-query\parameter-parser.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--limit.js*/
+// BEGIN C:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--joins.js*/
+
+function extractJoinPart(workingObject) {
+  var query = workingObject.query,
+      joins = [],
+      listName,
+      t, 
+      i,
+      m = query.match(/\s+(left\s+|)join\s+(.+?)\s+as\s+([a-zA-Z_\d]+)\son\s(.+?)\.([a-zA-Z_\d]+)\s+=\s+(.+?)\.([a-zA-Z_\d]+?)(\s|$)/i);
+ 
+  
+      if (m) {
+          var joinTable = m[2],
+              alias = m[3],
+              onTable1 = m[4],
+              onField1 = m[5],
+              onTable2 = m[6],
+              onField2 = m[7];
+
+          joins.push({
+            inner : trim(m[1]) == "",
+            listName : joinTable,
+            alias : alias,
+            table1 : onTable1,
+            field1 : onField1,
+            table2 : onTable2,
+            field2 : onField2
+          });
+      }
+
+      console.warn("JOIN", joins);
+
+      
+
+  // if (m) {
+  //   if (m.length == 4) {
+  //     fields = parseFieldNames(m[1]);
+  //     for (i=0; i < fields.length; i++) {
+  //       if (!fields[i].match(/^[a-z:A-Z_\\d]+$/)) {
+  //         if (console.warn) console.warn("[camlsql] Doubtful field name: " + fields[i]);
+  //       }
+  //     }
+  //     workingObject.fields = fields;
+  //     workingObject.listName = formatFieldName(m[2]);
+  //     workingObject.query = m[3];
+  //   } else {
+  //     workingObject.query = "";
+  //   }
+  // }
+}
+// END C:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--joins.js
+
+// BEGIN C:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--limit.js*/
 function extractLimitPart(workingObject) {
   var match, limitString;
   if ((match = workingObject.query.match(/\sLIMIT\s(\d+).*$/i))) {
@@ -596,9 +670,9 @@ function extractLimitPart(workingObject) {
     workingObject.rowLimit = parseInt(match[1], 10);
   }
 }
-// END D:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--limit.js
+// END C:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--limit.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--list-and-fieldnames.js*/
+// BEGIN C:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--list-and-fieldnames.js*/
 /**
  * Extract the chosen Field and the list name from the query.
  * The query part of the workingObject will remain only with the SELECT statement (if found)
@@ -610,7 +684,7 @@ function extractListAndFieldNameParts(workingObject) {
       listName,
       t,
       i,
-      m = query.match(/^SELECT\s(.*?)\sFROM\s(.*?)(?:\s+(where.*)$|$)/i);
+      m = query.match(/^SELECT\s(.*?)(?:\sFROM\s(.*?)|)(?:\s+((?:order|where).*)$|$)/i);
 
   if (m) {
     if (m.length == 4) {
@@ -645,9 +719,10 @@ function parseFieldNames(fieldNameString) {
   if (fields.length == 1 && fields[0] == '*') fields = [];
   return fields;
 }
-// END D:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--list-and-fieldnames.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--orderby.js*/
+// END C:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--list-and-fieldnames.js
+
+// BEGIN C:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--orderby.js*/
 /**
  * Parse the ORDER BY string
  * @param {[type]} orderByString [description]
@@ -702,9 +777,9 @@ function extractOrderByPart(workingObject, quiet) {
     }
     workingObject.sort = orderValues;
 }
-// END D:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--orderby.js
+// END C:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--orderby.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--viewscope.js*/
+// BEGIN C:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--viewscope.js*/
 function extractScopePart(workingObject) {
   var m, query = workingObject.query, scope;
     if ((m = query.match(/^(select\s+)(scope\s+([a-z]+)\s+)/i))) {
@@ -724,9 +799,9 @@ function extractScopePart(workingObject) {
       workingObject.viewScope = null;
     }
 }
-// END D:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--viewscope.js
+// END C:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--viewscope.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\sql-query\query-parser.js*/
+// BEGIN C:\git\camlsql-js\src\camlsql-js\sql-query\query-parser.js*/
  /**
  * The parsed query
  * @typedef {Object} CamlSql~ParsedQuery
@@ -763,6 +838,7 @@ function extractScopePart(workingObject) {
   extractScopePart(workingObject);
   extractLimitPart(workingObject);
   extractOrderByPart(workingObject);
+  extractJoinPart(workingObject);
   extractListAndFieldNameParts(workingObject);
 
   // Parse the remaining part of the query - the WHERE statement
@@ -775,9 +851,9 @@ function extractScopePart(workingObject) {
 
   return workingObject;
 }
-// END D:\git\camlsql-js\src\camlsql-js\sql-query\query-parser.js
+// END C:\git\camlsql-js\src\camlsql-js\sql-query\query-parser.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\sql-query\where-parser.js*/
+// BEGIN C:\git\camlsql-js\src\camlsql-js\sql-query\where-parser.js*/
 /**
  * Parse the WHERE statements
  * @param {[type]} whereString [description]
@@ -1007,9 +1083,9 @@ var WhereParser = function(whereString, quiet) {
 
 
 }; 
-// END D:\git\camlsql-js\src\camlsql-js\sql-query\where-parser.js
+// END C:\git\camlsql-js\src\camlsql-js\sql-query\where-parser.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\xml-builder\CamlXmlBuilder.js*/
+// BEGIN C:\git\camlsql-js\src\camlsql-js\xml-builder\CamlXmlBuilder.js*/
 
 var XML_FIELD_VIEW = 'View',
     XML_FIELD_VIEWFIELDS = 'ViewFields',
@@ -1165,9 +1241,15 @@ function createQueryElement(statements, sort, parameters, log) {
   }
 
   function createFieldRefValue(statement, parameter, isWhereClause) {
-    var xml = "";
+    var xml = "", LookupId = null;
 
-    xml += xmlBeginElement(XML_FIELD_FIELDREF, { Name : statement.field }, true);
+    if (parameter) {
+      if (parameter.lookupid) {
+        LookupId = "True";
+      }
+    }
+
+    xml += xmlBeginElement(XML_FIELD_FIELDREF, { Name : statement.field, LookupId : LookupId }, true);
 
     if (parameter) {
       if (statement.comparison == "in") {
@@ -1203,6 +1285,8 @@ function createQueryElement(statements, sort, parameters, log) {
           innerXml = parameter.value.toISOString();
         }
       }
+    // } else if (parameter.type == "Url") {
+    //     innerXml = encodeHTML(parameter.value);
     } else if (parameter.type == "Text") {
       if (parameter.multiline == true) {
         innerXml = "<![CDATA[" + encodeHTML(parameter.value) + "]]>";
@@ -1211,6 +1295,20 @@ function createQueryElement(statements, sort, parameters, log) {
       }
     } else if (parameter.type == "Number") {
       innerXml = parameter.value;
+    } else if (parameter.type == "User") {
+      if (typeof parameter.value === "number") {
+          valueAttributes.Type = "Number";
+          valueAttributes.LookupId = 'True';
+          innerXml = encodeHTML(parameter.value + "");
+      } else {
+        valueAttributes.Type = "Number";
+        innerXml = "<UserID />";
+      } 
+    } else if (parameter.type == "Lookup") {
+      if (parameter.byId == true) valueAttributes.LookupId = 'True';
+      innerXml = encodeHTML(parameter.value + "");
+    } else if (parameter.type == "Boolean") {
+      innerXml = parameter.value ? 1 : 0;
     } else {
       innerXml = xmlBeginElement('NotImplemented',{}, true);
     }
@@ -1252,9 +1350,9 @@ function xmlBeginElement(name, attributes, close) {
 function xmlEndElement(name) {
   return "</" + name + ">";
 }
-// END D:\git\camlsql-js\src\camlsql-js\xml-builder\CamlXmlBuilder.js
+// END C:\git\camlsql-js\src\camlsql-js\xml-builder\CamlXmlBuilder.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\index.js*/
+// BEGIN C:\git\camlsql-js\src\camlsql-js\index.js*/
   
   /**
    * These are the methods that should be public in the camlsql object
@@ -1274,8 +1372,8 @@ function xmlEndElement(name) {
     today : createTodayParameter,
     multichoice : createMultiChoiceParameter,
     choice : createChoiceParameter,
-    url : createUrlParameter,
-    user : createUserParameter
+    user : createUserParameter,
+    boolean : createBooleanParameter
   }; 
   // var _properties = {
   //  query : query,
@@ -1606,9 +1704,9 @@ function xmlEndElement(name) {
   // generateViewXml();
 
   // return publicItems;
-// END D:\git\camlsql-js\src\camlsql-js\index.js
+// END C:\git\camlsql-js\src\camlsql-js\index.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\__testonly__.js*/
+// BEGIN C:\git\camlsql-js\src\camlsql-js\__testonly__.js*/
 /*!
  *
  * This will expose private methods publicly so tests can be run
@@ -1632,7 +1730,6 @@ publicData.__testonly__.createTodayParameter = createTodayParameter;
 publicData.__testonly__.createGuidParameter = createGuidParameter;
 publicData.__testonly__.createMultiChoiceParameter = createMultiChoiceParameter;
 publicData.__testonly__.createChoiceParameter = createChoiceParameter;
-publicData.__testonly__.createUrlParameter = createUrlParameter;
 publicData.__testonly__.createUserParameter = createUserParameter;
 publicData.__testonly__.encodeHTML = encodeHTML;
 publicData.__testonly__.trim = trim;
@@ -1643,9 +1740,9 @@ publicData.__testonly__.getDateFromTextualRepresentation = getDateFromTextualRep
 publicData.__testonly__.getStartOfWeek = getStartOfWeek;
 publicData.__testonly__.getEndOfWeek = getEndOfWeek;
 
-// END D:\git\camlsql-js\src\camlsql-js\__testonly__.js
+// END C:\git\camlsql-js\src\camlsql-js\__testonly__.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\core\footer.js*/
+// BEGIN C:\git\camlsql-js\src\camlsql-js\core\footer.js*/
   return publicData;
 }));
-// END D:\git\camlsql-js\src\camlsql-js\core\footer.js
+// END C:\git\camlsql-js\src\camlsql-js\core\footer.js

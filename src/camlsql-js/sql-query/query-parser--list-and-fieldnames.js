@@ -9,7 +9,7 @@ function extractListAndFieldNameParts(workingObject) {
       listName,
       t,
       i,
-      m = query.match(/^SELECT\s(.*?)\sFROM\s(.*?)(?:\s+(where.*)$|$)/i);
+      m = query.match(/^SELECT\s(.*?)(?:\sFROM\s(.*?)|)(?:\s+((?:order|where).*)$|$)/i);
 
   if (m) {
     if (m.length == 4) {

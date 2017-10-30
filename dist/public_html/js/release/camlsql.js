@@ -111,7 +111,17 @@ function getEndOfWeek(date, startWeekWithMonday) {
  }
 
 
- function createNumberParameter(value) {
+ function createBooleanParameter(value) {
+  if (typeof value != "boolean" && typeof value !== "undefined")  {
+    throw "[camlsql] Value was not boolean";
+  }
+  return {
+    type : 'Boolean',
+    value : value
+  };
+ }
+
+  function createNumberParameter(value) {
   if (typeof value != "number" && typeof value !== "undefined")  {
     throw "[camlsql] Value was not a number";
   }
@@ -126,6 +136,7 @@ function getEndOfWeek(date, startWeekWithMonday) {
   return {
     type : 'Lookup',
     value : value,
+    lookupid : typeof value == "number",
     byId : typeof value == "number"
   };
  }
@@ -199,12 +210,14 @@ var CamlSqlDateParameter = {
     this.errstr();
     var diff = getIntervalStringAsMs(intervalString)
     this.value = new Date( this.value.getTime() + diff );
+    this.today = false;
     return this;
   },
   sub : function(intervalString){
     this.errstr();
     var diff = getIntervalStringAsMs(intervalString)
     this.value = new Date( this.value.getTime() - diff );
+    this.today = false;
     return this;
   },
   startOfWeek : function(startOnSunday) {
@@ -295,18 +308,25 @@ function createChoiceParameter(value) {
   };
 }
 
-function createUrlParameter(value) {
-  return {
-    type : 'URL',
-    value : value
-  };
-}
+// function createUrlParameter(value) {
+//   return {
+//     type : 'Url',
+//     value : value
+//   };
+// }
 
 
 function createUserParameter(value) {
+  if (typeof value === "number") {
+     return {
+      type : 'User',
+      value : value,
+      lookupid : true
+    };
+  }
+
   return {
-    type : 'User',
-    value : value
+    type : 'User'
   };
 }
 
@@ -559,12 +579,63 @@ function parseParameter(parameter) {
    }
  } else if (typeof parameter === "string") {
    ret = createTextParameter(parameter);
+ } else if (typeof parameter === "boolean") {
+   ret = createBooleanParameter(parameter);
  } else if (typeof parameter == "number") {
    ret = createNumberParameter(parameter);
  } else if (typeof parameter == "object" && parameter.type !== "undefined") {
    return parameter;
  }
  return ret;
+}
+
+function extractJoinPart(workingObject) {
+  var query = workingObject.query,
+      joins = [],
+      listName,
+      t, 
+      i,
+      m = query.match(/\s+(left\s+|)join\s+(.+?)\s+as\s+([a-zA-Z_\d]+)\son\s(.+?)\.([a-zA-Z_\d]+)\s+=\s+(.+?)\.([a-zA-Z_\d]+?)(\s|$)/i);
+ 
+  
+      if (m) {
+          var joinTable = m[2],
+              alias = m[3],
+              onTable1 = m[4],
+              onField1 = m[5],
+              onTable2 = m[6],
+              onField2 = m[7];
+
+          joins.push({
+            inner : trim(m[1]) == "",
+            listName : joinTable,
+            alias : alias,
+            table1 : onTable1,
+            field1 : onField1,
+            table2 : onTable2,
+            field2 : onField2
+          });
+      }
+
+      console.warn("JOIN", joins);
+
+      
+
+  // if (m) {
+  //   if (m.length == 4) {
+  //     fields = parseFieldNames(m[1]);
+  //     for (i=0; i < fields.length; i++) {
+  //       if (!fields[i].match(/^[a-z:A-Z_\\d]+$/)) {
+  //         if (console.warn) console.warn("[camlsql] Doubtful field name: " + fields[i]);
+  //       }
+  //     }
+  //     workingObject.fields = fields;
+  //     workingObject.listName = formatFieldName(m[2]);
+  //     workingObject.query = m[3];
+  //   } else {
+  //     workingObject.query = "";
+  //   }
+  // }
 }
 function extractLimitPart(workingObject) {
   var match, limitString;
@@ -584,7 +655,7 @@ function extractListAndFieldNameParts(workingObject) {
       listName,
       t,
       i,
-      m = query.match(/^SELECT\s(.*?)\sFROM\s(.*?)(?:\s+(where.*)$|$)/i);
+      m = query.match(/^SELECT\s(.*?)(?:\sFROM\s(.*?)|)(?:\s+((?:order|where).*)$|$)/i);
 
   if (m) {
     if (m.length == 4) {
@@ -619,6 +690,7 @@ function parseFieldNames(fieldNameString) {
   if (fields.length == 1 && fields[0] == '*') fields = [];
   return fields;
 }
+
 /**
  * Parse the ORDER BY string
  * @param {[type]} orderByString [description]
@@ -728,6 +800,7 @@ function extractScopePart(workingObject) {
   extractScopePart(workingObject);
   extractLimitPart(workingObject);
   extractOrderByPart(workingObject);
+  extractJoinPart(workingObject);
   extractListAndFieldNameParts(workingObject);
 
   // Parse the remaining part of the query - the WHERE statement
@@ -1124,9 +1197,15 @@ function createQueryElement(statements, sort, parameters, log) {
   }
 
   function createFieldRefValue(statement, parameter, isWhereClause) {
-    var xml = "";
+    var xml = "", LookupId = null;
 
-    xml += xmlBeginElement(XML_FIELD_FIELDREF, { Name : statement.field }, true);
+    if (parameter) {
+      if (parameter.lookupid) {
+        LookupId = "True";
+      }
+    }
+
+    xml += xmlBeginElement(XML_FIELD_FIELDREF, { Name : statement.field, LookupId : LookupId }, true);
 
     if (parameter) {
       if (statement.comparison == "in") {
@@ -1162,6 +1241,8 @@ function createQueryElement(statements, sort, parameters, log) {
           innerXml = parameter.value.toISOString();
         }
       }
+    // } else if (parameter.type == "Url") {
+    //     innerXml = encodeHTML(parameter.value);
     } else if (parameter.type == "Text") {
       if (parameter.multiline == true) {
         innerXml = "<![CDATA[" + encodeHTML(parameter.value) + "]]>";
@@ -1170,6 +1251,20 @@ function createQueryElement(statements, sort, parameters, log) {
       }
     } else if (parameter.type == "Number") {
       innerXml = parameter.value;
+    } else if (parameter.type == "User") {
+      if (typeof parameter.value === "number") {
+          valueAttributes.Type = "Number";
+          valueAttributes.LookupId = 'True';
+          innerXml = encodeHTML(parameter.value + "");
+      } else {
+        valueAttributes.Type = "Number";
+        innerXml = "<UserID />";
+      } 
+    } else if (parameter.type == "Lookup") {
+      if (parameter.byId == true) valueAttributes.LookupId = 'True';
+      innerXml = encodeHTML(parameter.value + "");
+    } else if (parameter.type == "Boolean") {
+      innerXml = parameter.value ? 1 : 0;
     } else {
       innerXml = xmlBeginElement('NotImplemented',{}, true);
     }
@@ -1230,8 +1325,8 @@ function xmlEndElement(name) {
     today : createTodayParameter,
     multichoice : createMultiChoiceParameter,
     choice : createChoiceParameter,
-    url : createUrlParameter,
-    user : createUserParameter
+    user : createUserParameter,
+    boolean : createBooleanParameter
   }; 
   // var _properties = {
   //  query : query,

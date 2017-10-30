@@ -21,7 +21,6 @@ publicData.__testonly__.createTodayParameter = createTodayParameter;
 publicData.__testonly__.createGuidParameter = createGuidParameter;
 publicData.__testonly__.createMultiChoiceParameter = createMultiChoiceParameter;
 publicData.__testonly__.createChoiceParameter = createChoiceParameter;
-publicData.__testonly__.createUrlParameter = createUrlParameter;
 publicData.__testonly__.createUserParameter = createUserParameter;
 publicData.__testonly__.encodeHTML = encodeHTML;
 publicData.__testonly__.trim = trim;

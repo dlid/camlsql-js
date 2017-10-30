@@ -34,6 +34,7 @@
   extractScopePart(workingObject);
   extractLimitPart(workingObject);
   extractOrderByPart(workingObject);
+  extractJoinPart(workingObject);
   extractListAndFieldNameParts(workingObject);
 
   // Parse the remaining part of the query - the WHERE statement

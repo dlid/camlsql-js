@@ -17,8 +17,8 @@
     today : createTodayParameter,
     multichoice : createMultiChoiceParameter,
     choice : createChoiceParameter,
-    url : createUrlParameter,
-    user : createUserParameter
+    user : createUserParameter,
+    boolean : createBooleanParameter
   }; 
   // var _properties = {
   //  query : query,
