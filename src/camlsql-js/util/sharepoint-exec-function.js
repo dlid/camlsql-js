@@ -18,13 +18,19 @@ function executeSPQuery(options) {
             nextPage,
             prevPage;
 
+            console.log("[exec]", options);
+
         if (typeof execCallback !== "function") execCallback = null;
 
         if (typeof SP !== "undefined") {
 
-            SP.SOD.executeFunc('sp.js', 'SP.ClientContext', function () {
+            SP.SOD.executeFunc('sp.js', 'SP.ClientContext', function () {});
+            SP.SOD.executeOrDelayUntilScriptLoaded(function() {
+                console.log("[camlsql] all is well");
                 clientContext = SP.ClientContext.get_current();
-                if (spWeb === null) {
+                if (!spWeb) {
+                    console.log("[camlsql] spweb is not");
+
                     spWeb = clientContext.get_web();
                     spList = spWeb.get_lists().getByTitle(listName);
 
@@ -37,7 +43,7 @@ function executeSPQuery(options) {
                             status: "error",
                             message: "Failed to load list",
                             data: {
-                                sql: getSql,
+                                sql: options.query.$options.parsedQuery.query,
                                 viewXml: viewXml,
                                 listName: listName,
                                 error: Array.prototype.slice.call(arguments)
@@ -46,7 +52,7 @@ function executeSPQuery(options) {
                     });
 
                 }
-            });
+            },"sp.js");
 
         } else {
             if (execCallback == null) {
@@ -61,16 +67,23 @@ function executeSPQuery(options) {
 
         function onListLoaded() {
             var camlQuery = new SP.CamlQuery();
-            var camlQueryString = viewXml;
+            var camlQueryString = options.query.getXml();
             camlQuery.set_viewXml(camlQueryString);
             spListItems = spList.getItems(camlQuery);
             clientContext.load(spListItems);
-            clientContext.executeQueryAsync(camlQuerySuccess, function () {
+            clientContext.executeQueryAsync(camlQuerySuccess, function (clientRequest, failedEventArgs) {
+                var extraMessage = "";
+                if (failedEventArgs) {
+                    if (failedEventArgs.get_errorCode() == -2130575340) {
+                        extraMessage+= " (Error -2130575340: Check field names)";
+                    }
+                }
+
                 execCallback({
                     status: "error",
-                    message: "Error executing the SP.CamlQuery",
+                    message: "Error executing the SP.CamlQuery" + extraMessage,
                     data: {
-                        sql: getSql,
+                        sql: options.query.$options.parsedQuery.query,
                         viewXml: viewXml,
                         listName: listName,
                         error: Array.prototype.slice.call(arguments)

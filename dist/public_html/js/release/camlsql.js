@@ -2,7 +2,7 @@
 (function (global, factory) {
   'use strict';
   typeof exports === 'object' && typeof module !== 'undefined' ? (module.exports = factory()) :
-  typeof define === 'function' && define.amd ? define(factory) :
+ // typeof define === 'function' && define.amd ? define(factory) :
   (global.camlsql = factory()); // jshint ignore:line
 }(this, function() {
   'use strict';
@@ -22,11 +22,11 @@ function getIntervalStringAsMs(val) {
       seconds = 0;
 
   if (typeof val  !== "string") throw "[camlsql] Interval value must be a string";
+  val = val.toLowerCase();
 
-  if ((m = val.match(/^(\d+) (month|day|hour|minute|second|ms|millisecond)s?$/))) {
+  if ((m = val.match(/^(\d+) (day|hour|minute|second|ms|millisecond)s?$/i))) {
     val = parseInt(val, 10);
     switch (m[2]) {
-      case "month": seconds = (((24 * 60) * 60) * 30) * val; break;
       case "day": seconds = (((val * 24) * 60) * 60); break;
       case "hour": seconds = ((val * 60) * 60); break;
       case "minute": seconds = (val * 60); break;
@@ -50,17 +50,13 @@ function getDateFromTextualRepresentation(text, date) {
   } else if (text == "month end") {
     value = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23,59,59,999);
   } else if (text == "week start") {
-    date2 = getStartOfWeek(new Date());
-    value = date2.getFullYear() + "-" + padString(date2.getMonth()+1) + "-" + padString(date2.getDate()) + "T00:00:00Z";
+    value = getStartOfWeek(date);
   } else if (text == "week start monday") {
-    date2 = getStartOfWeek(new Date(), true);
-    value = date2.getFullYear() + "-" + padString(date2.getMonth()+1) + "-" + padString(date2.getDate()) + "T00:00:00Z";
+    value = getStartOfWeek(date, true);
   } else if (text == "week end monday") {
-    date2 = getEndOfWeek(new Date(), true);
-    value = date2.getFullYear() + "-" + padString(date2.getMonth()+1) + "-" + padString(date2.getDate()) + "T00:00:00Z";
+    value = getEndOfWeek(date, true);
   } else if (text == "week end") {
-    date2 = getEndOfWeek(new Date());
-    value = date2.getFullYear() + "-" + padString(date2.getMonth()+1) + "-" + padString(date2.getDate()) + "T00:00:00Z";
+    value = getEndOfWeek(date);
   } else if (text == "day start") {
     value = new Date(date.setHours(0,0,0,0));
   } else if (text == "day end") {
@@ -90,8 +86,9 @@ function getEndOfWeek(date, startWeekWithMonday) {
   var d;
   date = getStartOfWeek(date, startWeekWithMonday);
   d = date.getDay();
+
   date.setDate(date.getDate() + 6);
-  return date; 
+  return new Date(date.setHours(23,59,59,999)); 
 }
 /**
  * Helper functions for parameters
@@ -144,67 +141,35 @@ function getEndOfWeek(date, startWeekWithMonday) {
  function createDateParameter(value) {
   var o = createDateTimeParameter(value);
   if (o) {
-    o.includeTime = false;
+    o._includeTime = false;
   }
   return o;
  }
 
  function createDateTimeParameter(date) {
-  var date2, isToday = false;
-
-  if (date && date.__proto__ == CamlSqlDateParameter) {
+  var date2, isToday = false, stringValue;
+  if (typeof date !== "undefined" && CamlSqlDateParameter.isPrototypeOf(date)) {
     date = date.value;
+  } 
+
+  // If the user pass in a string, use it - no questions asked
+  if (typeof date === "string") {
+    stringValue = date + "";
+    date = null;
+  } else {
+    if (!date) isToday = true;
+    date = date ? new Date(+date) : new Date();
   }
 
-
-  //if (!date) isToday = true;
-  date = date ? new Date(+date) : new Date();
- 
   return Object.create(CamlSqlDateParameter, {
     type : {value : 'DateTime'},
     value : {value : date, writable : true}, 
-    includeTime : {value : true, writable : true},
+    _includeTime : {value : true, writable : true},
     today : {value : isToday, writable : true},
-    storageTZ : {value : true, writable : true}
+    _storageTZ : {value : true, writable : true},
+    stringValue : {value : stringValue, writable : false}
   });
 
-
-
-  if (arguments.length == 0) return createTodayParameter(0, true);
-
-  if (typeof value == "string") {
-    if (value == "month start") {
-      date= new Date();
-      value = d.getFullYear() + "-" + padString(d.getMonth()+ 1) + "-01T00:00:00Z";
-    } else if (value == "month end") {
-      date= new Date();
-      date2 = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-      value = date2.getFullYear() + "-" + padString(date2.getMonth()+1) + "-" + padString(date2.getDate()) + "T23:59:59Z";
-    } else if (value == "this morning") {
-      date= new Date();
-      value = d.getFullYear() + "-" + padString(d.getMonth()+1) + "-" + padString(d.getDate()) + "T00:00:00Z";
-    } else if (value == "tonight") {
-      date= new Date();
-      value = d.getFullYear() + "-" + padString(d.getMonth()+1) + "-" + padString(d.getDate()) + "T23:59:59Z";
-    }
-  }
-
-  if (typeof value !== "string") {
-    console.error("[camlsql] Bad type for datetime value");
-    return null;
-  }
-
-  if (typeof value === "string" &&
-    (!value.match(/^\d{4}-\d\d-\d\d$/) && !value.match(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/) )) {
-    console.error("[camlsql] Bad format for datetime value");
-  return null;
- }
-
- return {
-  type : 'DateTime',
-  value : value,
-  includeTime : true
- };
 }
 
 function createTodayParameter(offset, includeTime) {
@@ -217,7 +182,7 @@ function createTodayParameter(offset, includeTime) {
     type : 'DateTime',
     today : true,
     value : offset,
-    includeTime : includeTime === true ? true : false
+    _includeTime : includeTime === true ? true : false
   };
 }  
 
@@ -226,45 +191,71 @@ function createTodayParameter(offset, includeTime) {
 var CamlSqlDateParameter = {
   type : 'DateTime',
   today : false,
-  includeTime : false,
+  _includeTime : false,
   value : null,
-  storageTZ : true,
-  startOfWeek : function(startOnSunday) {
-    this.value = getDateFromTextualRepresentation('week start' + (!startOnSunday ? ' monday' : ''));
-    this.isToday = false;
+  _storageTZ : true,
+  stringValue : '',
+  add : function(intervalString){
+    this.errstr();
+    var diff = getIntervalStringAsMs(intervalString)
+    this.value = new Date( this.value.getTime() + diff );
     return this;
   },
+  sub : function(intervalString){
+    this.errstr();
+    var diff = getIntervalStringAsMs(intervalString)
+    this.value = new Date( this.value.getTime() - diff );
+    return this;
+  },
+  startOfWeek : function(startOnSunday) {
+    this.errstr();
+    this.value = getDateFromTextualRepresentation('week start' + (!startOnSunday ? ' monday' : ''), this.value);
+    this.today = false;
+    return this; 
+  },
   endOfWeek : function(startOnSunday) {
-    this.value = getDateFromTextualRepresentation('week end' + (!startOnSunday ? ' monday' : ''));
-    this.isToday = false;
+    this.errstr();
+    this.value = getDateFromTextualRepresentation('week end' + (!startOnSunday ? ' monday' : ''), this.value);
+    this.today = false;
     return this;
   },
   startOfMonth : function() {
-    this.value = getDateFromTextualRepresentation('month start');
-    this.isToday = false;
+    this.errstr();
+    this.value = getDateFromTextualRepresentation('month start', this.value);
+    this.today = false;
     return this;
   },
   endOfMonth : function() {
-    this.value = getDateFromTextualRepresentation('month end');
-    this.isToday = false;
+    this.errstr();
+    this.value = getDateFromTextualRepresentation('month end', this.value);
+    this.today = false;
     return this;
   },
   endOfDay : function(){
-    this.value = getDateFromTextualRepresentation('day end');
-    this.isToday = false;
+    this.errstr();
+    this.value = getDateFromTextualRepresentation('day end', this.value);
+    this.today = false;
     return this;
   },
   startOfDay : function() {
-    this.value = getDateFromTextualRepresentation('day start');
-    this.isToday = false;
+    this.errstr();
+    this.value = getDateFromTextualRepresentation('day start', this.value);
+    this.today = false;
     return this;
   },
   storageTZ : function(enabled) {
-    this.storageTZ = enabled ? true : false;
-    this.isToday = false;
+    this._storageTZ = enabled ? true : false;
+    this.today = false;
     return this;
+  },
+  includeTime : function(enabled) {
+    this._includeTime = enabled ? true : false;
+    return this;
+  },
+  errstr : function() {
+    if (this.stringValue) throw "[camlsql] You can't do that when DateTime was set as a string";
   }
-}
+};
 
 
 
@@ -326,7 +317,7 @@ function createUserParameter(value) {
  * @property {CamlSql~ParsedQuery} query - The parsed query to execute
  * @property {function} callback - The callback function
  * @where {Array.<CamlSql~Condition>}
- */
+ */ 
 
 function executeSPQuery(options) {
         var spWeb = options.spWeb,
@@ -339,21 +330,32 @@ function executeSPQuery(options) {
             nextPage,
             prevPage;
 
+            console.log("[exec]", options);
+
+        if (typeof execCallback !== "function") execCallback = null;
+
         if (typeof SP !== "undefined") {
 
-            SP.SOD.executeFunc('sp.js', 'SP.ClientContext', function () {
+            SP.SOD.executeFunc('sp.js', 'SP.ClientContext', function () {});
+            SP.SOD.executeOrDelayUntilScriptLoaded(function() {
+                console.log("[camlsql] all is well");
                 clientContext = SP.ClientContext.get_current();
-                if (spWeb === null) {
+                if (!spWeb) {
+                    console.log("[camlsql] spweb is not");
+
                     spWeb = clientContext.get_web();
                     spList = spWeb.get_lists().getByTitle(listName);
 
                     clientContext.load(spList);
                     clientContext.executeQueryAsync(onListLoaded, function () {
+                        if (execCallback == null) {
+                            throw "[camlsql] Failed to load list";
+                        }
                         execCallback({
                             status: "error",
                             message: "Failed to load list",
                             data: {
-                                sql: getSql,
+                                sql: options.query.$options.parsedQuery.query,
                                 viewXml: viewXml,
                                 listName: listName,
                                 error: Array.prototype.slice.call(arguments)
@@ -362,9 +364,12 @@ function executeSPQuery(options) {
                     });
 
                 }
-            });
+            },"sp.js");
 
         } else {
+            if (execCallback == null) {
+                throw "[camlsql] SP is not defined";
+            }
             execCallback({
                 status: "error",
                 message: "SP is not defined",
@@ -374,19 +379,23 @@ function executeSPQuery(options) {
 
         function onListLoaded() {
             var camlQuery = new SP.CamlQuery();
-            var camlQueryString = viewXml;
-
-
+            var camlQueryString = options.query.getXml();
             camlQuery.set_viewXml(camlQueryString);
-            console.log("camlQuery", camlQuery);
             spListItems = spList.getItems(camlQuery);
             clientContext.load(spListItems);
-            clientContext.executeQueryAsync(camlQuerySuccess, function () {
+            clientContext.executeQueryAsync(camlQuerySuccess, function (clientRequest, failedEventArgs) {
+                var extraMessage = "";
+                if (failedEventArgs) {
+                    if (failedEventArgs.get_errorCode() == -2130575340) {
+                        extraMessage+= " (Error -2130575340: Check field names)";
+                    }
+                }
+
                 execCallback({
                     status: "error",
-                    message: "Error executing the SP.CamlQuery",
+                    message: "Error executing the SP.CamlQuery" + extraMessage,
                     data: {
-                        sql: getSql,
+                        sql: options.query.$options.parsedQuery.query,
                         viewXml: viewXml,
                         listName: listName,
                         error: Array.prototype.slice.call(arguments)
@@ -418,13 +427,6 @@ function executeSPQuery(options) {
                 prevPage : prevPage
             });
         }
-
-        console.log({
-            web: spWeb,
-            callback: execCallback
-        });
-
-        return publicItems;
     }
 
 /**
@@ -445,6 +447,7 @@ function padString(str, size) {
  * @return {string}                The encoded string
  */
 function encodeHTML(stringToEncode) {
+  if (typeof stringToEncode !== "string") return stringToEncode;
   return stringToEncode.replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -483,7 +486,8 @@ function CamlSqlQuery(query, param) {
     this.exec = function() {
       var args = Array.prototype.slice.call(arguments),
           spWeb,
-          execCallback;
+          execCallback,
+          result;
 
       if (args.length > 1) {
           if (typeof args[0] === "object") {
@@ -500,19 +504,25 @@ function CamlSqlQuery(query, param) {
           }
       }
 
-      return executeSPQuery({
+      executeSPQuery({
         query : this,
         callback : execCallback,
         spWeb : spWeb
       });
+
+      return this;
     };
     
     function getXml() {
       var builder = new CamlXmlBuilder(currentQuery);
-      return builder;
+      return builder.xml;
     }
 
+    function getListName() {
+      return currentQuery.$options.parsedQuery.listName;
+    }
 
+    this.getListName = getListName;
     this.getXml = getXml;
     this.$options = {
       parsedQuery : parseSqlQuery(query),
@@ -550,7 +560,7 @@ function parseParameter(parameter) {
  } else if (typeof parameter === "string") {
    ret = createTextParameter(parameter);
  } else if (typeof parameter == "number") {
-   ret = camlsql.number(parameter);
+   ret = createNumberParameter(parameter);
  } else if (typeof parameter == "object" && parameter.type !== "undefined") {
    return parameter;
  }
@@ -585,7 +595,7 @@ function extractListAndFieldNameParts(workingObject) {
         }
       }
       workingObject.fields = fields;
-      listName = formatFieldName(m[2]);
+      workingObject.listName = formatFieldName(m[2]);
       workingObject.query = m[3];
     } else {
       workingObject.query = "";
@@ -652,8 +662,6 @@ function extractOrderByPart(workingObject, quiet) {
                     match[1] = m[1];
                 } else
                     return [];
-            } else {
-              if (console.error) console.error("[camlsql] Error in ORDER BY statement: " + match[1]);
             }
             fieldName = formatFieldName(match[1]);
             if (match.length == 3) {
@@ -711,7 +719,8 @@ function extractScopePart(workingObject) {
     viewScope : null,
     macros : [],
     statements : [],
-    parameters : []
+    parameters : [],
+    listName : null
   },
   where;
 
@@ -963,13 +972,21 @@ var WhereParser = function(whereString, quiet) {
 
 var XML_FIELD_VIEW = 'View',
     XML_FIELD_VIEWFIELDS = 'ViewFields',
-    XML_FIELD_FIELDREF = 'FieldRef';
+    XML_FIELD_FIELDREF = 'FieldRef',
+    XML_ELEMENT_QUERY = "Query",
+    XML_ELEMENT_ORDERBY = 'OrderBy',
+    XML_ELEMENT_WHERE = 'Where',
+    XML_ELEMENT_ISNULL = "IsNull",
+    XML_ELEMENT_ISNOTNULL = "IsNotNull";
 
 function CamlXmlBuilder(query) {
   var viewXml ="",
       parsedQuery = query.$options.parsedQuery,
-      parameters = parsedQuery.$options, parameters,
-      i;
+      parameters = query.$options.parameters,
+      i,
+      log = {
+        errors : []
+      };
   // remember https://yieldreturnpost.wordpress.com/2012/10/26/caml-query-utc-date-comparisons-in-sharepoint/
   // <Value Type='DateTime' IncludeTimeValue='TRUE' StorageTZ='TRUE'>
   //    2012-10-24T21:30:46Z
@@ -977,11 +994,13 @@ function CamlXmlBuilder(query) {
 
 
 
-  viewXml += xmlBeginElement(XML_FIELD_VIEW, {Scope : parsedQuery.viewScope});
   viewXml += createViewFieldsElement(parsedQuery.fields);
-  viewXml += createQueryElement(parsedQuery.statements, parameters)
-  viewXml += xmlEndElement('View');
+  viewXml += createQueryElement(parsedQuery.statements, parsedQuery.sort, parameters, log);
+  
 
+  if (viewXml) {
+    viewXml = xmlBeginElement(XML_FIELD_VIEW, {Scope : parsedQuery.viewScope}) + viewXml + xmlEndElement('View');
+  }
 
   console.log("query", query);
 
@@ -992,20 +1011,183 @@ function CamlXmlBuilder(query) {
 
 }
 
-function createQueryElement(statements, parameters) {
-  console.warn("CREATE QUERY ELEMENT", statements, parameters);
+function createOrderByElement(sort) {
+  var xml = "";
+  if (sort.length > 0) {
+    xml+=xmlBeginElement(XML_ELEMENT_ORDERBY);
+    for (var i=0; i < sort.length; i++) {
+      xml += xmlBeginElement(XML_FIELD_FIELDREF, {
+        Name : sort[i][0],
+        Type : sort[i][2] ? sort[i][2] : null,
+        Ascending : !sort[i][1] ? 'False' : null
+      },true);
+    }
+    xml+=xmlEndElement(XML_ELEMENT_ORDERBY);
+  }
 
-  return "<Query />";
+  return xml;
 }
+
+/**
+ * 
+ * https://msdn.microsoft.com/en-us/library/office/ms471093.aspx
+ * @param  {[type]} statements [description]
+ * @param  {[type]} sort       [description]
+ * @param  {[type]} parameters [description]
+ * @param  {[type]} log        [description]
+ * @return {[type]}            [description]
+ */
+function createQueryElement(statements, sort, parameters, log) {
+  console.warn("CREATE QUERY ELEMENT", statements, parameters);
+  var xml = "";
+
+  if (statements.length > 0 || sort.length > 0) {
+    xml += xmlBeginElement(XML_ELEMENT_QUERY);
+    if (statements.length > 0) {
+      xml += xmlBeginElement(XML_ELEMENT_WHERE);
+      xml += createAndOrFromStatements(statements, parameters, log);
+      xml += xmlEndElement(XML_ELEMENT_WHERE);
+    }
+    xml += createOrderByElement(sort, parameters, log);
+    // Groupby should go here?
+    xml += xmlEndElement(XML_ELEMENT_QUERY);
+  }
+  return xml;
+}
+
+  function createAndOrFromStatements(items, parameters, log) {
+
+   var xml = "";
+   if (!items) return "";
+   if (items.length > 1) {
+     var operatorElement = items[1].operator == "and" ? "And" : "Or";
+     // item 0 + 1 goes here
+     xml += createStatementXml(items[0], parameters, log);
+     xml += createAndOrFromStatements(items.slice(1), parameters, log);
+     return "<"+operatorElement+">" + xml + "</"+operatorElement+">";
+   } else if (items.length == 1) {
+    xml += createStatementXml(items[0], parameters, log);
+    
+   }
+   return xml;
+  }
+
+
+  function createStatementXml(statement, parameters, log) {
+    var xml = "", param, comparison = statement.comparison, elementName;
+    if (statement.type == "statement") {
+      param = parameters[statement.macro];
+
+      var simpleMappings = {'eq' : 'Eq', 'gt' : 'Gt', 'gte' : 'Geq', 'lte' : 'Leq', 'lt' : 'Lt', 'ne' : 'Neq'};
+
+      if (typeof simpleMappings[comparison] !== "undefined") {
+        if (typeof param === "undefined")
+          throw "[camlsql] Parameter is not defined " +  statement.macro;
+        xml+=xmlBeginElement(simpleMappings[comparison]);
+        xml+=createFieldRefValue(statement, param);
+        xml+=xmlEndElement(simpleMappings[comparison]);
+      } else if (comparison == "null") {
+        xml+=xmlBeginElement(XML_ELEMENT_ISNULL);
+        xml+=createFieldRefValue(statement);
+        xml+=xmlEndElement(XML_ELEMENT_ISNULL);
+      } else if (comparison == "notnull") {
+        xml+=xmlBeginElement(XML_ELEMENT_ISNOTNULL);
+        xml+=createFieldRefValue(statement);
+        xml+=xmlEndElement(XML_ELEMENT_ISNOTNULL);
+      } else if (comparison == "like") {
+        if (typeof param === "undefined")
+          throw "[camlsql] Parameter is not defined " +  statement.macro;
+        elementName = getXmlElementForLikeStatement(param.value);
+        xml+=xmlBeginElement(elementName);
+        xml+=createFieldRefValue(statement, param);
+        xml+=xmlEndElement(elementName);
+      }
+
+    } else {
+      xml += createAndOrFromStatements(statement.items, parameters, log);
+    }
+    return xml;
+  }
+
+  function getXmlElementForLikeStatement(text) {
+    var elementName = "Contains",
+      paramValue = null;
+    if (text.indexOf('%') === 0 && text[text.length-1] === "%") {
+      paramValue = text.replace(/^%?|%?$/g, '');
+    } else if (text.indexOf('%') === 0) {
+      throw "[casql] SharePoint does not support an 'EndsWith' statement: " + text;
+    } else if (text.indexOf('%') === text.length -1) {
+      paramValue = text.replace(/%?$/, '');
+      elementName = "BeginsWith";
+    }
+    return elementName;
+  }
+
+  function createFieldRefValue(statement, parameter, isWhereClause) {
+    var xml = "";
+
+    xml += xmlBeginElement(XML_FIELD_FIELDREF, { Name : statement.field }, true);
+
+    if (parameter) {
+      if (statement.comparison == "in") {
+        xml = "<In>x</In>";
+      } else {
+        xml += creatValueElement(statement, parameter);
+      }
+    }
+    return xml;
+  }
+
+
+  function creatValueElement(statement, parameter) {
+    console.warn("creatValueElement", statement, parameter);
+    var xml = "",
+        innerXml = "",
+        valueAttributes = {
+          Type : parameter.type
+        };
+
+    if (parameter.type == "DateTime") {
+      valueAttributes.IncludeTimeValue = parameter._includeTime ? 'True' : null;
+      
+      if (parameter.today === true) {
+        innerXml = "<Today />";
+      } else if (parameter.isNow === true) {
+        innerXml = "<Now />";
+      } else {
+        valueAttributes.StorageTZ = parameter._storageTZ ? 'True' : null;
+        if (parameter.stringValue) {
+          innerXml = encodeHTML(parameter.stringValue);
+        } else {
+          innerXml = parameter.value.toISOString();
+        }
+      }
+    } else if (parameter.type == "Text") {
+      if (parameter.multiline == true) {
+        innerXml = "<![CDATA[" + encodeHTML(parameter.value) + "]]>";
+      } else {
+        innerXml = encodeHTML(parameter.value);
+      }
+    } else if (parameter.type == "Number") {
+      innerXml = parameter.value;
+    } else {
+      innerXml = xmlBeginElement('NotImplemented',{}, true);
+    }
+
+    xml += xmlBeginElement('Value', valueAttributes);
+    xml += innerXml;
+    xml += xmlEndElement('Value');
+    return xml;
+  }
 
 function createViewFieldsElement(fields) {
   var xml = "", i;
   if (fields.length > 0) {
+    xml += xmlBeginElement(XML_FIELD_VIEWFIELDS);
     for (i = 0; i < fields.length; i++) {
-      xml += xmlBeginElement(XML_FIELD_VIEWFIELDS);
       xml += xmlBeginElement(XML_FIELD_FIELDREF, {Name : fields[i]}, true);
-      xml += xmlEndElement(XML_FIELD_VIEWFIELDS);
     }
+    xml += xmlEndElement(XML_FIELD_VIEWFIELDS);
   }
   return xml;
 }

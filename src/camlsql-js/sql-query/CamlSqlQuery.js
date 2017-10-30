@@ -10,7 +10,8 @@ function CamlSqlQuery(query, param) {
     this.exec = function() {
       var args = Array.prototype.slice.call(arguments),
           spWeb,
-          execCallback;
+          execCallback,
+          result;
 
       if (args.length > 1) {
           if (typeof args[0] === "object") {
@@ -27,11 +28,13 @@ function CamlSqlQuery(query, param) {
           }
       }
 
-      return executeSPQuery({
+      executeSPQuery({
         query : this,
         callback : execCallback,
         spWeb : spWeb
       });
+
+      return this;
     };
     
     function getXml() {

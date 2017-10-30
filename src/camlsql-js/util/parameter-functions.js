@@ -80,7 +80,7 @@
 
 }
 
-function createTodayParameter(offset, _includeTime) {
+function createTodayParameter(offset, includeTime) {
   if (typeof offset === "undefined") offset = 0;
   if (typeof offset !== "number") {
     throw "[camlsql] Bad offset value for 'today'";
@@ -103,39 +103,51 @@ var CamlSqlDateParameter = {
   value : null,
   _storageTZ : true,
   stringValue : '',
+  add : function(intervalString){
+    this.errstr();
+    var diff = getIntervalStringAsMs(intervalString)
+    this.value = new Date( this.value.getTime() + diff );
+    return this;
+  },
+  sub : function(intervalString){
+    this.errstr();
+    var diff = getIntervalStringAsMs(intervalString)
+    this.value = new Date( this.value.getTime() - diff );
+    return this;
+  },
   startOfWeek : function(startOnSunday) {
     this.errstr();
-    this.value = getDateFromTextualRepresentation('week start' + (!startOnSunday ? ' monday' : ''));
+    this.value = getDateFromTextualRepresentation('week start' + (!startOnSunday ? ' monday' : ''), this.value);
     this.today = false;
-    return this;
+    return this; 
   },
   endOfWeek : function(startOnSunday) {
     this.errstr();
-    this.value = getDateFromTextualRepresentation('week end' + (!startOnSunday ? ' monday' : ''));
+    this.value = getDateFromTextualRepresentation('week end' + (!startOnSunday ? ' monday' : ''), this.value);
     this.today = false;
     return this;
   },
   startOfMonth : function() {
     this.errstr();
-    this.value = getDateFromTextualRepresentation('month start');
+    this.value = getDateFromTextualRepresentation('month start', this.value);
     this.today = false;
     return this;
   },
   endOfMonth : function() {
     this.errstr();
-    this.value = getDateFromTextualRepresentation('month end');
+    this.value = getDateFromTextualRepresentation('month end', this.value);
     this.today = false;
     return this;
   },
   endOfDay : function(){
     this.errstr();
-    this.value = getDateFromTextualRepresentation('day end');
+    this.value = getDateFromTextualRepresentation('day end', this.value);
     this.today = false;
     return this;
   },
   startOfDay : function() {
     this.errstr();
-    this.value = getDateFromTextualRepresentation('day start');
+    this.value = getDateFromTextualRepresentation('day start', this.value);
     this.today = false;
     return this;
   },

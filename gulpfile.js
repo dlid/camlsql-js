@@ -46,9 +46,12 @@ gulp.task('build-clean', function () {
         .pipe(clean());
 });
 
+gulp.task('watch-on-camlsql-change', function(cb) {
+    runSequence('build-js', 'test', 'ftp-latest', cb);
+})
  
 gulp.task('serve-watch', function() { 
-    gulp.watch('./src/camlsql-js/**/*.js' , ['build-js', 'test']);
+    gulp.watch('./src/camlsql-js/**/*.js' , ['watch-on-camlsql-change']);
     gulp.watch('src/app/**/*.js' , ['build-app-js']);
     gulp.watch('src/app/**/*.html' , ['copy-html']);
     gulp.watch('src/app/less/*.less' , ['build-less']);
@@ -210,7 +213,7 @@ gulp.task('build-less', function() {
 
 
 gulp.task('default', function(cb) {
-  runSequence('build-clean', 'build-app-js', 'build-js', 'build-release-js', 'build-less', 'copy-html', 'copy-img', 'ftp-latest', cb);
+  runSequence('build-app-js', 'build-js', 'build-release-js', 'build-less', 'copy-html', 'copy-img', 'ftp-latest', cb);
 });
 
 gulp.task('release', function(cb) {

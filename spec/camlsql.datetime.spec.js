@@ -5,140 +5,138 @@ var camlsql = require("../dist/public_html/js/camlsql.js");
 
 describe("camlsql.datetime", function() {
 
-  it("No parameter => today", function() {
-    
-    var result = camlsql.datetime();
-    expect(result.type).toEqual("DateTime");
-    expect(result.today).toEqual(true);
-    expect(result._includeTime).toEqual(true);
-
+  it("camlsql.datetime(new Date()).startOfMonth()", function() {
+    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0),
+        expectedDate = new Date(2008, 0, 1, 0,0,0,0),
+        dateValue = camlsql.datetime(bbPremierDate).startOfMonth().value;
+    expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
 
-  it("getIntervalStringAsMs (1 minute)", function() {
-    var result = camlsql.__testonly__.getIntervalStringAsMs("1 minute");
-    expect(result).toEqual(60000);
+  it("camlsql.datetime(new Date()).endOfMonth()", function() {
+    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0),
+        expectedDate = new Date(2008, 0, 31, 23, 59, 59, 999),
+        dateValue = camlsql.datetime(bbPremierDate).endOfMonth().value;
+    expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
 
-  it("getIntervalStringAsMs (13 minutes)", function() {
-    var result = camlsql.__testonly__.getIntervalStringAsMs("13 minutes");
-    expect(result).toEqual(780000);
+  it("camlsql.datetime(new Date()).startOfDay()", function() {
+    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0),
+        expectedDate = new Date(2008, 0, 20, 0, 0, 0),
+        dateValue = camlsql.datetime(bbPremierDate).startOfDay().value;
+    expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
 
-    it("getIntervalStringAsMs (1 hour)", function() {
-    var result = camlsql.__testonly__.getIntervalStringAsMs("1 hour");
-    expect(result).toEqual(3600000);
+  it("camlsql.datetime(new Date()).endOfday()", function() {
+    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0),
+        expectedDate = new Date(2008, 0, 20, 23, 59, 59, 999);
+    var dateValue = camlsql.datetime(bbPremierDate).endOfDay().value;
+    expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
 
-  it("getIntervalStringAsMs (6 hours)", function() {
-    var result = camlsql.__testonly__.getIntervalStringAsMs("6 hours");
-    expect(result).toEqual(21600000);
+  it("camlsql.datetime(new Date()).startOfweek()", function() {
+    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0),
+        expectedDate = new Date(2008, 0, 14, 0, 0, 0);
+    var dateValue = camlsql.datetime(bbPremierDate).startOfWeek().value;
+    expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
 
-  it("getIntervalStringAsMs (1 second)", function() {
-    var result = camlsql.__testonly__.getIntervalStringAsMs("1 second");
-    expect(result).toEqual(1000);
+  it("camlsql.datetime(new Date()).endOfweek()", function() {
+    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0),
+        expectedDate = new Date(2008, 0, 20, 23, 59, 59,999);
+    var dateValue = camlsql.datetime(bbPremierDate).endOfWeek().value;
+    expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
 
-  it("getIntervalStringAsMs (131 seconds)", function() {
-    var result = camlsql.__testonly__.getIntervalStringAsMs("131 seconds");
-    expect(result).toEqual(131000);
+  it("camlsql.datetime(new Date()).startOfweek(sunday)", function() {
+    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0),
+        expectedDate = new Date(2008, 0, 20, 0, 0, 0);
+    var dateValue = camlsql.datetime(bbPremierDate).startOfWeek(true).value;
+    expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
 
-  it("getIntervalStringAsMs (1 day)", function() {
-    var result = camlsql.__testonly__.getIntervalStringAsMs("1 day");
-    expect(result).toEqual(86400000);
+  it("camlsql.datetime(new Date()).endOfweek(sunday)", function() {
+    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0),
+        expectedDate = new Date(2008, 0, 26, 23, 59, 59,999);
+    var dateValue = camlsql.datetime(bbPremierDate).endOfWeek(true).value;
+    expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
 
-  it("getIntervalStringAsMs (3 days)", function() {
-    var result = camlsql.__testonly__.getIntervalStringAsMs("3 days");
-    expect(result).toEqual(259200000);
+  it("camlsql.datetime(new Date()).add('1 day')", function() {
+    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0),
+        expectedDate = new Date(2008, 0, 21, 18, 30, 0);
+    var dateValue = camlsql.datetime(bbPremierDate).add('1 day').value;
+    expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
 
-  it("getIntervalStringAsMs (1 month)", function() {
-    var result = camlsql.__testonly__.getIntervalStringAsMs("1 month");
-    expect(result).toEqual(2592000000);
+  it("camlsql.datetime(new Date()).add('1 day').add('30 minutes')", function() {
+    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0),
+        expectedDate = new Date(2008, 0, 21, 19, 0, 0);
+    var dateValue = camlsql.datetime(bbPremierDate).add('1 day').add('30 minutes').value;
+    expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
 
-  it("getIntervalStringAsMs (3 months)", function() {
-    var result = camlsql.__testonly__.getIntervalStringAsMs("3 months");
-    expect(result).toEqual(2592000000 * 3);
+  it("camlsql.datetime(new Date()).add('1 day').sub('30 minutes')", function() {
+    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0),
+        expectedDate = new Date(2008, 0, 21, 18, 0, 0);
+    var dateValue = camlsql.datetime(bbPremierDate).add('1 day').sub('30 minutes').value;
+    expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
 
-  it("getIntervalStringAsMs (3 days)", function() {
-    var result = camlsql.__testonly__.getIntervalStringAsMs("3 days");
-    expect(result).toEqual(259200000);
+  it("camlsql.datetime(new Date()).add('1 hour')", function() {
+    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0),
+        expectedDate = new Date(2008, 0, 20, 19, 30, 0);
+    var dateValue = camlsql.datetime(bbPremierDate).add('1 hour').value;
+    expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
 
-  it("getIntervalStringAsMs (500 ms)", function() {
-    var result = camlsql.__testonly__.getIntervalStringAsMs("500 ms");
-    expect(result).toEqual(500);
+  it("camlsql.datetime(new Date()).add('30 ms')", function() {
+    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0),
+        expectedDate = new Date(2008, 0, 20, 18, 30, 0, 30);
+    var dateValue = camlsql.datetime(bbPremierDate).add('30 ms').value;
+    expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
 
-  it("getIntervalStringAsMs (1500 milliseconds)", function() {
-    var result = camlsql.__testonly__.getIntervalStringAsMs("1500 milliseconds");
-    expect(result).toEqual(1500);
+  it("camlsql.datetime(new Date()).sub('30 ms')", function() {
+    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0),
+        expectedDate = new Date(2008, 0, 20, 18, 29, 59, 970);
+    var dateValue = camlsql.datetime(bbPremierDate).sub('30 ms').value;
+    expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
 
-  it("getIntervalStringAsMs unknown string", function() {
-      expect(function() {
-      camlsql.__testonly__.getIntervalStringAsMs("infinity");
-    }).toThrow("[camlsql] Interval string was not recognized: infinity");
+  it("camlsql.datetime(new Date()).sub('2 hours')", function() {
+    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0),
+        expectedDate = new Date(2008, 0, 20, 16, 30,0,0);
+    var dateValue = camlsql.datetime(bbPremierDate).sub('2 hours').value;
+    expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
 
-  it("getIntervalStringAsMs not a string", function() {
-      expect(function() {
-      camlsql.__testonly__.getIntervalStringAsMs(5);
-    }).toThrow("[camlsql] Interval value must be a string");
+  it("camlsql.datetime(new Date()).sub('3 days')", function() {
+    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0),
+        expectedDate = new Date(2008, 0, 17, 18, 30,0,0);
+    var dateValue = camlsql.datetime(bbPremierDate).sub('3 days').value;
+    expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
 
-
-  it("getDateFromTextualRepresentation month start", function() {
-    var date = camlsql.__testonly__.getDateFromTextualRepresentation("month start", new Date(1980, 03, 04))
-    expect(date.toDateString()).toEqual("Tue Apr 01 1980");
-    expect(date.toTimeString().substr(0,8)).toEqual("00:00:00");
+  it("camlsql.datetime(new Date()).sub('10 days').startOfWeek()", function() {
+    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0),
+        expectedDate = new Date(2008, 0, 7, 0,0,0,0);
+    var dateValue = camlsql.datetime(bbPremierDate).sub('10 days').startOfWeek().value;
+    expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
 
-   it("getDateFromTextualRepresentation day start", function() {
-    var date = camlsql.__testonly__.getDateFromTextualRepresentation("day start", new Date(1980, 03, 04, 13, 13))
-    expect(date.toDateString()).toEqual("Fri Apr 04 1980");
-    expect(date.toTimeString().substr(0,8)).toEqual("00:00:00");
+  it("camlsql.datetime(new Date()).startOfWeek().sub('1 day')", function() {
+    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0),
+        expectedDate = new Date(2008, 0, 13, 0,0,0,0);
+    var dateValue = camlsql.datetime(bbPremierDate).startOfWeek().sub('1 day').value;
+    expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
 
-   it("getDateFromTextualRepresentation day end", function() {
-    var date = camlsql.__testonly__.getDateFromTextualRepresentation("day end", new Date(1980, 03, 02, 13, 13))
-    expect(date.toDateString()).toEqual("Wed Apr 02 1980");
-    expect(date.toTimeString().substr(0,8)).toEqual("23:59:59");
+   it("camlsql.datetime(new Date()).startOfWeek().sub('1 day').startOfWeek()", function() {
+    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0),
+        expectedDate = new Date(2008, 0, 7, 0,0,0,0);
+    var dateValue = camlsql.datetime(bbPremierDate).startOfWeek().sub('1 day').startOfWeek().value;
+    expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
-
-
-  it("getDateFromTextualRepresentation month end", function() {
-    var date = camlsql.__testonly__.getDateFromTextualRepresentation("month end", new Date(1980, 03, 04))
-    expect(date.toDateString()).toEqual("Wed Apr 30 1980");
-    expect(date.toTimeString().substr(0,8)).toEqual("23:59:59");
-  });
-
-
-  it("getDateFromTextualRepresentation month end leap year", function() {
-    var date = camlsql.__testonly__.getDateFromTextualRepresentation("month end", new Date(1980, 01, 04))
-    expect(date.toDateString()).toEqual("Fri Feb 29 1980");
-    expect(date.toTimeString().substr(0,8)).toEqual("23:59:59");
-  });
-
-  // it("getDateFromTextualRepresentation week start", function() {
-  //   var date = camlsql.__testonly__.getDateFromTextualRepresentation("month end", new Date(1980, 03, 04))
-  //   expect(date.toDateString()).toEqual("Wed Apr 30 1980");
-  //   expect(date.toTimeString().substr(0,8)).toEqual("23:59:59");
-  // });
-
-
-
-  // var d = camlsql.__testonly__.getDateFromTextualRepresentation("week start", new Date(1980, 03, 04)); d
-  // supposed to be 31st 00:00:00 but returns
-  // Sun Mar 30 1980 00:00:00 GMT+0100 (Central Europe Standard Time)
-  // same with week end
-  // var d = camlsql.__testonly__.getDateFromTextualRepresentation("week end", new Date(1980, 03, 04)); d
-
-  
 
 
 }); 

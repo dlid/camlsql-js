@@ -152,16 +152,16 @@ function createQueryElement(statements, sort, parameters, log) {
     return elementName;
   }
 
-  function createFieldRefValue(statement, parameter) {
+  function createFieldRefValue(statement, parameter, isWhereClause) {
     var xml = "";
 
-    xml += xmlBeginElement(XML_FIELD_FIELDREF, { Name : statement.field, Type : parameter ? parameter.type : null }, true);
+    xml += xmlBeginElement(XML_FIELD_FIELDREF, { Name : statement.field }, true);
 
     if (parameter) {
       if (statement.comparison == "in") {
         xml = "<In>x</In>";
       } else {
-        xml = creatValueElement(statement, parameter);
+        xml += creatValueElement(statement, parameter);
       }
     }
     return xml;
@@ -193,7 +193,7 @@ function createQueryElement(statements, sort, parameters, log) {
       }
     } else if (parameter.type == "Text") {
       if (parameter.multiline == true) {
-        innerXml = "<<![CDATA[" + encodeHTML(parameter.value) + "]]>";
+        innerXml = "<![CDATA[" + encodeHTML(parameter.value) + "]]>";
       } else {
         innerXml = encodeHTML(parameter.value);
       }

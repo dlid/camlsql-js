@@ -27,7 +27,7 @@ function parseParameter(parameter) {
  } else if (typeof parameter === "string") {
    ret = createTextParameter(parameter);
  } else if (typeof parameter == "number") {
-   ret = camlsql.number(parameter);
+   ret = createNumberParameter(parameter);
  } else if (typeof parameter == "object" && parameter.type !== "undefined") {
    return parameter;
  }

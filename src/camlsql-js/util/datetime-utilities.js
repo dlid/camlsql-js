@@ -15,10 +15,9 @@ function getIntervalStringAsMs(val) {
   if (typeof val  !== "string") throw "[camlsql] Interval value must be a string";
   val = val.toLowerCase();
 
-  if ((m = val.match(/^(\d+) (month|day|hour|minute|second|ms|millisecond)s?$/i))) {
+  if ((m = val.match(/^(\d+) (day|hour|minute|second|ms|millisecond)s?$/i))) {
     val = parseInt(val, 10);
     switch (m[2]) {
-      case "month": seconds = (((24 * 60) * 60) * 30) * val; break;
       case "day": seconds = (((val * 24) * 60) * 60); break;
       case "hour": seconds = ((val * 60) * 60); break;
       case "minute": seconds = (val * 60); break;
