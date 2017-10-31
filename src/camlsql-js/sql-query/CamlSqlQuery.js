@@ -9,7 +9,8 @@ function CamlSqlQuery(query, param) {
       var args = Array.prototype.slice.call(arguments),
           spWeb,
           execCallback,
-          result;
+          result,
+          rawXml = options.rawXml;
 
 
 
