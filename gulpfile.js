@@ -32,6 +32,7 @@ var package = JSON.parse(fs.readFileSync('./package.json'));
 var ftpConfig;
 
 
+
 // Quickly ftp latest build to an ftp server if a ftp.json exists
 try {ftpConfig = JSON.parse(fs.readFileSync('./ftp.json'));} catch(e) { ftpConfig = null;}
 
@@ -47,13 +48,13 @@ gulp.task('build-clean', function () {
 });
 
 gulp.task('watch-on-camlsql-change', function(cb) {
-    runSequence('build-js', 'test', 'ftp-latest', cb);
+    runSequence('build-js', 'copy-html', 'build-less', 'test', 'ftp-latest', cb);
 })
- 
+   
 gulp.task('serve-watch', function() { 
-    gulp.watch('./src/camlsql-js/**/*.js' , ['watch-on-camlsql-change']);
+    gulp.watch('src/**/*.*' , ['build-js', 'copy-html', 'build-less', 'test', 'ftp-latest']); 
     gulp.watch('src/app/**/*.js' , ['build-app-js']);
-    gulp.watch('src/app/**/*.html' , ['copy-html']);
+    gulp.watch('src/app/**/*.html' , ['copy-html']); 
     gulp.watch('src/app/less/*.less' , ['build-less']);
 });
 
@@ -86,10 +87,10 @@ gulp.task('serve-serve', function () {
         },
         reloadDelay : 2000
     }); 
-     gulp.watch("./dist/public_html/css/*.css").on('change', reload);
-     gulp.watch("./dist/public_html/*.html").on('change', reload);
+    // gulp.watch("./dist/public_html/css/*.css").on('all', reload);
+    // gulp.watch("./dist/public_html/*.html").on('all', reload);
      gulp.watch("./dist/public_html/**/*.js").on('change', reload);
-});
+}); 
  
 function getCamlsqlFiles(isRelease) {
     var files = [

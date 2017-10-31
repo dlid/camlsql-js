@@ -14,11 +14,9 @@ function executeSPQuery(options) {
             spList = null,
             listName = options.query.getListName(),
             spListItems = null,
-            viewXml = options.query.getXml(),
+            viewXml = options.rawXml ? options.rawXml : options.query.getXml(),
             nextPage,
             prevPage;
-
-            console.log("[exec]", options);
 
         if (typeof execCallback !== "function") execCallback = null;
 
@@ -26,11 +24,8 @@ function executeSPQuery(options) {
 
             SP.SOD.executeFunc('sp.js', 'SP.ClientContext', function () {});
             SP.SOD.executeOrDelayUntilScriptLoaded(function() {
-                console.log("[camlsql] all is well");
                 clientContext = SP.ClientContext.get_current();
                 if (!spWeb) {
-                    console.log("[camlsql] spweb is not");
-
                     spWeb = clientContext.get_web();
                     spList = spWeb.get_lists().getByTitle(listName);
 

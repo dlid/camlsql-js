@@ -24,7 +24,7 @@ function encodeHTML(stringToEncode) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;');
 }
-
+ 
 
 /**
  * Strip spaces from around a string

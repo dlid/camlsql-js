@@ -15,6 +15,18 @@ function extractListAndFieldNameParts(workingObject) {
     if (m.length == 4) {
       fields = parseFieldNames(m[1]);
       for (i=0; i < fields.length; i++) {
+
+        if ((t = fields[i].match(/^(.*?)\.(.*?)\sas\s(.*?)$/i))) {
+          workingObject.projectedFields.push({
+            list : t[1],
+            field : t[2],
+            name : t[3]
+          });
+          fields[i] = formatFieldName(t[3]);
+        } else if (fields[i].indexOf('.') !== -1) {
+          throw "[camlsql] Projected fields in the format <list>.<field_name> must be followed with an AS <alias> ("+fields[i]+")";
+        }
+
         if (!fields[i].match(/^[a-z:A-Z_\\d]+$/)) {
           if (console.warn) console.warn("[camlsql] Doubtful field name: " + fields[i]);
         }

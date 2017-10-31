@@ -22,11 +22,13 @@
     rowLimit : 0,
     fields : [],
     sort : [],
+    joins : [],
     viewScope : null,
     macros : [],
     statements : [],
     parameters : [],
-    listName : null
+    listName : null,
+    projectedFields : []
   },
   where;
 

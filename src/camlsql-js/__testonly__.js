@@ -30,3 +30,4 @@ publicData.__testonly__.createDateWithIntervalString = createDateWithIntervalStr
 publicData.__testonly__.getDateFromTextualRepresentation = getDateFromTextualRepresentation;
 publicData.__testonly__.getStartOfWeek = getStartOfWeek;
 publicData.__testonly__.getEndOfWeek = getEndOfWeek;
+publicData.__testonly__.executeSPQuery = executeSPQuery;

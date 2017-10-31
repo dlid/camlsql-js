@@ -4,14 +4,14 @@ function CamlSqlQuery(query, param) {
 
  
     var parameters = parseParameters(param);
-    console.log("parameters", parameters);
 
-
-    this.exec = function() {
+    this.exec = function(options) {
       var args = Array.prototype.slice.call(arguments),
           spWeb,
           execCallback,
           result;
+
+
 
       if (args.length > 1) {
           if (typeof args[0] === "object") {
@@ -31,7 +31,8 @@ function CamlSqlQuery(query, param) {
       executeSPQuery({
         query : this,
         callback : execCallback,
-        spWeb : spWeb
+        spWeb : spWeb,
+        rawXml : rawXml
       });
 
       return this;

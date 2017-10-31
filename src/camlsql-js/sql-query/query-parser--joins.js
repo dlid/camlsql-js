@@ -5,33 +5,98 @@ function extractJoinPart(workingObject) {
       listName,
       t, 
       i,
-      m = query.match(/\s+(left\s+|)join\s+(.+?)\s+as\s+([a-zA-Z_\d]+)\son\s(.+?)\.([a-zA-Z_\d]+)\s+=\s+(.+?)\.([a-zA-Z_\d]+?)(\s|$)/i);
+      m; 
  
-  
-      if (m) {
-          var joinTable = m[2],
-              alias = m[3],
-              onTable1 = m[4],
-              onField1 = m[5],
-              onTable2 = m[6],
-              onField2 = m[7];
-
-          joins.push({
-            inner : trim(m[1]) == "",
-            listName : joinTable,
-            alias : alias,
-            table1 : onTable1,
-            field1 : onField1,
-            table2 : onTable2,
-            field2 : onField2
-          });
-      }
-
-      console.warn("JOIN", joins);
+      do {
+        m = query.match(/\s+(left\s+|)join\s+(\[?[a-zA-Z_\d]+\]?)\son\s(.+?)\.([a-zA-Z_\d]+)(\s|$)/i);
+        if (m) {
+            var alias = formatFieldName(m[2]),
+                onTable1 = m[3],
+                onField1 = m[4],
+                onTable2 = m[5],
+                onField2 = m[6];
+    
+            joins.push({
+              inner : trim(m[1]) == "",
+              alias : alias,
+              childTable : onTable1,
+              childField : onField1
+            });
+            query = query.substr(0, m.index) + " " + query.substr(m.index + m[0].length) + m[5];
+        }
+      } while (m);
+console.table(joins);
+      workingObject.joins = joins;
+      workingObject.query = query;
 
     //multipel
     //camlsql.prepare("SELECT * FROM [Books] left join AuthorList as book_author ON book_author.Id = Books.Author join Cities as author_cities on book_author.City = author_cities.id ", [camlsql.user(14)]).getXml()
-      
+
+/*
+
+ SELECT *, FavCheese.Title AS CheeseFullName FROM TestList
+           LEFT JOIN Cheese AS FavCheese ON TestList.Lookup_x0020_Single
+
+<View>
+  <Joins>
+   <Join Type="LEFT" ListAlias="FavCheese">
+     <Eq>
+      <FieldRef Name="Lookup_x0020_Single" RefType="Id" />
+      <FieldRef List="APA" Name="ID" />
+     </Eq>
+   </Join>
+ </Joins>
+ <ProjectedFields>
+  <Field Name="CheeseFullName" Type="Lookup" List="APA" ShowField="Title" />
+ </ProjectedFields>
+</View>
+
+-----------------
+
+
+working nicely
+
+<View>
+
+ <Joins>
+  <Join Type="INNER" ListAlias="FavCheeseList">
+   <Eq>
+    <FieldRef Name="FavCheese" RefType="Id" />
+    <FieldRef List="FavCheeseList" Name="ID" />
+   </Eq>
+  </Join>
+  <Join Type="INNER" ListAlias="WorstCheeseList">
+   <Eq>
+    <FieldRef Name="WorstCheese" RefType="Id" />
+    <FieldRef List="WorstCheeseList" Name="ID" />
+   </Eq>
+  </Join>
+ </Joins>
+
+ <ProjectedFields>
+  <Field Name="FavCheeseName" Type="Lookup" List="FavCheeseList" ShowField="Title" />
+  <Field Name="WorstCheeseName" Type="Lookup" List="WorstCheeseList" ShowField="Title" />
+  <Field Name="WorstCheeseBabyName" Type="Lookup" List="WorstCheeseList" ShowField="BabyName" />
+ </ProjectedFields>
+ <ViewFields>
+  <FieldRef Name="Title" />
+  <FieldRef Name="FavCheeseName" />
+  <FieldRef Name="WorstCheeseName" />
+  <FieldRef Name="WorstCheeseBabyName" />
+</ViewFields>
+ <Query><Where>
+  <Eq>
+   <FieldRef Name="WorstCheeseBabyName" />
+   <Value Type="Text">maeh</Value>
+  </Eq>
+ </Where></Query>
+
+</View>
+
+
+*/
+
+
 
   // if (m) {
   //   if (m.length == 4) {
