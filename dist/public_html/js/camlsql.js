@@ -624,7 +624,8 @@ function extractJoinPart(workingObject) {
                 onField1 = m[4],
                 onTable2 = m[5],
                 onField2 = m[6];
-    
+      
+
             joins.push({
               inner : trim(m[1]) == "",
               alias : alias,
@@ -634,7 +635,7 @@ function extractJoinPart(workingObject) {
             query = query.substr(0, m.index) + " " + query.substr(m.index + m[0].length) + m[5];
         }
       } while (m);
-console.table(joins);
+
       workingObject.joins = joins;
       workingObject.query = query;
 
