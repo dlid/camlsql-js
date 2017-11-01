@@ -27,6 +27,8 @@ var WhereParser = function(whereString, quiet) {
             return str.replace(/^\s+|\s+$/g, '');
         }
 
+        // vkbeautify.xml(camlsql.prepare("SELECT * FROM Movies WHERE (Title = ? AND Title LIKE ?) AND (Fun = ? OR Scary < ?)",["summer", 'did', 10, 6,0,6]).getXml());
+
         function parse_blocks(str) {
             var i,
                 blockStartIndex = null,
@@ -38,7 +40,7 @@ var WhereParser = function(whereString, quiet) {
                 childBlocks,
                 statements,
                 j,s,p,newBlocks;
-
+console.log("parse_blocks", str);
             for (i=0; i < str.length; i++) {
 
                 if (str[i] == blockOpen) {
@@ -59,6 +61,8 @@ var WhereParser = function(whereString, quiet) {
                     }
                 }
             }
+
+            console.log("parse_blocks", "blocks=", blocks);
 
             if (blockStopIndex != null) {
                 blocks.push(trim(str.substring(blockStopIndex)));
@@ -104,11 +108,17 @@ var WhereParser = function(whereString, quiet) {
                     };
                 }
 
-                if (blocks[i].value.indexOf(blockOpen) !== -1) {
+                var n = blocks[i].value.indexOf(blockOpen) > 0;
+
+
+                if (n) {
+                    
                     childBlocks = parse_blocks(blocks[i].value);
+                    console.log("childBlocks", childBlocks.length);
                     if (childBlocks.length > 1) {
                         blocks[i].type = 'group';
                         blocks[i].items = childBlocks;
+                        
                     }
                 } else {
                     sp = blocks[i].value.split(/ (\|\||or|and|\&\&) /i);
@@ -173,7 +183,7 @@ var WhereParser = function(whereString, quiet) {
                 var comparison = "eq",
                     macro  = "@param" + _parameters,
                     cmpMatch = trim(m[2]);
-                    
+
                 if (cmpMatch == '>') comparison = "gt";
                 if (cmpMatch == '>=') comparison = "gte";
                 if (cmpMatch == '<') comparison = "lt";

@@ -31,6 +31,7 @@ function CamlXmlBuilder(query) {
   viewXml += createJoinElement(parsedQuery.listName, parsedQuery.joins);
   viewXml += createProjectedFieldsElement(parsedQuery.projectedFields, parsedQuery.joins);
   viewXml += createViewFieldsElement(parsedQuery.fields);
+  viewXml += createRowLimitFieldsElement(parsedQuery.rowLimit);
   
 
   if (viewXml) {
@@ -44,6 +45,16 @@ function CamlXmlBuilder(query) {
   errors : null
 };
 
+}
+ 
+function createRowLimitFieldsElement(rowLimit) {
+  var xml = "";
+  if (rowLimit > 0) {
+    xml+=xmlBeginElement('RowLimit');
+    xml+=rowLimit;
+    xml+=xmlEndElement('RowLimit');
+  }
+  return xml;
 }
 
 function createProjectedFieldsElement(projectedFields, joins) {
@@ -126,7 +137,7 @@ function createOrderByElement(sort) {
  */
  function createQueryElement(parsedQuery, statements, sort, parameters, log) {
   var xml = "";
-
+console.log("PARSED", parsedQuery, parameters);
   if (statements.length > 0 || sort.length > 0) {
     xml += xmlBeginElement(XML_ELEMENT_QUERY);
     if (statements.length > 0) {

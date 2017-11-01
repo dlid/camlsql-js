@@ -4,7 +4,7 @@
 // };
 
 function parseParameters(param) {
-  var i, newParam = {}, p;
+  var i, newParam = {}, p, keys;
   if (param && param.length > 0) {
    for (i=0; i < param.length; i++) {
      p = parseParameter(param[i]);
@@ -12,6 +12,16 @@ function parseParameters(param) {
       newParam["@param" + i] = p;
      }
    }
+ } else if (typeof param === "object") {
+  keys = Object.keys(param);
+  for (var i=0; i < keys.length; i++) {
+    if (keys[i].indexOf('@') === 0) {
+      p = parseParameter(param[keys[i]]);
+      if (p) {
+        newParam[keys[i]] = p;
+      }
+    }
+  }
  }
  return newParam;
 }

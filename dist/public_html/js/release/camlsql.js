@@ -554,7 +554,7 @@ function CamlSqlQuery(query, param) {
 // };
 
 function parseParameters(param) {
-  var i, newParam = {}, p;
+  var i, newParam = {}, p, keys;
   if (param && param.length > 0) {
    for (i=0; i < param.length; i++) {
      p = parseParameter(param[i]);
@@ -562,6 +562,16 @@ function parseParameters(param) {
       newParam["@param" + i] = p;
      }
    }
+ } else if (typeof param === "object") {
+  keys = Object.keys(param);
+  for (var i=0; i < keys.length; i++) {
+    if (keys[i].indexOf('@') === 0) {
+      p = parseParameter(param[keys[i]]);
+      if (p) {
+        newParam[keys[i]] = p;
+      }
+    }
+  }
  }
  return newParam;
 }
@@ -704,6 +714,7 @@ working nicely
 }
 function extractLimitPart(workingObject) {
   var match, limitString;
+  console.log("WOBJ", workingObject);
   if ((match = workingObject.query.match(/\sLIMIT\s(\d+).*$/i))) {
     workingObject.query = workingObject.query.substr(0, workingObject.query.length - match[0].length );
     workingObject.rowLimit = parseInt(match[1], 10);
@@ -921,6 +932,8 @@ var WhereParser = function(whereString, quiet) {
             return str.replace(/^\s+|\s+$/g, '');
         }
 
+        // vkbeautify.xml(camlsql.prepare("SELECT * FROM Movies WHERE (Title = ? AND Title LIKE ?) AND (Fun = ? OR Scary < ?)",["summer", 'did', 10, 6,0,6]).getXml());
+
         function parse_blocks(str) {
             var i,
                 blockStartIndex = null,
@@ -932,7 +945,7 @@ var WhereParser = function(whereString, quiet) {
                 childBlocks,
                 statements,
                 j,s,p,newBlocks;
-
+console.log("parse_blocks", str);
             for (i=0; i < str.length; i++) {
 
                 if (str[i] == blockOpen) {
@@ -953,6 +966,8 @@ var WhereParser = function(whereString, quiet) {
                     }
                 }
             }
+
+            console.log("parse_blocks", "blocks=", blocks);
 
             if (blockStopIndex != null) {
                 blocks.push(trim(str.substring(blockStopIndex)));
@@ -998,11 +1013,17 @@ var WhereParser = function(whereString, quiet) {
                     };
                 }
 
-                if (blocks[i].value.indexOf(blockOpen) !== -1) {
+                var n = blocks[i].value.indexOf(blockOpen) > 0;
+
+
+                if (n) {
+                    
                     childBlocks = parse_blocks(blocks[i].value);
+                    console.log("childBlocks", childBlocks.length);
                     if (childBlocks.length > 1) {
                         blocks[i].type = 'group';
                         blocks[i].items = childBlocks;
+                        
                     }
                 } else {
                     sp = blocks[i].value.split(/ (\|\||or|and|\&\&) /i);
@@ -1067,7 +1088,7 @@ var WhereParser = function(whereString, quiet) {
                 var comparison = "eq",
                     macro  = "@param" + _parameters,
                     cmpMatch = trim(m[2]);
-                    
+
                 if (cmpMatch == '>') comparison = "gt";
                 if (cmpMatch == '>=') comparison = "gte";
                 if (cmpMatch == '<') comparison = "lt";
@@ -1154,6 +1175,7 @@ function CamlXmlBuilder(query) {
   viewXml += createJoinElement(parsedQuery.listName, parsedQuery.joins);
   viewXml += createProjectedFieldsElement(parsedQuery.projectedFields, parsedQuery.joins);
   viewXml += createViewFieldsElement(parsedQuery.fields);
+  viewXml += createRowLimitFieldsElement(parsedQuery.rowLimit);
   
 
   if (viewXml) {
@@ -1167,6 +1189,16 @@ function CamlXmlBuilder(query) {
   errors : null
 };
 
+}
+ 
+function createRowLimitFieldsElement(rowLimit) {
+  var xml = "";
+  if (rowLimit > 0) {
+    xml+=xmlBeginElement('RowLimit');
+    xml+=rowLimit;
+    xml+=xmlEndElement('RowLimit');
+  }
+  return xml;
 }
 
 function createProjectedFieldsElement(projectedFields, joins) {
@@ -1249,7 +1281,7 @@ function createOrderByElement(sort) {
  */
  function createQueryElement(parsedQuery, statements, sort, parameters, log) {
   var xml = "";
-
+console.log("PARSED", parsedQuery, parameters);
   if (statements.length > 0 || sort.length > 0) {
     xml += xmlBeginElement(XML_ELEMENT_QUERY);
     if (statements.length > 0) {
