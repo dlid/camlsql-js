@@ -137,7 +137,7 @@ function createOrderByElement(sort) {
  */
  function createQueryElement(parsedQuery, statements, sort, parameters, log) {
   var xml = "";
-console.log("PARSED", parsedQuery, parameters);
+//console.log("PARSED", parsedQuery, parameters);
   if (statements.length > 0 || sort.length > 0) {
     xml += xmlBeginElement(XML_ELEMENT_QUERY);
     if (statements.length > 0) {

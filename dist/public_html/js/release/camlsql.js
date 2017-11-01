@@ -457,6 +457,26 @@ function padString(str, size) {
 }
 
 /**
+ * Encode a string to it's SharePoint Internal field representation
+ */
+function encodeToInternalField(str) {
+ var i,c,n = "";
+ for (i=0; i < str.length; i++) {
+  c = encodeURIComponent(str[i]);
+  if (c.indexOf('%') == 0) {
+   n += "_x" + ("0000" + str.charCodeAt(i).toString(16)).slice(-4) + "_"
+  } else if (c == ' ') {
+   n += "_x0020_";
+  } else if( c== '.') {
+   n += "_x002e_";
+  } else {
+   n += c;
+  }
+ }
+ return n.length > 32 ? n.substr(0,32) : n;
+}
+
+/**
  * HTML Encode a string for use in the XML
  * @param  {string} stringToEncode The string to encode
  * @return {string}                The encoded string
@@ -714,7 +734,7 @@ working nicely
 }
 function extractLimitPart(workingObject) {
   var match, limitString;
-  console.log("WOBJ", workingObject);
+  //console.log("WOBJ", workingObject);
   if ((match = workingObject.query.match(/\sLIMIT\s(\d+).*$/i))) {
     workingObject.query = workingObject.query.substr(0, workingObject.query.length - match[0].length );
     workingObject.rowLimit = parseInt(match[1], 10);
@@ -945,7 +965,7 @@ var WhereParser = function(whereString, quiet) {
                 childBlocks,
                 statements,
                 j,s,p,newBlocks;
-console.log("parse_blocks", str);
+//console.log("parse_blocks", str);
             for (i=0; i < str.length; i++) {
 
                 if (str[i] == blockOpen) {
@@ -967,7 +987,7 @@ console.log("parse_blocks", str);
                 }
             }
 
-            console.log("parse_blocks", "blocks=", blocks);
+       //     console.log("parse_blocks", "blocks=", blocks);
 
             if (blockStopIndex != null) {
                 blocks.push(trim(str.substring(blockStopIndex)));
@@ -1019,7 +1039,7 @@ console.log("parse_blocks", str);
                 if (n) {
                     
                     childBlocks = parse_blocks(blocks[i].value);
-                    console.log("childBlocks", childBlocks.length);
+//                    console.log("childBlocks", childBlocks.length);
                     if (childBlocks.length > 1) {
                         blocks[i].type = 'group';
                         blocks[i].items = childBlocks;
@@ -1281,7 +1301,7 @@ function createOrderByElement(sort) {
  */
  function createQueryElement(parsedQuery, statements, sort, parameters, log) {
   var xml = "";
-console.log("PARSED", parsedQuery, parameters);
+//console.log("PARSED", parsedQuery, parameters);
   if (statements.length > 0 || sort.length > 0) {
     xml += xmlBeginElement(XML_ELEMENT_QUERY);
     if (statements.length > 0) {
@@ -1536,7 +1556,8 @@ function xmlEndElement(name) {
     multichoice : createMultiChoiceParameter,
     choice : createChoiceParameter,
     user : createUserParameter,
-    boolean : createBooleanParameter
+    boolean : createBooleanParameter,
+    encode : encodeToInternalField
   }; 
   // var _properties = {
   //  query : query,

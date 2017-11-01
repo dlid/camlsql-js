@@ -40,7 +40,7 @@ var WhereParser = function(whereString, quiet) {
                 childBlocks,
                 statements,
                 j,s,p,newBlocks;
-console.log("parse_blocks", str);
+//console.log("parse_blocks", str);
             for (i=0; i < str.length; i++) {
 
                 if (str[i] == blockOpen) {
@@ -62,7 +62,7 @@ console.log("parse_blocks", str);
                 }
             }
 
-            console.log("parse_blocks", "blocks=", blocks);
+       //     console.log("parse_blocks", "blocks=", blocks);
 
             if (blockStopIndex != null) {
                 blocks.push(trim(str.substring(blockStopIndex)));
@@ -114,7 +114,7 @@ console.log("parse_blocks", str);
                 if (n) {
                     
                     childBlocks = parse_blocks(blocks[i].value);
-                    console.log("childBlocks", childBlocks.length);
+//                    console.log("childBlocks", childBlocks.length);
                     if (childBlocks.length > 1) {
                         blocks[i].type = 'group';
                         blocks[i].items = childBlocks;

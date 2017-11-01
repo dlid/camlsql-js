@@ -12,6 +12,26 @@ function padString(str, size) {
 }
 
 /**
+ * Encode a string to it's SharePoint Internal field representation
+ */
+function encodeToInternalField(str) {
+ var i,c,n = "";
+ for (i=0; i < str.length; i++) {
+  c = encodeURIComponent(str[i]);
+  if (c.indexOf('%') == 0) {
+   n += "_x" + ("0000" + str.charCodeAt(i).toString(16)).slice(-4) + "_"
+  } else if (c == ' ') {
+   n += "_x0020_";
+  } else if( c== '.') {
+   n += "_x002e_";
+  } else {
+   n += c;
+  }
+ }
+ return n.length > 32 ? n.substr(0,32) : n;
+}
+
+/**
  * HTML Encode a string for use in the XML
  * @param  {string} stringToEncode The string to encode
  * @return {string}                The encoded string

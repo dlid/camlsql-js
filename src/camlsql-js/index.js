@@ -18,7 +18,8 @@
     multichoice : createMultiChoiceParameter,
     choice : createChoiceParameter,
     user : createUserParameter,
-    boolean : createBooleanParameter
+    boolean : createBooleanParameter,
+    encode : encodeToInternalField
   }; 
   // var _properties = {
   //  query : query,
