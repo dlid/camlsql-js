@@ -29,7 +29,7 @@ var WhereParser = function(whereString, quiet) {
 
         // vkbeautify.xml(camlsql.prepare("SELECT * FROM Movies WHERE (Title = ? AND Title LIKE ?) AND (Fun = ? OR Scary < ?)",["summer", 'did', 10, 6,0,6]).getXml());
 
-        function parse_blocks(str) {
+        function parse_blocks(str, level) {
             var i,
                 blockStartIndex = null,
                 blockStopIndex = null,
@@ -39,36 +39,64 @@ var WhereParser = function(whereString, quiet) {
                 sp,
                 childBlocks,
                 statements,
-                j,s,p,newBlocks;
-//console.log("parse_blocks", str);
+                j,s,p,newBlocks,si,
+                prevBlockEnd = null;
+                
+            str = trimParanthesis(str);
+                
+            level = level ? level : 0;
             for (i=0; i < str.length; i++) {
 
                 if (str[i] == blockOpen) {
                     if (startCount == 0) {
-
-                        if (i > 0) {
-                            blocks.push(str.substring(0, i));
+                        //console.warn("Block start@", i, str.substr(i));
+                        if (i > 0 && blocks.length == 0) {
+                           //console.warn("addx start@", 0, i);
+                           blocks.push(str.substring(0, i));
+                        } else if (prevBlockEnd != null) {
+                            blocks.push(str.substring(prevBlockEnd, i));
                         }
                         blockStartIndex = i;
                         blockStopIndex = null;
-                    }
+                    } 
                     startCount++;
                 } else if (str[i] == blockClose && blockStartIndex !== null) {
                     startCount--;
                     if(startCount == 0) {
+                        si = blockStartIndex;
+                        if (prevBlockEnd !== null) {
+                            //si = prevBlockEnd;
+                            if (prevBlockEnd < i - 1) {
+                                //console.warn("yo", str.substring(prevBlockEnd, i))
+                                //blocks.push(str.substring(prevBlockEnd, i));
+                            }
+
+                        }
+
+                       /// console.warn("end_add@", i, str.substring(blockStartIndex, i+1 ));
                         blocks.push(trim(str.substring(blockStartIndex, i+1 )).replace(/^\(|\)$/g,''));
                         blockStopIndex = i+1;
+                        prevBlockEnd = i+1;
+                        blockStartIndex = null;
+
                     }
                 }
             }
-
-       //     console.log("parse_blocks", "blocks=", blocks);
-
-            if (blockStopIndex != null) {
-                blocks.push(trim(str.substring(blockStopIndex)));
+            //console.log("parse_blocks"+level+"==", blocks);
+            if (blockStopIndex != null && blockStartIndex == null) {
+                if (trim(str.substring(blockStopIndex))) {
+                    blocks.push(trim(str.substring(blockStopIndex)));
+                }
+            } else if (blockStartIndex != null) {
+                //console.log("ADDx", blockStartIndex);
+               // blocks.push(trim(str.substring(blockStopIndex)));
             } else if (blocks.length == 0 && blockStartIndex == null && blockStopIndex == null) {
                 blocks.push(trim(str));
             }
+
+           // console.log("parse_blocks"+level+" ==", blocks);
+           // return;
+
 
             for (i=0; i < blocks.length; i++) {
 
@@ -76,7 +104,9 @@ var WhereParser = function(whereString, quiet) {
                 // Determine operator for "i"
 
                 if (blocks[i].match(/^\s*(\|\||(or))\s*/i)) {
+                   // console.warn("FOUND AN OR ", blocks[i]);
                     op = 'or';
+
                 }
 
                 if (blocks[i].match(/\s*(?:\|\||(or))\s*$/gi)) {
@@ -110,11 +140,11 @@ var WhereParser = function(whereString, quiet) {
 
                 var n = blocks[i].value.indexOf(blockOpen) > 0;
 
-
+ 
                 if (n) {
                     
-                    childBlocks = parse_blocks(blocks[i].value);
-//                    console.log("childBlocks", childBlocks.length);
+                    childBlocks = parse_blocks(blocks[i].value, level+1);
+                    //console.log("childBlocks", childBlocks.length);
                     if (childBlocks.length > 1) {
                         blocks[i].type = 'group';
                         blocks[i].items = childBlocks;
@@ -126,7 +156,7 @@ var WhereParser = function(whereString, quiet) {
                     statements = [];
                     for (j = 0; j < sp.length; j++) {
                         s = {type : 'statement', operator : 'and'};
-
+ 
                         if (trim(sp[j]) == "") continue;
 
                         if (sp[j].toLowerCase() == "and" || sp[j].toLowerCase() == "or" || sp[j] == "||" || sp[j] == "&&" )
@@ -138,7 +168,7 @@ var WhereParser = function(whereString, quiet) {
                         }
                         p = parseStatement(sp[j]);
                         if (p) {
-                            s.field = p.field;
+                            s.field = formatFieldName(p.field);
                             s.macro = p.macro;
                             s.comparison = p.comparison;
                             statements.push(s);
@@ -150,7 +180,7 @@ var WhereParser = function(whereString, quiet) {
                         blocks[i].type = 'group';
                         blocks[i].items = statements;
                     } else if (statements.length == 1) {
-                        blocks[i].field = statements[0].field;
+                        blocks[i].field = formatFieldName(statements[0].field);
                         blocks[i].macro = statements[0].macro;
                         blocks[i].comparison = statements[0].comparison;
 
@@ -168,6 +198,8 @@ var WhereParser = function(whereString, quiet) {
             return newBlocks;
         }
 
+      
+
         var _parameters = 0,
             _numMacros = 0,
             _macros = [];
@@ -178,8 +210,10 @@ var WhereParser = function(whereString, quiet) {
             str = str.replace(/ is not null/i, ' isnotnull ?');
             str = str.replace(/ is null/i, ' isnull ?');
 
-            var m = str.match(/(.*)\s*(<>|>=|[^<]>|<=|<[^>]|[^<>]=|like|isnull|isnotnull|in)\s*(\?|@[a-z]+)/i);
+            var m = str.match(/(.*)\s*(<>|>=|[^<]>|<=|<[^>]|[^<>]=|like|isnull|isnotnull|in)\s*(\?|@[a-z0-9_]+)/i);
             if (m) {
+
+                //console.warn("MATCH!", m);
                 var comparison = "eq",
                     macro  = "@param" + _parameters,
                     cmpMatch = trim(m[2]);
@@ -200,8 +234,8 @@ var WhereParser = function(whereString, quiet) {
                     _parameters++; 
                     _numMacros++;
                     if (prevMacro == null) 
-                        prevMacro = m[3];
-                    else if (prevMacro != m[3]) {
+                        prevMacro = m[3][0];
+                    else if (prevMacro != m[3][0]) {
                         if(!quiet) console.error("[casql] You can not mix named macros and ?");
                         return null;
                     }
@@ -237,3 +271,4 @@ var WhereParser = function(whereString, quiet) {
 
 
 }; 
+

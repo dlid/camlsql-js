@@ -31,3 +31,5 @@ publicData.__testonly__.getDateFromTextualRepresentation = getDateFromTextualRep
 publicData.__testonly__.getStartOfWeek = getStartOfWeek;
 publicData.__testonly__.getEndOfWeek = getEndOfWeek;
 publicData.__testonly__.executeSPQuery = executeSPQuery;
+publicData.__testonly__.trimParanthesis = trimParanthesis;
+

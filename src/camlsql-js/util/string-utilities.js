@@ -61,5 +61,36 @@ function trim(str) {
  * @return {string}      The fixed field name
  */
 function formatFieldName(name) {
- return trim(name).replace(/^\[|\]$/g, '');
+ return trim(name).replace(/^[\[\(]|[\]\)]$/g, '');
 }
+
+/**
+ * Trim away extra parenthesis around a string
+ *
+ *  '(hello world)' => hello world
+ *  'hi (and everything)' => hi (and everything)
+ *  '((field1 = 2) and field2 = 3)' => (field1 = 2) and field2 = 3
+ * @param  {[type]} str [description]
+ * @return {[type]}     [description]
+ */
+ function trimParanthesis(str) {
+    var i=0, pIndex = -1, op = 0;
+    str = trim(str);
+    if (str.length > 1) {
+        if (str[0] == "(" && str[str.length-1] == ")") {
+            for (i=0; i < str.length; i++) {
+                if (str[i] == "(") {
+                    op ++;
+                } else if (str[i] == ")") {
+                    op --;
+                    if (op == 0 && i == str.length-1) {
+                        return trimParanthesis(str.substring(1, str.length-1));
+                    } else if (op==0) {
+                        break;
+                    }
+                }
+            }
+        } 
+    }
+    return str;
+ }

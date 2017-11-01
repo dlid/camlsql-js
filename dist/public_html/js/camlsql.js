@@ -1,6 +1,6 @@
 /*! camlsqj-js v1.0.1 | (c) dlid.se | https://camlsqljs.dlid.se/license */
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\core\header.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\core\header.js*/
 (function (global, factory) {
   'use strict';
   typeof exports === 'object' && typeof module !== 'undefined' ? (module.exports = factory()) :
@@ -9,9 +9,9 @@
 }(this, function() {
   'use strict';
   var publicData; 
-// END D:\git\camlsql-js\src\camlsql-js\core\header.js
+// END c:\git\camlsql-js\src\camlsql-js\core\header.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\util\datetime-utilities.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\util\datetime-utilities.js*/
 
 
 
@@ -95,9 +95,9 @@ function getEndOfWeek(date, startWeekWithMonday) {
   date.setDate(date.getDate() + 6);
   return new Date(date.setHours(23,59,59,999)); 
 }
-// END D:\git\camlsql-js\src\camlsql-js\util\datetime-utilities.js
+// END c:\git\camlsql-js\src\camlsql-js\util\datetime-utilities.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\util\parameter-functions.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\util\parameter-functions.js*/
 /**
  * Helper functions for parameters
  */
@@ -338,9 +338,9 @@ function createUserParameter(value) {
   };
 }
 
-// END D:\git\camlsql-js\src\camlsql-js\util\parameter-functions.js
+// END c:\git\camlsql-js\src\camlsql-js\util\parameter-functions.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\util\sharepoint-exec-function.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\util\sharepoint-exec-function.js*/
 
  /**
  * The parsed query
@@ -454,9 +454,9 @@ function executeSPQuery(options) {
             });
         }
     }
-// END D:\git\camlsql-js\src\camlsql-js\util\sharepoint-exec-function.js
+// END c:\git\camlsql-js\src\camlsql-js\util\sharepoint-exec-function.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\util\string-utilities.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\util\string-utilities.js*/
 
 /**
  * Add zero padding to a string
@@ -520,12 +520,42 @@ function trim(str) {
  * @return {string}      The fixed field name
  */
 function formatFieldName(name) {
- return trim(name).replace(/^\[|\]$/g, '');
+ return trim(name).replace(/^[\[\(]|[\]\)]$/g, '');
 }
 
-// END D:\git\camlsql-js\src\camlsql-js\util\string-utilities.js
+/**
+ * Trim away extra parenthesis around a string
+ *
+ *  '(hello world)' => hello world
+ *  'hi (and everything)' => hi (and everything)
+ *  '((field1 = 2) and field2 = 3)' => (field1 = 2) and field2 = 3
+ * @param  {[type]} str [description]
+ * @return {[type]}     [description]
+ */
+ function trimParanthesis(str) {
+    var i=0, pIndex = -1, op = 0;
+    str = trim(str);
+    if (str.length > 1) {
+        if (str[0] == "(" && str[str.length-1] == ")") {
+            for (i=0; i < str.length; i++) {
+                if (str[i] == "(") {
+                    op ++;
+                } else if (str[i] == ")") {
+                    op --;
+                    if (op == 0 && i == str.length-1) {
+                        return trimParanthesis(str.substring(1, str.length-1));
+                    } else if (op==0) {
+                        break;
+                    }
+                }
+            }
+        } 
+    }
+    return str;
+ }
+// END c:\git\camlsql-js\src\camlsql-js\util\string-utilities.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\sql-query\CamlSqlQuery.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\CamlSqlQuery.js*/
 function CamlSqlQuery(query, param) {
     
     var currentQuery = this;
@@ -585,9 +615,9 @@ function CamlSqlQuery(query, param) {
 
   }
 
-// END D:\git\camlsql-js\src\camlsql-js\sql-query\CamlSqlQuery.js
+// END c:\git\camlsql-js\src\camlsql-js\sql-query\CamlSqlQuery.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\sql-query\parameter-parser.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\parameter-parser.js*/
 
 // var ParameterBase = {
 
@@ -635,9 +665,9 @@ function parseParameter(parameter) {
  }
  return ret;
 }
-// END D:\git\camlsql-js\src\camlsql-js\sql-query\parameter-parser.js
+// END c:\git\camlsql-js\src\camlsql-js\sql-query\parameter-parser.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--joins.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--joins.js*/
 
 function extractJoinPart(workingObject) {
   var query = workingObject.query,
@@ -755,9 +785,9 @@ working nicely
   //   }
   // }
 }
-// END D:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--joins.js
+// END c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--joins.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--limit.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--limit.js*/
 function extractLimitPart(workingObject) {
   var match, limitString;
   //console.log("WOBJ", workingObject);
@@ -766,9 +796,9 @@ function extractLimitPart(workingObject) {
     workingObject.rowLimit = parseInt(match[1], 10);
   }
 } 
-// END D:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--limit.js
+// END c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--limit.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--list-and-fieldnames.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--list-and-fieldnames.js*/
 /**
  * Extract the chosen Field and the list name from the query.
  * The query part of the workingObject will remain only with the SELECT statement (if found)
@@ -798,7 +828,7 @@ function extractListAndFieldNameParts(workingObject) {
           throw "[camlsql] Projected fields in the format <list>.<field_name> must be followed with an AS <alias> ("+fields[i]+")";
         }
 
-        if (!fields[i].match(/^[a-z:A-Z_\\d]+$/)) {
+        if (!fields[i].match(/^[a-z:A-Z_\d]+$/)) {
           if (console.warn) console.warn("[camlsql] Doubtful field name: " + fields[i]);
         }
       }
@@ -828,9 +858,9 @@ function parseFieldNames(fieldNameString) {
   return fields;
 }
 
-// END D:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--list-and-fieldnames.js
+// END c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--list-and-fieldnames.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--orderby.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--orderby.js*/
 /**
  * Parse the ORDER BY string
  * @param {[type]} orderByString [description]
@@ -885,9 +915,9 @@ function extractOrderByPart(workingObject, quiet) {
     }
     workingObject.sort = orderValues;
 }
-// END D:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--orderby.js
+// END c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--orderby.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--viewscope.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--viewscope.js*/
 function extractScopePart(workingObject) {
   var m, query = workingObject.query, scope;
     if ((m = query.match(/^(select\s+)(scope\s+([a-z]+)\s+)/i))) {
@@ -907,9 +937,9 @@ function extractScopePart(workingObject) {
       workingObject.viewScope = null;
     }
 }
-// END D:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--viewscope.js
+// END c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--viewscope.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\sql-query\query-parser.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser.js*/
  /**
  * The parsed query
  * @typedef {Object} CamlSql~ParsedQuery
@@ -961,9 +991,9 @@ function extractScopePart(workingObject) {
 
   return workingObject;
 }
-// END D:\git\camlsql-js\src\camlsql-js\sql-query\query-parser.js
+// END c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\sql-query\where-parser.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\where-parser.js*/
 /**
  * Parse the WHERE statements
  * @param {[type]} whereString [description]
@@ -995,7 +1025,7 @@ var WhereParser = function(whereString, quiet) {
 
         // vkbeautify.xml(camlsql.prepare("SELECT * FROM Movies WHERE (Title = ? AND Title LIKE ?) AND (Fun = ? OR Scary < ?)",["summer", 'did', 10, 6,0,6]).getXml());
 
-        function parse_blocks(str) {
+        function parse_blocks(str, level) {
             var i,
                 blockStartIndex = null,
                 blockStopIndex = null,
@@ -1005,36 +1035,64 @@ var WhereParser = function(whereString, quiet) {
                 sp,
                 childBlocks,
                 statements,
-                j,s,p,newBlocks;
-//console.log("parse_blocks", str);
+                j,s,p,newBlocks,si,
+                prevBlockEnd = null;
+                
+            str = trimParanthesis(str);
+                
+            level = level ? level : 0;
             for (i=0; i < str.length; i++) {
 
                 if (str[i] == blockOpen) {
                     if (startCount == 0) {
-
-                        if (i > 0) {
-                            blocks.push(str.substring(0, i));
+                        //console.warn("Block start@", i, str.substr(i));
+                        if (i > 0 && blocks.length == 0) {
+                           //console.warn("addx start@", 0, i);
+                           blocks.push(str.substring(0, i));
+                        } else if (prevBlockEnd != null) {
+                            blocks.push(str.substring(prevBlockEnd, i));
                         }
                         blockStartIndex = i;
                         blockStopIndex = null;
-                    }
+                    } 
                     startCount++;
                 } else if (str[i] == blockClose && blockStartIndex !== null) {
                     startCount--;
                     if(startCount == 0) {
+                        si = blockStartIndex;
+                        if (prevBlockEnd !== null) {
+                            //si = prevBlockEnd;
+                            if (prevBlockEnd < i - 1) {
+                                //console.warn("yo", str.substring(prevBlockEnd, i))
+                                //blocks.push(str.substring(prevBlockEnd, i));
+                            }
+
+                        }
+
+                       /// console.warn("end_add@", i, str.substring(blockStartIndex, i+1 ));
                         blocks.push(trim(str.substring(blockStartIndex, i+1 )).replace(/^\(|\)$/g,''));
                         blockStopIndex = i+1;
+                        prevBlockEnd = i+1;
+                        blockStartIndex = null;
+
                     }
                 }
             }
-
-       //     console.log("parse_blocks", "blocks=", blocks);
-
-            if (blockStopIndex != null) {
-                blocks.push(trim(str.substring(blockStopIndex)));
+            //console.log("parse_blocks"+level+"==", blocks);
+            if (blockStopIndex != null && blockStartIndex == null) {
+                if (trim(str.substring(blockStopIndex))) {
+                    blocks.push(trim(str.substring(blockStopIndex)));
+                }
+            } else if (blockStartIndex != null) {
+                //console.log("ADDx", blockStartIndex);
+               // blocks.push(trim(str.substring(blockStopIndex)));
             } else if (blocks.length == 0 && blockStartIndex == null && blockStopIndex == null) {
                 blocks.push(trim(str));
             }
+
+           // console.log("parse_blocks"+level+" ==", blocks);
+           // return;
+
 
             for (i=0; i < blocks.length; i++) {
 
@@ -1042,7 +1100,9 @@ var WhereParser = function(whereString, quiet) {
                 // Determine operator for "i"
 
                 if (blocks[i].match(/^\s*(\|\||(or))\s*/i)) {
+                   // console.warn("FOUND AN OR ", blocks[i]);
                     op = 'or';
+
                 }
 
                 if (blocks[i].match(/\s*(?:\|\||(or))\s*$/gi)) {
@@ -1076,11 +1136,11 @@ var WhereParser = function(whereString, quiet) {
 
                 var n = blocks[i].value.indexOf(blockOpen) > 0;
 
-
+ 
                 if (n) {
                     
-                    childBlocks = parse_blocks(blocks[i].value);
-//                    console.log("childBlocks", childBlocks.length);
+                    childBlocks = parse_blocks(blocks[i].value, level+1);
+                    //console.log("childBlocks", childBlocks.length);
                     if (childBlocks.length > 1) {
                         blocks[i].type = 'group';
                         blocks[i].items = childBlocks;
@@ -1092,7 +1152,7 @@ var WhereParser = function(whereString, quiet) {
                     statements = [];
                     for (j = 0; j < sp.length; j++) {
                         s = {type : 'statement', operator : 'and'};
-
+ 
                         if (trim(sp[j]) == "") continue;
 
                         if (sp[j].toLowerCase() == "and" || sp[j].toLowerCase() == "or" || sp[j] == "||" || sp[j] == "&&" )
@@ -1104,7 +1164,7 @@ var WhereParser = function(whereString, quiet) {
                         }
                         p = parseStatement(sp[j]);
                         if (p) {
-                            s.field = p.field;
+                            s.field = formatFieldName(p.field);
                             s.macro = p.macro;
                             s.comparison = p.comparison;
                             statements.push(s);
@@ -1116,7 +1176,7 @@ var WhereParser = function(whereString, quiet) {
                         blocks[i].type = 'group';
                         blocks[i].items = statements;
                     } else if (statements.length == 1) {
-                        blocks[i].field = statements[0].field;
+                        blocks[i].field = formatFieldName(statements[0].field);
                         blocks[i].macro = statements[0].macro;
                         blocks[i].comparison = statements[0].comparison;
 
@@ -1134,6 +1194,8 @@ var WhereParser = function(whereString, quiet) {
             return newBlocks;
         }
 
+      
+
         var _parameters = 0,
             _numMacros = 0,
             _macros = [];
@@ -1144,8 +1206,10 @@ var WhereParser = function(whereString, quiet) {
             str = str.replace(/ is not null/i, ' isnotnull ?');
             str = str.replace(/ is null/i, ' isnull ?');
 
-            var m = str.match(/(.*)\s*(<>|>=|[^<]>|<=|<[^>]|[^<>]=|like|isnull|isnotnull|in)\s*(\?|@[a-z]+)/i);
+            var m = str.match(/(.*)\s*(<>|>=|[^<]>|<=|<[^>]|[^<>]=|like|isnull|isnotnull|in)\s*(\?|@[a-z0-9_]+)/i);
             if (m) {
+
+                //console.warn("MATCH!", m);
                 var comparison = "eq",
                     macro  = "@param" + _parameters,
                     cmpMatch = trim(m[2]);
@@ -1166,8 +1230,8 @@ var WhereParser = function(whereString, quiet) {
                     _parameters++; 
                     _numMacros++;
                     if (prevMacro == null) 
-                        prevMacro = m[3];
-                    else if (prevMacro != m[3]) {
+                        prevMacro = m[3][0];
+                    else if (prevMacro != m[3][0]) {
                         if(!quiet) console.error("[casql] You can not mix named macros and ?");
                         return null;
                     }
@@ -1203,9 +1267,11 @@ var WhereParser = function(whereString, quiet) {
 
 
 }; 
-// END D:\git\camlsql-js\src\camlsql-js\sql-query\where-parser.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\xml-builder\CamlXmlBuilder.js*/
+
+// END c:\git\camlsql-js\src\camlsql-js\sql-query\where-parser.js
+
+// BEGIN c:\git\camlsql-js\src\camlsql-js\xml-builder\CamlXmlBuilder.js*/
 
 var XML_FIELD_VIEW = 'View',
 XML_FIELD_VIEWFIELDS = 'ViewFields',
@@ -1580,9 +1646,9 @@ function xmlBeginElement(name, attributes, close) {
 function xmlEndElement(name) {
   return "</" + name + ">";
 }
-// END D:\git\camlsql-js\src\camlsql-js\xml-builder\CamlXmlBuilder.js
+// END c:\git\camlsql-js\src\camlsql-js\xml-builder\CamlXmlBuilder.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\index.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\index.js*/
   
   /**
    * These are the methods that should be public in the camlsql object
@@ -1935,9 +2001,9 @@ function xmlEndElement(name) {
   // generateViewXml();
 
   // return publicItems;
-// END D:\git\camlsql-js\src\camlsql-js\index.js
+// END c:\git\camlsql-js\src\camlsql-js\index.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\__testonly__.js*/
+// BEGIN c:\git\camlsql-js\src\camlsql-js\__testonly__.js*/
 /*!
  *
  * This will expose private methods publicly so tests can be run
@@ -1971,10 +2037,12 @@ publicData.__testonly__.getDateFromTextualRepresentation = getDateFromTextualRep
 publicData.__testonly__.getStartOfWeek = getStartOfWeek;
 publicData.__testonly__.getEndOfWeek = getEndOfWeek;
 publicData.__testonly__.executeSPQuery = executeSPQuery;
+publicData.__testonly__.trimParanthesis = trimParanthesis;
 
-// END D:\git\camlsql-js\src\camlsql-js\__testonly__.js
 
-// BEGIN D:\git\camlsql-js\src\camlsql-js\core\footer.js*/
+// END c:\git\camlsql-js\src\camlsql-js\__testonly__.js
+
+// BEGIN c:\git\camlsql-js\src\camlsql-js\core\footer.js*/
   return publicData;
 }));
-// END D:\git\camlsql-js\src\camlsql-js\core\footer.js
+// END c:\git\camlsql-js\src\camlsql-js\core\footer.js
