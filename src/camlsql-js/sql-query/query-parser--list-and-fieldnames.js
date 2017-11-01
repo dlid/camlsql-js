@@ -27,7 +27,7 @@ function extractListAndFieldNameParts(workingObject) {
           throw "[camlsql] Projected fields in the format <list>.<field_name> must be followed with an AS <alias> ("+fields[i]+")";
         }
 
-        if (!fields[i].match(/^[a-z:A-Z_\\d]+$/)) {
+        if (!fields[i].match(/^[a-z:A-Z_\d]+$/)) {
           if (console.warn) console.warn("[camlsql] Doubtful field name: " + fields[i]);
         }
       }
