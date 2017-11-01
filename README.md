@@ -1,90 +1,35 @@
-# camlsql
+# camlsql-js
 
 Create List CAML XML using SQL-like syntax. 
 
 [![Build Status](https://travis-ci.org/dlid/camlsql-js.svg?branch=master)](https://travis-ci.org/dlid/camlsql-js) [![codecov](https://codecov.io/gh/dlid/camlsql-js/branch/master/graph/badge.svg)](https://codecov.io/gh/dlid/camlsql-js)
 
+------------------------------
 
-## Introduction
+**NOTE!** 
+- This is a work in progress.
+- Things can change alot between commits
+- Feel free to test and provide feedback - it helps me a lot!
+- A dedicated website is being built where it will be easy see how your query maps to XML 
+- "Beware" of the non-minified version. Today it contains a lot of extra data so it's a bit huge.
+---------------------------
+
+## What is this?
 
 `camlsql` is my attempt to create SharePoint [CAML](https://msdn.microsoft.com/en-us/library/office/ms426449.aspx) queries using a syntax I am more familiar with: SQL.
 
-```
-var query = camlsql.prepare("SELECT * FROM ListName WHERE [Title] = ?",  ["Hello"] );
-console.log(query.getXml());
-
-// Result:
-<View>
-    <Query>
-        <Where>
-            <Eq>
-                <FieldRef Name="Title" />
-                <Value Type="Text">hello</Value>
-            </Eq>
-        </Where>
-    </Query>
-</View> 
-```
-
-LIKE statements supporting CONTAINS and BeginsWith (EndsWith is not supported in SharePoint).
+- Use SQL-like syntax to create the ViewXML used by CamlQueries
+- Easily execute the CamlQuery toward the current ClientContext web
 
 ```
-var query = camlsql.prepare("SELECT Title, ImageUrl FROM ListName WHERE [Title] LIKE ?",  ["%Hello%"] );
-console.log(query.getXml());
-
-// Result:
-<View>
-    <ViewFields>
-        <FieldRef Name="Title" />
-        <FieldRef Name="ImageUrl" />
-    </ViewFields>
-    <Query>
-        <Where>
-            <Contains>
-                <FieldRef Name="Title" />
-                <Value Type="Text">hello%</Value>
-            </Contains>
-        </Where>
-    </Query>
-</View> 
+camlsql.prepare("SELECT * FROM Pages WHERE Title LIKE ? ORDER BY Modified DESC LIMIT 10", ["%hello%"])
+ .exec(function(err, rows) {
+  console.err(err);
+  console.table(rows);
+ });
 ```
 
-More complex queries with groups and OR statements
+See more examples in the [SQL Test Queries](https://github.com/dlid/camlsql-js/wiki/SQL-Test-Queries) wiki page.
 
-```
-var query = camlsql.prepare("SELECT Title, ImageUrl FROM List WHERE Title LIKE ? AND ([StartDate] is null or [StartDate] >= ?)", 
-  [
-   'test%', 
-   camlsql.today()
-  ]);
 
-console.log(query.getXml());
-// Result
-<View>
-    <ViewFields>
-        <FieldRef Name="Title" />
-        <FieldRef Name="ImageUrl" />
-    </ViewFields>
-    <Query>
-        <Where>
-            <And>
-                <BeginsWith>
-                    <FieldRef Name="Title" />
-                    <Value Type="Text">test</Value>
-                </BeginsWith>
-                <Or>
-                    <IsNull>
-                        <FieldRef Name="StartDate" />
-                    </IsNull>
-                    <Geq>
-                        <FieldRef Name="StartDate" />
-                        <Value Type="DateTime">
-                            <Today />
-                        </Value>
-                    </Geq>
-                </Or>
-            </And>
-        </Where>
-    </Query>
-</View> 
-```
+
