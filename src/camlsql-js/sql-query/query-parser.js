@@ -28,16 +28,19 @@
     statements : [],
     parameters : [],
     listName : null,
-    projectedFields : []
+    projectedFields : [],
+    encoded : {} // Contains a list of encoded values so they can be decoded later
   },
   where;
 
   // The extract-parts functions will update the working object accordingly
+  extractNamesToEncode(workingObject);
   extractScopePart(workingObject);
   extractLimitPart(workingObject);
   extractOrderByPart(workingObject);
   extractJoinPart(workingObject);
   extractListAndFieldNameParts(workingObject);
+
 
   // Parse the remaining part of the query - the WHERE statement
   where = WhereParser(workingObject.query);
@@ -47,5 +50,36 @@
   // Reset to the original query
   workingObject.query = query;
 
+  // console.log("query", workingObject);
+
   return workingObject;
+}
+
+/**
+ * This will look for text within [ and ] and encode it using the camlsql.encode method
+ * @param  {[type]} workingObject [description]
+ * @return {[type]}               [description]
+ */
+function extractNamesToEncode(workingObject) {
+  var query = workingObject.query,i,counter = 0,startIndex = null,
+      match, encoded, normalized,
+      newQuery = query;
+
+  for (i=0; i < query.length; i++) {
+    if (query[i] == "[") {
+      counter++;
+      if (startIndex === null) startIndex = i;
+    } else if (query[i] == "]") {
+      counter--;
+      if (counter == 0) {
+        match = query.substring( startIndex, i+1 );
+        normalized = match.substring(1, match.length-1),
+        encoded = encodeToInternalField(normalized);
+        newQuery = newQuery.replace(match, encoded);
+        startIndex = null;
+        workingObject.encoded[encoded] = match.substring(1, match.length-1);
+      }
+    }
+  }
+  workingObject.query = newQuery;
 }

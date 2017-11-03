@@ -1,6 +1,6 @@
 /*! camlsqj-js v1.0.1 | (c) dlid.se | https://camlsqljs.dlid.se/license */
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\core\header.js*/
+// BEGIN C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\core\header.js*/
 (function (global, factory) {
   'use strict';
   typeof exports === 'object' && typeof module !== 'undefined' ? (module.exports = factory()) :
@@ -9,9 +9,9 @@
 }(this, function() {
   'use strict';
   var publicData; 
-// END c:\git\camlsql-js\src\camlsql-js\core\header.js
+// END C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\core\header.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\util\datetime-utilities.js*/
+// BEGIN C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\util\datetime-utilities.js*/
 
 
 
@@ -95,9 +95,9 @@ function getEndOfWeek(date, startWeekWithMonday) {
   date.setDate(date.getDate() + 6);
   return new Date(date.setHours(23,59,59,999)); 
 }
-// END c:\git\camlsql-js\src\camlsql-js\util\datetime-utilities.js
+// END C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\util\datetime-utilities.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\util\parameter-functions.js*/
+// BEGIN C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\util\parameter-functions.js*/
 /**
  * Helper functions for parameters
  */
@@ -338,9 +338,9 @@ function createUserParameter(value) {
   };
 }
 
-// END c:\git\camlsql-js\src\camlsql-js\util\parameter-functions.js
+// END C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\util\parameter-functions.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\util\sharepoint-exec-function.js*/
+// BEGIN C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\util\sharepoint-exec-function.js*/
 
  /**
  * The parsed query
@@ -357,11 +357,27 @@ function executeSPQuery(options) {
             spList = null,
             listName = options.query.getListName(),
             spListItems = null,
-            viewXml = options.rawXml ? options.rawXml : options.query.getXml(),
+            viewXml = options && options.rawXml ? options.rawXml : options.query.getXml(),
             nextPage,
-            prevPage;
+            prevPage,
+            noCallback = false;
 
         if (typeof execCallback !== "function") execCallback = null;
+
+
+        if (!execCallback) {
+            noCallback = true;
+            execCallback = function(err, rows) {
+                if (typeof console !== "undefined") {
+                    if (err) console.error(err);
+                    if (typeof console.table !== "undefined") {
+                        console.table(rows);
+                    } else {
+                        console.log("[camlsql] Result", rows);
+                    }
+                }
+            }
+        }
 
         if (typeof SP !== "undefined") {
 
@@ -371,7 +387,7 @@ function executeSPQuery(options) {
                 if (!spWeb) {
                     spWeb = clientContext.get_web();
                     spList = spWeb.get_lists().getByTitle(listName);
-
+                    if (noCallback && console) console.log("[camlsql] Loading list '" + listName + "'"); 
                     clientContext.load(spList);
                     clientContext.executeQueryAsync(onListLoaded, function () {
                         if (execCallback == null) {
@@ -393,7 +409,13 @@ function executeSPQuery(options) {
             },"sp.js");
 
         } else {
+            if (noCallback) {
+                if (typeof console !== "undefined") {
+                    console.log("[camlsql] ViewXML:", options.query.getXml());
+                }
+            }
             if (execCallback == null) {
+                // Output xml and info?
                 throw "[camlsql] SP is not defined";
             }
             execCallback({
@@ -408,6 +430,7 @@ function executeSPQuery(options) {
             var camlQueryString = options.query.getXml();
             camlQuery.set_viewXml(camlQueryString);
             spListItems = spList.getItems(camlQuery);
+            if (noCallback && console) console.log("[camlsql] Executing SP.CamlQuery", camlQueryString); 
             clientContext.load(spListItems);
             clientContext.executeQueryAsync(camlQuerySuccess, function (clientRequest, failedEventArgs) {
                 var extraMessage = "";
@@ -454,9 +477,9 @@ function executeSPQuery(options) {
             });
         }
     }
-// END c:\git\camlsql-js\src\camlsql-js\util\sharepoint-exec-function.js
+// END C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\util\sharepoint-exec-function.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\util\string-utilities.js*/
+// BEGIN C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\util\string-utilities.js*/
 
 /**
  * Add zero padding to a string
@@ -553,9 +576,9 @@ function formatFieldName(name) {
     }
     return str;
  }
-// END c:\git\camlsql-js\src\camlsql-js\util\string-utilities.js
+// END C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\util\string-utilities.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\CamlSqlQuery.js*/
+// BEGIN C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\sql-query\CamlSqlQuery.js*/
 function CamlSqlQuery(query, param) {
     
     var currentQuery = this;
@@ -568,9 +591,7 @@ function CamlSqlQuery(query, param) {
           spWeb,
           execCallback,
           result,
-          rawXml = options.rawXml;
-
-
+          rawXml = typeof options !== "undefined" ? options.rawXml : null;
 
       if (args.length > 1) {
           if (typeof args[0] === "object") {
@@ -603,7 +624,10 @@ function CamlSqlQuery(query, param) {
     }
 
     function getListName() {
-      return currentQuery.$options.parsedQuery.listName;
+      var parsed = currentQuery.$options.parsedQuery;
+      if (parsed.listName && parsed.encoded[parsed.listName])
+        return parsed.encoded[parsed.listName];
+      return parsed.listName;
     }
 
     this.getListName = getListName;
@@ -615,9 +639,9 @@ function CamlSqlQuery(query, param) {
 
   }
 
-// END c:\git\camlsql-js\src\camlsql-js\sql-query\CamlSqlQuery.js
+// END C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\sql-query\CamlSqlQuery.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\parameter-parser.js*/
+// BEGIN C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\sql-query\parameter-parser.js*/
 
 // var ParameterBase = {
 
@@ -665,9 +689,9 @@ function parseParameter(parameter) {
  }
  return ret;
 }
-// END c:\git\camlsql-js\src\camlsql-js\sql-query\parameter-parser.js
+// END C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\sql-query\parameter-parser.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--joins.js*/
+// BEGIN C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\sql-query\query-parser--joins.js*/
 
 function extractJoinPart(workingObject) {
   var query = workingObject.query,
@@ -678,7 +702,7 @@ function extractJoinPart(workingObject) {
       m; 
  
       do {
-        m = query.match(/\s+(left\s+|)join\s+(\[?[a-zA-Z_\d]+\]?)\son\s(.+?)\.([a-zA-Z_\d]+)(\s|$)/i);
+        m = query.match(/\s+(left\s+|)join\s+(.+?)\s+on\s(.+?)\.([a-zA-Z_\d]+)(\s|$)/i);
         if (m) {
             var alias = formatFieldName(m[2]),
                 onTable1 = m[3],
@@ -686,7 +710,6 @@ function extractJoinPart(workingObject) {
                 onTable2 = m[5],
                 onField2 = m[6];
       
-
             joins.push({
               inner : trim(m[1]) == "",
               alias : alias,
@@ -785,9 +808,9 @@ working nicely
   //   }
   // }
 }
-// END c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--joins.js
+// END C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\sql-query\query-parser--joins.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--limit.js*/
+// BEGIN C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\sql-query\query-parser--limit.js*/
 function extractLimitPart(workingObject) {
   var match, limitString;
   //console.log("WOBJ", workingObject);
@@ -796,9 +819,9 @@ function extractLimitPart(workingObject) {
     workingObject.rowLimit = parseInt(match[1], 10);
   }
 } 
-// END c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--limit.js
+// END C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\sql-query\query-parser--limit.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--list-and-fieldnames.js*/
+// BEGIN C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\sql-query\query-parser--list-and-fieldnames.js*/
 /**
  * Extract the chosen Field and the list name from the query.
  * The query part of the workingObject will remain only with the SELECT statement (if found)
@@ -825,8 +848,8 @@ function extractListAndFieldNameParts(workingObject) {
           });
           fields[i] = formatFieldName(t[3]);
         } else if (fields[i].indexOf('.') !== -1) {
-          throw "[camlsql] Projected fields in the format <list>.<field_name> must be followed with an AS <alias> ("+fields[i]+")";
-        }
+          throw "[camlsql] Projected fields in the format <list>.<field_name> must be followed with an AS <alias>";
+        } 
 
         if (!fields[i].match(/^[a-z:A-Z_\d]+$/)) {
           if (console.warn) console.warn("[camlsql] Doubtful field name: " + fields[i]);
@@ -858,9 +881,9 @@ function parseFieldNames(fieldNameString) {
   return fields;
 }
 
-// END c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--list-and-fieldnames.js
+// END C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\sql-query\query-parser--list-and-fieldnames.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--orderby.js*/
+// BEGIN C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\sql-query\query-parser--orderby.js*/
 /**
  * Parse the ORDER BY string
  * @param {[type]} orderByString [description]
@@ -915,9 +938,9 @@ function extractOrderByPart(workingObject, quiet) {
     }
     workingObject.sort = orderValues;
 }
-// END c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--orderby.js
+// END C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\sql-query\query-parser--orderby.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--viewscope.js*/
+// BEGIN C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\sql-query\query-parser--viewscope.js*/
 function extractScopePart(workingObject) {
   var m, query = workingObject.query, scope;
     if ((m = query.match(/^(select\s+)(scope\s+([a-z]+)\s+)/i))) {
@@ -937,9 +960,9 @@ function extractScopePart(workingObject) {
       workingObject.viewScope = null;
     }
 }
-// END c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser--viewscope.js
+// END C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\sql-query\query-parser--viewscope.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser.js*/
+// BEGIN C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\sql-query\query-parser.js*/
  /**
  * The parsed query
  * @typedef {Object} CamlSql~ParsedQuery
@@ -970,16 +993,19 @@ function extractScopePart(workingObject) {
     statements : [],
     parameters : [],
     listName : null,
-    projectedFields : []
+    projectedFields : [],
+    encoded : {} // Contains a list of encoded values so they can be decoded later
   },
   where;
 
   // The extract-parts functions will update the working object accordingly
+  extractNamesToEncode(workingObject);
   extractScopePart(workingObject);
   extractLimitPart(workingObject);
   extractOrderByPart(workingObject);
   extractJoinPart(workingObject);
   extractListAndFieldNameParts(workingObject);
+
 
   // Parse the remaining part of the query - the WHERE statement
   where = WhereParser(workingObject.query);
@@ -989,11 +1015,42 @@ function extractScopePart(workingObject) {
   // Reset to the original query
   workingObject.query = query;
 
+  // console.log("query", workingObject);
+
   return workingObject;
 }
-// END c:\git\camlsql-js\src\camlsql-js\sql-query\query-parser.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\sql-query\where-parser.js*/
+/**
+ * This will look for text within [ and ] and encode it using the camlsql.encode method
+ * @param  {[type]} workingObject [description]
+ * @return {[type]}               [description]
+ */
+function extractNamesToEncode(workingObject) {
+  var query = workingObject.query,i,counter = 0,startIndex = null,
+      match, encoded, normalized,
+      newQuery = query;
+
+  for (i=0; i < query.length; i++) {
+    if (query[i] == "[") {
+      counter++;
+      if (startIndex === null) startIndex = i;
+    } else if (query[i] == "]") {
+      counter--;
+      if (counter == 0) {
+        match = query.substring( startIndex, i+1 );
+        normalized = match.substring(1, match.length-1),
+        encoded = encodeToInternalField(normalized);
+        newQuery = newQuery.replace(match, encoded);
+        startIndex = null;
+        workingObject.encoded[encoded] = match.substring(1, match.length-1);
+      }
+    }
+  }
+  workingObject.query = newQuery;
+}
+// END C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\sql-query\query-parser.js
+
+// BEGIN C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\sql-query\where-parser.js*/
 /**
  * Parse the WHERE statements
  * @param {[type]} whereString [description]
@@ -1269,9 +1326,9 @@ var WhereParser = function(whereString, quiet) {
 }; 
 
 
-// END c:\git\camlsql-js\src\camlsql-js\sql-query\where-parser.js
+// END C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\sql-query\where-parser.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\xml-builder\CamlXmlBuilder.js*/
+// BEGIN C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\xml-builder\CamlXmlBuilder.js*/
 
 var XML_FIELD_VIEW = 'View',
 XML_FIELD_VIEWFIELDS = 'ViewFields',
@@ -1302,7 +1359,7 @@ function CamlXmlBuilder(query) {
   //  </Value>
 
   viewXml += createQueryElement(parsedQuery, parsedQuery.statements, parsedQuery.sort, parameters, log);
-  viewXml += createJoinElement(parsedQuery.listName, parsedQuery.joins);
+  viewXml += createJoinElement(parsedQuery, parsedQuery.listName, parsedQuery.joins);
   viewXml += createProjectedFieldsElement(parsedQuery.projectedFields, parsedQuery.joins);
   viewXml += createViewFieldsElement(parsedQuery.fields);
   viewXml += createRowLimitFieldsElement(parsedQuery.rowLimit);
@@ -1357,17 +1414,24 @@ function createProjectedFieldsElement(projectedFields, joins) {
   return xml;
 }
 
-function createJoinElement(listName, joins) {
-  var xml = "",i;
+function createJoinElement(parsedQuery, listName, joins) {
+  var xml = "",i,childTableName;
   if (joins.length > 0) {
     xml += xmlBeginElement("Joins");
 
     for (i = 0; i < joins.length; i++) {
       xml += xmlBeginElement("Join", {ListAlias : joins[i].alias});
 
+      childTableName = joins[i].childTable;
+      // if (childTableName) {
+      //   if (parsedQuery.encoded[childTableName]) {
+      //     childTableName = "x" + parsedQuery.encoded[childTableName];
+      //   }
+      // }
+
       xml += xmlBeginElement("Eq");
       xml += xmlBeginElement("FieldRef", { 
-        List : joins[i].childTable != listName ? joins[i].childTable : null,
+        List : joins[i].childTable != listName ? childTableName : null,
         Name : joins[i].childField, RefType : 'Id' 
       }, true);
       xml += xmlBeginElement("FieldRef", { List : joins[i].alias, Name : 'Id' }, true);
@@ -1508,39 +1572,44 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
     notProjected = true,
     notJoined = true;
 
-    for (i=0; i < parsedQuery.projectedFields.length; i++) {
-      if (parsedQuery.projectedFields[i].list == formatFieldName(x[0]) && parsedQuery.projectedFields[i].field == formatFieldName(x[1])) {
-        fieldName = parsedQuery.projectedFields[i].name;
-        notProjected = false;
-      }
-    }
+    if (formatFieldName(x[0]) == parsedQuery.listName) {
+      fieldName = x[1];
+    } else { 
 
-    if (notProjected) {
-
-      for (i=0; i < parsedQuery.joins.length; i++) {
-        if (parsedQuery.joins[i].alias == x[0]) {
-          notJoined = false;
-          break;
+      for (i=0; i < parsedQuery.projectedFields.length; i++) {
+        if (parsedQuery.projectedFields[i].list == formatFieldName(x[0]) && parsedQuery.projectedFields[i].field == formatFieldName(x[1])) {
+          fieldName = parsedQuery.projectedFields[i].name;
+          notProjected = false;
         }
       }
 
-      if (notJoined) throw "[camlsql] Unknown list alias in where clause: " + x[0];
+      if (notProjected) {
 
-      if (parsedQuery.fields.length == 0) {
-        throw "[camlsql] The projected field '" + statement.field + "' must be explicitly included in the query";
-      } else {
-        fieldName = parsedQuery.uuid('camlsqlfld_');
-          // Add a projected field for this one... 
-          parsedQuery.projectedFields.push({
-            list : x[0],
-            field : x[1],
-            name : fieldName
-          });
-          parsedQuery.fields.push(fieldName);
+        for (i=0; i < parsedQuery.joins.length; i++) {
+          if (parsedQuery.joins[i].alias == x[0]) {
+            notJoined = false;
+            break;
+          }
         }
+
+        if (notJoined) throw "[camlsql] Unknown list alias in where clause: " + x[0];
+
+        if (parsedQuery.fields.length == 0) {
+          throw "[camlsql] The projected field '" + statement.field + "' must be explicitly included in the query";
+        } else {
+          fieldName = parsedQuery.uuid('camlsqlfld_');
+            // Add a projected field for this one... 
+            parsedQuery.projectedFields.push({
+              list : x[0],
+              field : x[1],
+              name : fieldName
+            });
+            parsedQuery.fields.push(fieldName);
+          }
+        }
+
+
       }
-
-
     }
     
     xml += xmlBeginElement(XML_FIELD_FIELDREF, { Name : fieldName, LookupId : LookupId }, true);
@@ -1646,9 +1715,9 @@ function xmlBeginElement(name, attributes, close) {
 function xmlEndElement(name) {
   return "</" + name + ">";
 }
-// END c:\git\camlsql-js\src\camlsql-js\xml-builder\CamlXmlBuilder.js
+// END C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\xml-builder\CamlXmlBuilder.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\index.js*/
+// BEGIN C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\index.js*/
   
   /**
    * These are the methods that should be public in the camlsql object
@@ -2001,9 +2070,9 @@ function xmlEndElement(name) {
   // generateViewXml();
 
   // return publicItems;
-// END c:\git\camlsql-js\src\camlsql-js\index.js
+// END C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\index.js
 
-// BEGIN c:\git\camlsql-js\src\camlsql-js\__testonly__.js*/
+// BEGIN C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\__testonly__.js*/
 /*!
  *
  * This will expose private methods publicly so tests can be run
@@ -2038,11 +2107,11 @@ publicData.__testonly__.getStartOfWeek = getStartOfWeek;
 publicData.__testonly__.getEndOfWeek = getEndOfWeek;
 publicData.__testonly__.executeSPQuery = executeSPQuery;
 publicData.__testonly__.trimParanthesis = trimParanthesis;
+publicData.__testonly__.extractNamesToEncode = extractNamesToEncode;
 
+// END C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\__testonly__.js
 
-// END c:\git\camlsql-js\src\camlsql-js\__testonly__.js
-
-// BEGIN c:\git\camlsql-js\src\camlsql-js\core\footer.js*/
+// BEGIN C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\core\footer.js*/
   return publicData;
 }));
-// END c:\git\camlsql-js\src\camlsql-js\core\footer.js
+// END C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\core\footer.js

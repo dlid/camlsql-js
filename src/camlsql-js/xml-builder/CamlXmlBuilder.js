@@ -28,7 +28,7 @@ function CamlXmlBuilder(query) {
   //  </Value>
 
   viewXml += createQueryElement(parsedQuery, parsedQuery.statements, parsedQuery.sort, parameters, log);
-  viewXml += createJoinElement(parsedQuery.listName, parsedQuery.joins);
+  viewXml += createJoinElement(parsedQuery, parsedQuery.listName, parsedQuery.joins);
   viewXml += createProjectedFieldsElement(parsedQuery.projectedFields, parsedQuery.joins);
   viewXml += createViewFieldsElement(parsedQuery.fields);
   viewXml += createRowLimitFieldsElement(parsedQuery.rowLimit);
@@ -83,17 +83,24 @@ function createProjectedFieldsElement(projectedFields, joins) {
   return xml;
 }
 
-function createJoinElement(listName, joins) {
-  var xml = "",i;
+function createJoinElement(parsedQuery, listName, joins) {
+  var xml = "",i,childTableName;
   if (joins.length > 0) {
     xml += xmlBeginElement("Joins");
 
     for (i = 0; i < joins.length; i++) {
       xml += xmlBeginElement("Join", {ListAlias : joins[i].alias});
 
+      childTableName = joins[i].childTable;
+      // if (childTableName) {
+      //   if (parsedQuery.encoded[childTableName]) {
+      //     childTableName = "x" + parsedQuery.encoded[childTableName];
+      //   }
+      // }
+
       xml += xmlBeginElement("Eq");
       xml += xmlBeginElement("FieldRef", { 
-        List : joins[i].childTable != listName ? joins[i].childTable : null,
+        List : joins[i].childTable != listName ? childTableName : null,
         Name : joins[i].childField, RefType : 'Id' 
       }, true);
       xml += xmlBeginElement("FieldRef", { List : joins[i].alias, Name : 'Id' }, true);
@@ -234,39 +241,44 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
     notProjected = true,
     notJoined = true;
 
-    for (i=0; i < parsedQuery.projectedFields.length; i++) {
-      if (parsedQuery.projectedFields[i].list == formatFieldName(x[0]) && parsedQuery.projectedFields[i].field == formatFieldName(x[1])) {
-        fieldName = parsedQuery.projectedFields[i].name;
-        notProjected = false;
-      }
-    }
+    if (formatFieldName(x[0]) == parsedQuery.listName) {
+      fieldName = x[1];
+    } else { 
 
-    if (notProjected) {
-
-      for (i=0; i < parsedQuery.joins.length; i++) {
-        if (parsedQuery.joins[i].alias == x[0]) {
-          notJoined = false;
-          break;
+      for (i=0; i < parsedQuery.projectedFields.length; i++) {
+        if (parsedQuery.projectedFields[i].list == formatFieldName(x[0]) && parsedQuery.projectedFields[i].field == formatFieldName(x[1])) {
+          fieldName = parsedQuery.projectedFields[i].name;
+          notProjected = false;
         }
       }
 
-      if (notJoined) throw "[camlsql] Unknown list alias in where clause: " + x[0];
+      if (notProjected) {
 
-      if (parsedQuery.fields.length == 0) {
-        throw "[camlsql] The projected field '" + statement.field + "' must be explicitly included in the query";
-      } else {
-        fieldName = parsedQuery.uuid('camlsqlfld_');
-          // Add a projected field for this one... 
-          parsedQuery.projectedFields.push({
-            list : x[0],
-            field : x[1],
-            name : fieldName
-          });
-          parsedQuery.fields.push(fieldName);
+        for (i=0; i < parsedQuery.joins.length; i++) {
+          if (parsedQuery.joins[i].alias == x[0]) {
+            notJoined = false;
+            break;
+          }
         }
+
+        if (notJoined) throw "[camlsql] Unknown list alias in where clause: " + x[0];
+
+        if (parsedQuery.fields.length == 0) {
+          throw "[camlsql] The projected field '" + statement.field + "' must be explicitly included in the query";
+        } else {
+          fieldName = parsedQuery.uuid('camlsqlfld_');
+            // Add a projected field for this one... 
+            parsedQuery.projectedFields.push({
+              list : x[0],
+              field : x[1],
+              name : fieldName
+            });
+            parsedQuery.fields.push(fieldName);
+          }
+        }
+
+
       }
-
-
     }
     
     xml += xmlBeginElement(XML_FIELD_FIELDREF, { Name : fieldName, LookupId : LookupId }, true);

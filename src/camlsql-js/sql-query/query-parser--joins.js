@@ -8,7 +8,7 @@ function extractJoinPart(workingObject) {
       m; 
  
       do {
-        m = query.match(/\s+(left\s+|)join\s+(\[?[a-zA-Z_\d]+\]?)\son\s(.+?)\.([a-zA-Z_\d]+)(\s|$)/i);
+        m = query.match(/\s+(left\s+|)join\s+(.+?)\s+on\s(.+?)\.([a-zA-Z_\d]+)(\s|$)/i);
         if (m) {
             var alias = formatFieldName(m[2]),
                 onTable1 = m[3],
@@ -16,7 +16,6 @@ function extractJoinPart(workingObject) {
                 onTable2 = m[5],
                 onField2 = m[6];
       
-
             joins.push({
               inner : trim(m[1]) == "",
               alias : alias,

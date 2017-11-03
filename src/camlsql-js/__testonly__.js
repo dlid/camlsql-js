@@ -32,4 +32,4 @@ publicData.__testonly__.getStartOfWeek = getStartOfWeek;
 publicData.__testonly__.getEndOfWeek = getEndOfWeek;
 publicData.__testonly__.executeSPQuery = executeSPQuery;
 publicData.__testonly__.trimParanthesis = trimParanthesis;
-
+publicData.__testonly__.extractNamesToEncode = extractNamesToEncode;

@@ -14,11 +14,27 @@ function executeSPQuery(options) {
             spList = null,
             listName = options.query.getListName(),
             spListItems = null,
-            viewXml = options.rawXml ? options.rawXml : options.query.getXml(),
+            viewXml = options && options.rawXml ? options.rawXml : options.query.getXml(),
             nextPage,
-            prevPage;
+            prevPage,
+            noCallback = false;
 
         if (typeof execCallback !== "function") execCallback = null;
+
+
+        if (!execCallback) {
+            noCallback = true;
+            execCallback = function(err, rows) {
+                if (typeof console !== "undefined") {
+                    if (err) console.error(err);
+                    if (typeof console.table !== "undefined") {
+                        console.table(rows);
+                    } else {
+                        console.log("[camlsql] Result", rows);
+                    }
+                }
+            }
+        }
 
         if (typeof SP !== "undefined") {
 
@@ -28,7 +44,7 @@ function executeSPQuery(options) {
                 if (!spWeb) {
                     spWeb = clientContext.get_web();
                     spList = spWeb.get_lists().getByTitle(listName);
-
+                    if (noCallback && console) console.log("[camlsql] Loading list '" + listName + "'"); 
                     clientContext.load(spList);
                     clientContext.executeQueryAsync(onListLoaded, function () {
                         if (execCallback == null) {
@@ -50,7 +66,13 @@ function executeSPQuery(options) {
             },"sp.js");
 
         } else {
+            if (noCallback) {
+                if (typeof console !== "undefined") {
+                    console.log("[camlsql] ViewXML:", options.query.getXml());
+                }
+            }
             if (execCallback == null) {
+                // Output xml and info?
                 throw "[camlsql] SP is not defined";
             }
             execCallback({
@@ -65,6 +87,7 @@ function executeSPQuery(options) {
             var camlQueryString = options.query.getXml();
             camlQuery.set_viewXml(camlQueryString);
             spListItems = spList.getItems(camlQuery);
+            if (noCallback && console) console.log("[camlsql] Executing SP.CamlQuery", camlQueryString); 
             clientContext.load(spListItems);
             clientContext.executeQueryAsync(camlQuerySuccess, function (clientRequest, failedEventArgs) {
                 var extraMessage = "";

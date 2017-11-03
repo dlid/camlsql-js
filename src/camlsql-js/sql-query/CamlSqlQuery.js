@@ -10,9 +10,7 @@ function CamlSqlQuery(query, param) {
           spWeb,
           execCallback,
           result,
-          rawXml = options.rawXml;
-
-
+          rawXml = typeof options !== "undefined" ? options.rawXml : null;
 
       if (args.length > 1) {
           if (typeof args[0] === "object") {
@@ -45,7 +43,10 @@ function CamlSqlQuery(query, param) {
     }
 
     function getListName() {
-      return currentQuery.$options.parsedQuery.listName;
+      var parsed = currentQuery.$options.parsedQuery;
+      if (parsed.listName && parsed.encoded[parsed.listName])
+        return parsed.encoded[parsed.listName];
+      return parsed.listName;
     }
 
     this.getListName = getListName;
