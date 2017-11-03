@@ -194,6 +194,10 @@ function createStatementXml(parsedQuery, statement, parameters, log) {
       xml+=xmlBeginElement(XML_ELEMENT_ISNULL);
       xml+=createFieldRefValue(parsedQuery, statement);
       xml+=xmlEndElement(XML_ELEMENT_ISNULL);
+    } else if (comparison == "in") {
+      xml+=xmlBeginElement("In");
+      xml+=createFieldRefValue(parsedQuery, statement,param);
+      xml+=xmlEndElement("In");
     } else if (comparison == "notnull") {
       xml+=xmlBeginElement(XML_ELEMENT_ISNOTNULL);
       xml+=createFieldRefValue(parsedQuery, statement);
@@ -282,10 +286,13 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
     }
     
     xml += xmlBeginElement(XML_FIELD_FIELDREF, { Name : fieldName, LookupId : LookupId }, true);
-
     if (parameter) {
       if (statement.comparison == "in") {
-        xml = "<In>x</In>";
+       xml += '<Values>';
+       for (var i=0; i < parameter.length; i++) {
+         xml += creatValueElement(statement, parameter[i], parameter[i].value);      
+       }
+       xml += '</Values>';
       } else {
         xml += creatValueElement(statement, parameter);
       }
