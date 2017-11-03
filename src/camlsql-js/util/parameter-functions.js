@@ -20,9 +20,16 @@
 
 
  function createBooleanParameter(value) {
+  if (typeof value === "number") {
+    if (value > 0) 
+      value = true;
+    else if (value <= 0)
+      value = false;
+  }
   if (typeof value != "boolean" && typeof value !== "undefined")  {
     throw "[camlsql] Value was not boolean";
   }
+  if (typeof value === "undefined") value = false;
   return {
     type : 'Boolean',
     value : value
@@ -41,6 +48,7 @@
  }
 
  function createLookupParameter(value) {
+  if (typeof value !== "string" && typeof value !== "number") throw "[camlsql] Value must be number or string";
   return {
     type : 'Lookup',
     value : value,

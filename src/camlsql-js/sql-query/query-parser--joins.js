@@ -8,21 +8,23 @@ function extractJoinPart(workingObject) {
       m; 
  
       do {
-        m = query.match(/\s+(left\s+|)join\s+(.+?)\s+on\s(.+?)\.([a-zA-Z_\d]+)(\s|$)/i);
+        m = query.match(/\s+(left\s+|)join\s+(.+?)\s+on\s+(.+?)(\s|$)/i);
         if (m) {
-            var alias = formatFieldName(m[2]),
-                onTable1 = m[3],
-                onField1 = m[4],
-                onTable2 = m[5],
-                onField2 = m[6];
-      
+            if (m[3].indexOf('.') === -1)
+              throw "[camlsql] You must specify the List Name when joining: JOIN [ListAlias] ON [List].[Field]";
+
+            t = m[3].split('.');
+            if (!t[0].match(/^[a-z\d_]+$/i)) {
+              throw "[camlsql] Wrap list alias in brackets if it contains special characters: " + t[0] ;
+            }  
+
             joins.push({
               inner : trim(m[1]) == "",
-              alias : alias,
-              childTable : onTable1,
-              childField : onField1
+              alias : formatFieldName(m[2]),
+              childTable : t[0],
+              childField : t[1]
             });
-            query = query.substr(0, m.index) + " " + query.substr(m.index + m[0].length) + m[5];
+            query = query.substr(0, m.index) + " " + query.substr(m.index + m[0].length) + m[4];
         }
       } while (m);
 

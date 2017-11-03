@@ -140,3 +140,19 @@ describe("camlsql.datetime", function() {
 
 
 }); 
+
+
+
+describe("Internal date/time functions", function() {
+
+  it("createDateWithIntervalString('10 minutes')", function() {
+    // Hope we can trust this one to not take too long..
+    var dateValue = camlsql.__testonly__.createDateWithIntervalString("10 minutes"),
+        expectedDate = new Date((new Date().getTime()) + 600000);
+    expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
+  });
+
+
+
+
+});

@@ -126,6 +126,14 @@ describe("camlsql.datetime", function() {
     expect(date.toTimeString().substr(0,8)).toEqual("00:00:00");
   });
 
+   it("createDateParameter", function() {
+    var date = camlsql.__testonly__.createDateParameter()
+    expect(date.type).toEqual("DateTime");
+    expect(date._includeTime).toEqual(false);
+    expect(date.today).toEqual(true);
+    expect(date._storageTZ).toEqual(true);
+  });
+
 
 
   // var d = camlsql.__testonly__.getDateFromTextualRepresentation("week start", new Date(1980, 03, 04)); d

@@ -33,6 +33,11 @@ function extractListAndFieldNameParts(workingObject) {
       }
       workingObject.fields = fields;
       workingObject.listName = formatFieldName(m[2]);
+
+      if (!workingObject.listName.match(/^[a-z\d_]+$/i)) {
+        throw "[camlsql] Wrap list name in brackets if it contains special characters: [" + workingObject.listName + "]";
+      }
+
       workingObject.query = m[3];
     } else {
       workingObject.query = "";
