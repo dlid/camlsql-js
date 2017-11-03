@@ -16,7 +16,7 @@ function extractOrderByPart(workingObject, quiet) {
         order,
         re = new RegExp("(\\[?[a-z:A-Z_\\d]+?\\]?)(\\,\\s+|\\s+asc|\\s+desc|$)", "ig");
 
-      if ((m = query.match(/\sORDER\sBY\s(.*?)$/i))) {
+      if ((m = query.match(/\sORDER\sBY\s+(.*?)$/i))) {
         orderByString = m[1];
         query = query.substr(0, query.length - m[0].length );
       } else {
@@ -35,7 +35,6 @@ function extractOrderByPart(workingObject, quiet) {
                         case "datetime": m[0] = "DateTime"; break;
                         case "text": m[0] = "Text"; break;
                         case "number": m[0] = "Number"; break;
-                        case "datetime": m[0] = "DateTime"; break;
                     }
                     dataType = m[0];
                     match[1] = m[1];

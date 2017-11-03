@@ -223,7 +223,7 @@ function getXmlElementForLikeStatement(text) {
   if (text.indexOf('%') === 0 && text[text.length-1] === "%") {
     paramValue = text.replace(/^%?|%?$/g, '');
   } else if (text.indexOf('%') === 0) {
-    throw "[casql] SharePoint does not support an 'EndsWith' statement: " + text;
+    throw "[camlsql] SharePoint does not support an 'EndsWith' statement: " + text;
   } else if (text.indexOf('%') === text.length -1) {
     paramValue = text.replace(/%?$/, '');
     elementName = "BeginsWith";
@@ -288,6 +288,8 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
     xml += xmlBeginElement(XML_FIELD_FIELDREF, { Name : fieldName, LookupId : LookupId }, true);
     if (parameter) {
       if (statement.comparison == "in") {
+        if (!parameter || parameter.constructor !== Array)
+          throw "[camlsql] IN parameter must be an array";
        xml += '<Values>';
        for (var i=0; i < parameter.length; i++) {
          xml += creatValueElement(statement, parameter[i], parameter[i].value);      

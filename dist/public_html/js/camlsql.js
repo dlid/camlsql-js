@@ -718,7 +718,13 @@ function extractJoinPart(workingObject) {
             t = m[3].split('.');
             if (!t[0].match(/^[a-z\d_]+$/i)) {
               throw "[camlsql] Wrap list alias in brackets if it contains special characters: " + t[0] ;
-            }  
+            }
+
+            if (!m[2].match(/^[a-z\d_]+$/i)) {
+              throw "[camlsql] Wrap list alias in brackets if it contains special characters: " + m[2] ;
+            }
+
+            console.warn("join list", m[2]);
 
             joins.push({
               inner : trim(m[1]) == "",
@@ -824,7 +830,11 @@ working nicely
 function extractLimitPart(workingObject) {
   var match, limitString;
   //console.log("WOBJ", workingObject);
-  if ((match = workingObject.query.match(/\sLIMIT\s(\d+).*$/i))) {
+  if ((match = workingObject.query.match(/\sLIMIT\s+(.*?)(\s.*$|$)/i))) {
+    if (!match[1].match(/^\d+$/))
+      throw "[camlsql] LIMIT value must be a number";
+    if (match[1] == "0")
+      throw "[camlsql] LIMIT value can not be 0";
     workingObject.query = workingObject.query.substr(0, workingObject.query.length - match[0].length );
     workingObject.rowLimit = parseInt(match[1], 10);
   }
@@ -917,7 +927,7 @@ function extractOrderByPart(workingObject, quiet) {
         order,
         re = new RegExp("(\\[?[a-z:A-Z_\\d]+?\\]?)(\\,\\s+|\\s+asc|\\s+desc|$)", "ig");
 
-      if ((m = query.match(/\sORDER\sBY\s(.*?)$/i))) {
+      if ((m = query.match(/\sORDER\sBY\s+(.*?)$/i))) {
         orderByString = m[1];
         query = query.substr(0, query.length - m[0].length );
       } else {
@@ -936,7 +946,6 @@ function extractOrderByPart(workingObject, quiet) {
                         case "datetime": m[0] = "DateTime"; break;
                         case "text": m[0] = "Text"; break;
                         case "number": m[0] = "Number"; break;
-                        case "datetime": m[0] = "DateTime"; break;
                     }
                     dataType = m[0];
                     match[1] = m[1];
@@ -1304,7 +1313,7 @@ var WhereParser = function(whereString, quiet) {
                     if (prevMacro == null) 
                         prevMacro = m[3][0];
                     else if (prevMacro != m[3][0]) {
-                        if(!quiet) console.error("[casql] You can not mix named macros and ?");
+                        throw "[camlsql] You can not mix named macros and ?";
                         return null;
                     }
                     if (m[3][0] == "@") {
@@ -1569,7 +1578,7 @@ function getXmlElementForLikeStatement(text) {
   if (text.indexOf('%') === 0 && text[text.length-1] === "%") {
     paramValue = text.replace(/^%?|%?$/g, '');
   } else if (text.indexOf('%') === 0) {
-    throw "[casql] SharePoint does not support an 'EndsWith' statement: " + text;
+    throw "[camlsql] SharePoint does not support an 'EndsWith' statement: " + text;
   } else if (text.indexOf('%') === text.length -1) {
     paramValue = text.replace(/%?$/, '');
     elementName = "BeginsWith";
@@ -1634,6 +1643,8 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
     xml += xmlBeginElement(XML_FIELD_FIELDREF, { Name : fieldName, LookupId : LookupId }, true);
     if (parameter) {
       if (statement.comparison == "in") {
+        if (!parameter || parameter.constructor !== Array)
+          throw "[camlsql] IN parameter must be an array";
        xml += '<Values>';
        for (var i=0; i < parameter.length; i++) {
          xml += creatValueElement(statement, parameter[i], parameter[i].value);      

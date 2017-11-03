@@ -67,6 +67,13 @@ describe("extractScopePart", function() {
     expect(workerObject.viewScope).toEqual(null);
     expect(workerObject.query).toEqual("SELECT SCOPE reCurSiVeaLL");
   });
+
+   it("Set DefaultValue scope", function() {
+    var workerObject = createWorkerObject("SELECT SCOPE DefaultValue * FROM [ListName]");
+    testonly.extractScopePart(workerObject);
+    expect(workerObject.query).toEqual("SELECT * FROM [ListName]");
+    expect(workerObject.viewScope).toEqual("DefaultValue");
+  });
  
 
 }); 

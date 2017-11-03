@@ -236,7 +236,7 @@ var WhereParser = function(whereString, quiet) {
                     if (prevMacro == null) 
                         prevMacro = m[3][0];
                     else if (prevMacro != m[3][0]) {
-                        if(!quiet) console.error("[casql] You can not mix named macros and ?");
+                        throw "[camlsql] You can not mix named macros and ?";
                         return null;
                     }
                     if (m[3][0] == "@") {
