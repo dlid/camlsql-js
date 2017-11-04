@@ -112,9 +112,16 @@ function getEndOfWeek(date, startWeekWithMonday) {
 
 
  function createBooleanParameter(value) {
+  if (typeof value === "number") {
+    if (value > 0) 
+      value = true;
+    else if (value <= 0)
+      value = false;
+  }
   if (typeof value != "boolean" && typeof value !== "undefined")  {
     throw "[camlsql] Value was not boolean";
   }
+  if (typeof value === "undefined") value = false;
   return {
     type : 'Boolean',
     value : value
@@ -133,6 +140,7 @@ function getEndOfWeek(date, startWeekWithMonday) {
  }
 
  function createLookupParameter(value) {
+  if (typeof value !== "string" && typeof value !== "number") throw "[camlsql] Value must be number or string";
   return {
     type : 'Lookup',
     value : value,
@@ -669,6 +677,22 @@ function parseParameter(parameter) {
  }
  return ret;
 }
+/**
+ * Parse the GROUP BY string
+ */
+function extractGroupByPart(workingObject, quiet) {
+    var groupByString,
+        m,
+        query = workingObject.query,
+        re = new RegExp("([a-zA-Z_\\d]+?)(\\s|$)", "ig");
+      if ((m = query.match(/\sGROUP\sBY\s+([a-zA-Z_\d]+?)(\s+|$)/i))) {
+        workingObject.query =  query.substr(0, m.index) + " " + query.substr(m.index + m[0].length) + m[2] ;
+        workingObject.group = {
+            field : formatFieldName(m[1]),
+            collapse : false
+        }
+      }
+} 
 
 function extractJoinPart(workingObject) {
   var query = workingObject.query,
@@ -679,21 +703,29 @@ function extractJoinPart(workingObject) {
       m; 
  
       do {
-        m = query.match(/\s+(left\s+|)join\s+(.+?)\s+on\s(.+?)\.([a-zA-Z_\d]+)(\s|$)/i);
+        m = query.match(/\s+(left\s+|)join\s+(.+?)\s+on\s+(.+?)(\s|$)/i);
         if (m) {
-            var alias = formatFieldName(m[2]),
-                onTable1 = m[3],
-                onField1 = m[4],
-                onTable2 = m[5],
-                onField2 = m[6];
-      
+            if (m[3].indexOf('.') === -1)
+              throw "[camlsql] You must specify the List Name when joining: JOIN [ListAlias] ON [List].[Field]";
+
+            t = m[3].split('.');
+            if (!t[0].match(/^[a-z\d_]+$/i)) {
+              throw "[camlsql] Wrap list alias in brackets if it contains special characters: " + t[0] ;
+            }
+
+            if (!m[2].match(/^[a-z\d_]+$/i)) {
+              throw "[camlsql] Wrap list alias in brackets if it contains special characters: " + m[2] ;
+            }
+
+            console.warn("join list", m[2]);
+
             joins.push({
               inner : trim(m[1]) == "",
-              alias : alias,
-              childTable : onTable1,
-              childField : onField1
+              alias : formatFieldName(m[2]),
+              childTable : t[0],
+              childField : t[1]
             });
-            query = query.substr(0, m.index) + " " + query.substr(m.index + m[0].length) + m[5];
+            query = query.substr(0, m.index) + " " + query.substr(m.index + m[0].length) + m[4];
         }
       } while (m);
 
@@ -788,7 +820,11 @@ working nicely
 function extractLimitPart(workingObject) {
   var match, limitString;
   //console.log("WOBJ", workingObject);
-  if ((match = workingObject.query.match(/\sLIMIT\s(\d+).*$/i))) {
+  if ((match = workingObject.query.match(/\sLIMIT\s+(.*?)(\s.*$|$)/i))) {
+    if (!match[1].match(/^\d+$/))
+      throw "[camlsql] LIMIT value must be a number";
+    if (match[1] == "0")
+      throw "[camlsql] LIMIT value can not be 0";
     workingObject.query = workingObject.query.substr(0, workingObject.query.length - match[0].length );
     workingObject.rowLimit = parseInt(match[1], 10);
   }
@@ -804,7 +840,7 @@ function extractListAndFieldNameParts(workingObject) {
       listName,
       t,
       i,
-      m = query.match(/^SELECT\s(.*?)(?:\sFROM\s(.*?)|)(?:\s+((?:order|where).*)$|$)/i);
+      m = query.match(/^SELECT\s(.*?)(?:\sFROM\s(.*?)|)(?:\s+((?:order|group|where).*)$|$)/i);
 
   if (m) {
     if (m.length == 4) {
@@ -875,7 +911,7 @@ function extractOrderByPart(workingObject, quiet) {
         order,
         re = new RegExp("(\\[?[a-z:A-Z_\\d]+?\\]?)(\\,\\s+|\\s+asc|\\s+desc|$)", "ig");
 
-      if ((m = query.match(/\sORDER\sBY\s(.*?)$/i))) {
+      if ((m = query.match(/\sORDER\sBY\s+(.*?)$/i))) {
         orderByString = m[1];
         query = query.substr(0, query.length - m[0].length );
       } else {
@@ -894,7 +930,6 @@ function extractOrderByPart(workingObject, quiet) {
                         case "datetime": m[0] = "DateTime"; break;
                         case "text": m[0] = "Text"; break;
                         case "number": m[0] = "Number"; break;
-                        case "datetime": m[0] = "DateTime"; break;
                     }
                     dataType = m[0];
                     match[1] = m[1];
@@ -961,6 +996,7 @@ function extractScopePart(workingObject) {
     parameters : [],
     listName : null,
     projectedFields : [],
+    group : null,
     encoded : {} // Contains a list of encoded values so they can be decoded later
   },
   where;
@@ -970,6 +1006,7 @@ function extractScopePart(workingObject) {
   extractScopePart(workingObject);
   extractLimitPart(workingObject);
   extractOrderByPart(workingObject);
+  extractGroupByPart(workingObject);
   extractJoinPart(workingObject);
   extractListAndFieldNameParts(workingObject);
 
@@ -1253,7 +1290,7 @@ var WhereParser = function(whereString, quiet) {
                     if (prevMacro == null) 
                         prevMacro = m[3][0];
                     else if (prevMacro != m[3][0]) {
-                        if(!quiet) console.error("[casql] You can not mix named macros and ?");
+                        throw "[camlsql] You can not mix named macros and ?";
                         return null;
                     }
                     if (m[3][0] == "@") {
@@ -1325,6 +1362,7 @@ function CamlXmlBuilder(query) {
   viewXml += createViewFieldsElement(parsedQuery.fields);
   viewXml += createRowLimitFieldsElement(parsedQuery.rowLimit);
   
+  
 
   if (viewXml) {
     viewXml = xmlBeginElement(XML_FIELD_VIEW, {Scope : parsedQuery.viewScope}) + viewXml + xmlEndElement('View');
@@ -1336,6 +1374,21 @@ function CamlXmlBuilder(query) {
   xml : viewXml,
   errors : null
 };
+
+}
+
+function createGroupByElement(parsedQuery) {
+  var xml  ="";
+  if (parsedQuery.group) {
+    xml += xmlBeginElement("GroupBy", {
+      Collapse : parsedQuery.group.collapse ? 'True' : null
+    });
+    xml += xmlBeginElement('FieldRef', { 
+      Name : parsedQuery.group.field
+     },true);
+    xml += xmlEndElement("GroupBy");
+  }
+  return xml;
 
 }
  
@@ -1437,7 +1490,7 @@ function createOrderByElement(sort) {
  function createQueryElement(parsedQuery, statements, sort, parameters, log) {
   var xml = "";
 //console.log("PARSED", parsedQuery, parameters);
-  if (statements.length > 0 || sort.length > 0) {
+  if (statements.length > 0 || sort.length > 0 || parsedQuery.group) {
     xml += xmlBeginElement(XML_ELEMENT_QUERY);
     if (statements.length > 0) {
       xml += xmlBeginElement(XML_ELEMENT_WHERE);
@@ -1445,10 +1498,10 @@ function createOrderByElement(sort) {
       xml += xmlEndElement(XML_ELEMENT_WHERE);
     }
     xml += createOrderByElement(sort, parameters, log);
-    // Groupby should go here?
-    xml += xmlEndElement(XML_ELEMENT_QUERY);
+    xml += createGroupByElement(parsedQuery);
+    xml += xmlEndElement(XML_ELEMENT_QUERY); 
   }
-  return xml;
+  return xml; 
 }
 
 function createAndOrFromStatements(parsedQuery, items, parameters, log) {
@@ -1515,7 +1568,7 @@ function getXmlElementForLikeStatement(text) {
   if (text.indexOf('%') === 0 && text[text.length-1] === "%") {
     paramValue = text.replace(/^%?|%?$/g, '');
   } else if (text.indexOf('%') === 0) {
-    throw "[casql] SharePoint does not support an 'EndsWith' statement: " + text;
+    throw "[camlsql] SharePoint does not support an 'EndsWith' statement: " + text;
   } else if (text.indexOf('%') === text.length -1) {
     paramValue = text.replace(/%?$/, '');
     elementName = "BeginsWith";
@@ -1580,6 +1633,8 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
     xml += xmlBeginElement(XML_FIELD_FIELDREF, { Name : fieldName, LookupId : LookupId }, true);
     if (parameter) {
       if (statement.comparison == "in") {
+        if (!parameter || parameter.constructor !== Array)
+          throw "[camlsql] IN parameter must be an array";
        xml += '<Values>';
        for (var i=0; i < parameter.length; i++) {
          xml += creatValueElement(statement, parameter[i], parameter[i].value);      

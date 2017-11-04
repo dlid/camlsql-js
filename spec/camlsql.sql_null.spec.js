@@ -16,5 +16,10 @@ describe("NULL SQL Query #001", function() {
       expect(result).toEqual('<View><Query><Where><IsNotNull><FieldRef Name="Field1" /></IsNotNull></Where></Query></View>');
   });
 
+   it("Query 3", function() {
+      var result = camlsql.prepare('SELECT * FROM List1 WHERE [Some cool Field] IS NOT NULL').getXml();
+      expect(result).toEqual('<View><Query><Where><IsNotNull><FieldRef Name="Some_x0020_cool_x0020_Field" /></IsNotNull></Where></Query></View>');
+  });
+
 
 }); 

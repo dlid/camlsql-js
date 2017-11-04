@@ -10,13 +10,11 @@ var routes = [
   { path: '/get-started', name : 'get-started', component: GetStartedTabComponent },
   { path: '/examples', name : 'examples', component: ExamplesTabComponent },
   { path: '/examples/find/:query', component: ExamplesTabComponent },
-  { path: '/examples/find/:query/:id', name : 'example-search-item', component: VisaAvtalComponent },
-  { path: '/examples/:id', name : 'show-example', component: VisaAvtalComponent },
+  { path: '/examples/find/:query/:id', name : 'example-search-item', component: ViewExampleTabComponent },
+  { path: '/examples/:id', name : 'show-example', component: ViewExampleTabComponent },
   { path: '/live', name : 'live', component: LiveTabComponent },
-  { path: '/live/:hash', name : 'live-hash', component: LiveTabComponent },
-] 
-
-
+  { path: '/live/:hash', name : 'live-hash', component: LiveTabComponent }, 
+];
   
 // 3. Create the router instance and pass the `routes` option
 // You can pass in additional options here, but let's
@@ -30,7 +28,7 @@ var app = new Vue({
 	el : '#camljs-app',
 	router : router,
 	data : {
-		test : "hej4"
+		globals : appGlobals
 	}
 });
      

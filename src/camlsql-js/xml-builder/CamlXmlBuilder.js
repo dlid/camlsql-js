@@ -33,6 +33,7 @@ function CamlXmlBuilder(query) {
   viewXml += createViewFieldsElement(parsedQuery.fields);
   viewXml += createRowLimitFieldsElement(parsedQuery.rowLimit);
   
+  
 
   if (viewXml) {
     viewXml = xmlBeginElement(XML_FIELD_VIEW, {Scope : parsedQuery.viewScope}) + viewXml + xmlEndElement('View');
@@ -44,6 +45,21 @@ function CamlXmlBuilder(query) {
   xml : viewXml,
   errors : null
 };
+
+}
+
+function createGroupByElement(parsedQuery) {
+  var xml  ="";
+  if (parsedQuery.group) {
+    xml += xmlBeginElement("GroupBy", {
+      Collapse : parsedQuery.group.collapse ? 'True' : null
+    });
+    xml += xmlBeginElement('FieldRef', { 
+      Name : parsedQuery.group.field
+     },true);
+    xml += xmlEndElement("GroupBy");
+  }
+  return xml;
 
 }
  
@@ -145,7 +161,7 @@ function createOrderByElement(sort) {
  function createQueryElement(parsedQuery, statements, sort, parameters, log) {
   var xml = "";
 //console.log("PARSED", parsedQuery, parameters);
-  if (statements.length > 0 || sort.length > 0) {
+  if (statements.length > 0 || sort.length > 0 || parsedQuery.group) {
     xml += xmlBeginElement(XML_ELEMENT_QUERY);
     if (statements.length > 0) {
       xml += xmlBeginElement(XML_ELEMENT_WHERE);
@@ -153,10 +169,10 @@ function createOrderByElement(sort) {
       xml += xmlEndElement(XML_ELEMENT_WHERE);
     }
     xml += createOrderByElement(sort, parameters, log);
-    // Groupby should go here?
-    xml += xmlEndElement(XML_ELEMENT_QUERY);
+    xml += createGroupByElement(parsedQuery);
+    xml += xmlEndElement(XML_ELEMENT_QUERY); 
   }
-  return xml;
+  return xml; 
 }
 
 function createAndOrFromStatements(parsedQuery, items, parameters, log) {
@@ -205,7 +221,13 @@ function createStatementXml(parsedQuery, statement, parameters, log) {
     } else if (comparison == "like") {
       if (typeof param === "undefined")
         throw "[camlsql] Parameter is not defined " +  statement.macro;
-      elementName = getXmlElementForLikeStatement(param.value);
+      var x = getXmlElementForLikeStatement(param.value);
+      //console.log("statement", statement);
+      //console.log("parameters", parameters);
+      //console.warn("X", param);
+      elementName = x[1];
+      param.overrideValue =  x[0];
+
       xml+=xmlBeginElement(elementName);
       xml+=createFieldRefValue(parsedQuery, statement, param);
       xml+=xmlEndElement(elementName);
@@ -219,7 +241,8 @@ function createStatementXml(parsedQuery, statement, parameters, log) {
 
 function getXmlElementForLikeStatement(text) {
   var elementName = "Contains",
-  paramValue = null;
+  paramValue = text;
+  if(!text) return [text, elementName];
   if (text.indexOf('%') === 0 && text[text.length-1] === "%") {
     paramValue = text.replace(/^%?|%?$/g, '');
   } else if (text.indexOf('%') === 0) {
@@ -228,7 +251,7 @@ function getXmlElementForLikeStatement(text) {
     paramValue = text.replace(/%?$/, '');
     elementName = "BeginsWith";
   }
-  return elementName;
+  return [paramValue, elementName];
 }
 
 function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
@@ -305,15 +328,22 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
   function creatValueElement(statement, parameter) {
     var xml = "",
     innerXml = "",
+    vAttr = {},
     valueAttributes = {
       Type : parameter.type
-    };
+    },
+    parameterValue = parameter.overrideValue ? parameter.overrideValue : parameter.value;
 
     if (parameter.type == "DateTime") {
       valueAttributes.IncludeTimeValue = parameter._includeTime ? 'True' : null;
       
+      if (parameter.value) {
+        vAttr.OffsetDays = parameterValue;
+  //        xml += ' OffsetDays="' + paramValue + '"';
+  //      }
+}
       if (parameter.today === true) {
-        innerXml = "<Today />";
+        innerXml = xmlBeginElement('Today', vAttr, true);
       } else if (parameter.isNow === true) {
         innerXml = "<Now />";
       } else {
@@ -321,33 +351,33 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
         if (parameter.stringValue) {
           innerXml = encodeHTML(parameter.stringValue);
         } else {
-          innerXml = parameter.value.toISOString();
+          innerXml = parameterValue.toISOString();
         }
       }
     // } else if (parameter.type == "Url") {
-    //     innerXml = encodeHTML(parameter.value);
+    //     innerXml = encodeHTML(parameterValue);
   } else if (parameter.type == "Text") {
     if (parameter.multiline == true) {
-      innerXml = "<![CDATA[" + encodeHTML(parameter.value) + "]]>";
+      innerXml = "<![CDATA[" + encodeHTML(parameterValue) + "]]>";
     } else {
-      innerXml = encodeHTML(parameter.value);
+      innerXml = encodeHTML(parameterValue);
     }
   } else if (parameter.type == "Number") {
-    innerXml = parameter.value;
+    innerXml = parameterValue;
   } else if (parameter.type == "User") {
-    if (typeof parameter.value === "number") {
+    if (typeof parameterValue === "number") {
       valueAttributes.Type = "Number";
       valueAttributes.LookupId = 'True';
-      innerXml = encodeHTML(parameter.value + "");
+      innerXml = encodeHTML(parameterValue + "");
     } else {
       valueAttributes.Type = "Number";
       innerXml = "<UserID />";
     } 
   } else if (parameter.type == "Lookup") {
     if (parameter.byId == true) valueAttributes.LookupId = 'True';
-    innerXml = encodeHTML(parameter.value + "");
+    innerXml = encodeHTML(parameterValue + "");
   } else if (parameter.type == "Boolean") {
-    innerXml = parameter.value ? 1 : 0;
+    innerXml = parameterValue ? 1 : 0;
   } else {
     innerXml = xmlBeginElement('NotImplemented',{}, true);
   }

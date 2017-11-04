@@ -164,6 +164,7 @@ gulp.task('build-app-js',  function (cb) {
         'src/app/js/managers/*.js',
         'src/app/js/vue/directives/*.js',
         'src/app/js/vue/components/*.js',
+        'src/app/js/vue/appGlobals.js',
         'src/app/js/start.js'
     ];
 

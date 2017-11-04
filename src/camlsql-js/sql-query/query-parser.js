@@ -29,6 +29,7 @@
     parameters : [],
     listName : null,
     projectedFields : [],
+    group : null,
     encoded : {} // Contains a list of encoded values so they can be decoded later
   },
   where;
@@ -38,6 +39,7 @@
   extractScopePart(workingObject);
   extractLimitPart(workingObject);
   extractOrderByPart(workingObject);
+  extractGroupByPart(workingObject);
   extractJoinPart(workingObject);
   extractListAndFieldNameParts(workingObject);
 

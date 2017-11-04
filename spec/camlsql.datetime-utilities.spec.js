@@ -76,7 +76,7 @@ describe("camlsql.datetime", function() {
   });
 
   it("getIntervalStringAsMs not a string", function() {
-      expect(function() {
+    expect(function() {
       camlsql.__testonly__.getIntervalStringAsMs(5);
     }).toThrow("[camlsql] Interval value must be a string");
   });

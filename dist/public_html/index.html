@@ -109,7 +109,7 @@
 
 	<script type="text/x-template" id="GetStartedTab-template">
 		<div>
-			<h1>Get started</h1>
+			<h1>Get started Guide</h1>
 
 			<h2>1. Include the script</h2>
 			<p>Include <code>camlsql</code> on your page. It has no dependencies for basic use.</p>
@@ -184,7 +184,7 @@
 				</thead>
 				<tbody>
 					<tr v-for="example in examples" class="examplerow" :class="{'examplerow--notimplemented' : example.status == 0}">
-						<td><a href="#">{{example.name}}</a><!-- <router-link :to="{ name : 'show-example', params : {id : '3131312213'}}">Avtal 1</router-link> --></td>
+						<td><router-link :to="{name : 'show-example', params : { id : ('00000' + example.id ).slice(-4) + '-' + urifyString(example.name) }}">{{example.name}}</router-link><!-- <router-link :to="{ name : 'show-example', params : {id : '3131312213'}}">Avtal 1</router-link> --></td> 
 						<td>{{ example.customSqlText ? example.customSqlText :  cutDownSql(example.sql)}}</td>
 						<td>{{example.keywords}}</td>
 						<td>{{example.status == 1 ? example.version : '-'}}
@@ -195,7 +195,20 @@
 
 	</script>
 
+  <script type="text/x-template" id="ViewExample-template">
+    <div>
+        <div v-if="example">
+        <h1>{{example.name}}</h1>
+        <p>{{example.description}}</p>
+        <pre class="prettyprint"><code>&lt;script&gt;
+camlsql.prepare('{{example.sql}}'{{formatParametersAsString(example.parametersAsString)}})
+&lt;/script&gt;</code></pre>
+        <pre v-show="example.xml" class="prettyprint"><code>{{formatXml()}}</code></pre>
 
+        <div v-html="example.body ? example.body : ''"></div>
+      </div>
+    </div>
+  </script>
 
 	<script type="text/x-template" id="StartTab-template">
 		<div class="searchtab">
