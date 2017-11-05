@@ -1,8 +1,8 @@
 {
   "name": "camlsql-js",
-  "version": "1.0.1",
+  "version": "0.0.1",
   "description": "Javascript utility to create CAML queries using SQL syntax",
-  "main": "index.js",
+  "main": "dist/camlsql.js",
   "scripts": {
     "test": "istanbul cover node_modules/jasmine/bin/jasmine.js -verbose JASMINE_CONFIG_PATH=./jasmine.json",
     "report-coverage": "codecov"
@@ -16,6 +16,9 @@
   "bugs": {
     "url": "https://github.com/dlid/camlsql-js/issues"
   },
+  "files" : [
+    "dist/camlsql.*.js"
+  ],
   "homepage": "https://github.com/dlid/camlsql-js#readme",
   "devDependencies": {
     "browser-sync": "^2.18.13",

@@ -138,6 +138,7 @@ gulp.task('build-release-js',  function (cb) {
         concat('camlsql.js'),
         inject.wrap(script_header()[0], script_header()[1]),
         gulp.dest('dist/public_html/js/release'),
+        gulp.dest('dist'),
         jshint(),
         jshint.reporter('default'),
         uglify().on('error', function(uglify) {
@@ -147,7 +148,8 @@ gulp.task('build-release-js',  function (cb) {
         }),
         inject.wrap(script_header()[0], script_header()[1]),
         rename({ suffix: '.min' }),
-        gulp.dest('dist/public_html/js/release')
+        gulp.dest('dist/public_html/js/release'),
+        gulp.dest('dist')
     ], cb);
 
 });
