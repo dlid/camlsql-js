@@ -173,7 +173,7 @@ var WhereParser = function(whereString, quiet) {
                             s.comparison = p.comparison;
                             statements.push(s);
                         } else {
-                            if(!quiet) throw "[casql] Could not parse statement: " +sp[j];
+                            if(!quiet) throw "[camlsql] Could not parse statement: " +sp[j];
                         }
                     }
                     if (statements.length > 1) {
@@ -207,13 +207,11 @@ var WhereParser = function(whereString, quiet) {
 
             if (typeof str === "undefined") return null;
 
-            str = str.replace(/ is not null/i, ' isnotnull ?');
-            str = str.replace(/ is null/i, ' isnull ?');
+            str = str.replace(/ is\s+not\s+null/i, ' cxqlisnotnull ?');
+            str = str.replace(/ is\s+null/i, ' cxqlisnull ?');
 
-            var m = str.match(/(.*)\s*(<>|>=|[^<]>|<=|<[^>]|[^<>]=|like|isnull|isnotnull|in)\s*(\?|@[a-z0-9_]+)/i);
-            if (m) {
-
-                //console.warn("MATCH!", m);
+            var m = str.match(/([a-zA-Z_\d\.]+)\s*(<>|>=|[^<]>|<=|<[^>]|=|\slike|\scxqlisnull|\scxqlisnotnull|in)\s*(\?|@[a-z0-9_]+)/i);
+            if (m) { 
                 var comparison = "eq",
                     macro  = "@param" + _parameters,
                     cmpMatch = trim(m[2]);
@@ -226,11 +224,11 @@ var WhereParser = function(whereString, quiet) {
                 
                 if (cmpMatch == '<>' || cmpMatch == "!=") comparison = "ne";
                 if (cmpMatch.toLowerCase() == 'like') comparison = "like";
-                if (cmpMatch.toLowerCase() == 'isnull') comparison = "null";
-                if (cmpMatch.toLowerCase() == 'isnotnull') comparison = "notnull";
+                if (cmpMatch.toLowerCase() == 'cxqlisnull') comparison = "null";
+                if (cmpMatch.toLowerCase() == 'cxqlisnotnull') comparison = "notnull";
                 if (cmpMatch.toLowerCase() == 'in') comparison = "in";
 
-                if (comparison != "null" && comparison != "notnull") {
+                if (comparison != "cxqlisnull" && comparison != "cxqlisnotnull") {
                     _parameters++; 
                     _numMacros++;
                     if (prevMacro == null) 

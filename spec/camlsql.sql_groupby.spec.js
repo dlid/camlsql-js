@@ -5,16 +5,18 @@ var camlsql = require("../dist/public_html/js/camlsql.js");
 
 describe("SQL Query #001", function() {
 
-  // var expected_xml = '<View><Query><OrderBy><FieldRef Name="Field" /></OrderBy></Query></View>';
+  it("Query 1", function() {
+    var result = camlsql.prepare("SELECT * FROM List1 GROUP BY Title", []).getXml();
+    expect(result).toEqual('<View><Query><GroupBy><FieldRef Name="Title" /></GroupBy></Query></View>');
+  });
 
-  // it("Query 1", function() {
-  //   var result = camlsql.prepare("SELECT * FROM List ORDER BY Field", []).getXml();
-  //   expect(result).toEqual(expected_xml);
-  // });
+}); 
 
-  // it("Query 2", function() {
-  //   var result = camlsql.prepare("SELECT * FROM List ORDER BY [Field]", []).getXml();
-  //   expect(result).toEqual(expected_xml);
-  // });
+describe("SQL Query #002", function() {
+
+  it("Query 1", function() {
+    var result = camlsql.prepare("SELECT * FROM List1 GROUP BY Title", []).getXml(true);
+    expect(result).toEqual('');
+  });
 
 }); 

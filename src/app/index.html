@@ -6,7 +6,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 	<!-- Downloaded and saved in /static/css/highlight.css -->
 <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
-
+<link rel="icon" href="/favicon.ico?v=2" />
 <!-- Or if you want to use the stylesheet from the CDN -->
 <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/agate.min.css">
 </head>
@@ -17,13 +17,14 @@
 	<div id="camljs-app" class="camljs-app">
 		<div class="ma-header">
 			<div class="appwidth">
-				<h1>camlsql-js</h1>
-			</div>
+        <img src="img/logo.png" alt="camlsql-js" height="60"  />
+			
+			</div> 
 		</div>
 		<div class="tabs tabs--line">
 			<div  class="appwidth">
 				<router-link to="/start">Start</router-link>
-			    <router-link to="/get-started">Getting started</router-link>
+			    <router-link to="/get-started">Gettin  started</router-link>
 			    <router-link to="/examples">Examples</router-link>
 			    <router-link to="/live">Try it out</router-link>
 			    <router-link to="/download">Download</router-link>
@@ -36,7 +37,7 @@
 	<script type="text/x-template" id="LiveTab-template">
 		<div>
 			<h1>Try it out</h1>
-			 
+			   
 			<div class="live">
 					<strong>camlsql statement:<span v-show="liveTimeout">*</span> </strong> 
 					<textarea  spellcheck="false" style="width:100%; padding: 8px;    box-sizing: border-box;" auto-resize v-model="liveQuery">m</textarea>

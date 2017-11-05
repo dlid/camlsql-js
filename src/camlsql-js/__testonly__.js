@@ -33,3 +33,5 @@ publicData.__testonly__.getEndOfWeek = getEndOfWeek;
 publicData.__testonly__.executeSPQuery = executeSPQuery;
 publicData.__testonly__.trimParanthesis = trimParanthesis;
 publicData.__testonly__.extractNamesToEncode = extractNamesToEncode;
+publicData.__testonly__.createMembershipParameter = createMembershipParameter;
+

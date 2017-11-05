@@ -178,7 +178,7 @@ function getEndOfWeek(date, startWeekWithMonday) {
   if (typeof date !== "undefined" && CamlSqlDateParameter.isPrototypeOf(date)) {
     date = date.value;
   } 
-
+    
   // If the user pass in a string, use it - no questions asked
   if (typeof date === "string") {
     stringValue = date + "";
@@ -310,6 +310,30 @@ function createGuidParameter(value) {
   };
 }
 
+function createMembershipParameter(type, id) {
+
+//  https://waelmohamed.wordpress.com/2013/06/10/get-tasks-assigned-to-user-or-to-current-user-groups-in-sharepoint-using-caml-query/
+
+  var types = ['SPWeb.AllUsers', 'SPGroup', 'SPWeb.Groups', 'CurrentUserGroups', 'SPWeb.Users'],i,foundAt = null;
+  if (!type) throw "Membership type should be one of " + types.join(', ');
+  for (i=0; i < types.length; i++) {
+    if (types[i].toLowerCase() == type.toLowerCase()){ 
+      type = types[i];
+      foundAt = i;
+      if (type === "SPGroup" && typeof id !== "number")
+        throw "[camlsql] When using SPGroup you must specify a numeric GroupID";
+    }
+  }
+  if(foundAt === null) 
+    throw "Membership type should be one of " + types.join(', ');
+
+  return {
+    type : 'Membership',
+    value : type,
+    id : id
+  };
+}
+
 function createMultiChoiceParameter(value) {
   return {
     type : 'MultiChoice',
@@ -365,12 +389,19 @@ function executeSPQuery(options) {
             spList = null,
             listName = options.query.getListName(),
             spListItems = null,
-            viewXml = options && options.rawXml ? options.rawXml : options.query.getXml(),
+            viewXml = options && options.rawXml ? options.rawXml : options.query.getXml(true),
             nextPage,
             prevPage,
-            noCallback = false;
+            noCallback = false,
+            groupBy = options.query.$options.parsedQuery.group;
+
 
         if (typeof execCallback !== "function") execCallback = null;
+
+        if (groupBy && options.query.$options.parsedQuery.fields.length > 0) {
+            if ( options.query.$options.parsedQuery.fields.indexOf(groupBy.field)=== -1 )
+                throw "[camlsql] The Grouping Field must be included in the field list";   
+        }
 
 
         if (!execCallback) {
@@ -419,7 +450,7 @@ function executeSPQuery(options) {
         } else {
             if (noCallback) {
                 if (typeof console !== "undefined") {
-                    console.log("[camlsql] ViewXML:", options.query.getXml());
+                    console.log("[camlsql] ViewXML:", options.query.getXml(true));
                 }
             }
             if (execCallback == null) {
@@ -435,7 +466,7 @@ function executeSPQuery(options) {
 
         function onListLoaded() {
             var camlQuery = new SP.CamlQuery();
-            var camlQueryString = options.query.getXml();
+            var camlQueryString = options.query.getXml(true);
             camlQuery.set_viewXml(camlQueryString);
             spListItems = spList.getItems(camlQuery);
             if (noCallback && console) console.log("[camlsql] Executing SP.CamlQuery", camlQueryString); 
@@ -466,18 +497,47 @@ function executeSPQuery(options) {
                 items = [],
                 spListItem;
 
-            var listItemCollectionPosition = spListItems.get_listItemCollectionPosition();
+            var listItemCollectionPosition = spListItems.get_listItemCollectionPosition(),
+                values, field, groupByValue,
+                groupIndexes = {};
 
             if (listItemCollectionPosition) {
                 nextPage = listItemCollectionPosition.get_pagingInfo();
             }
-
             while (listItemEnumerator.moveNext()) {
                 spListItem = listItemEnumerator.get_current();
+                values = spListItem.get_fieldValues();
                 if (!prevPage) {
                     prevPage = "PagedPrev=TRUE&Paged=TRUE&p_ID=" + encodeURIComponent(spListItem.get_id());
                 }
-                items.push(spListItem.get_fieldValues());
+
+                if (groupBy) {
+                    field = groupBy.field;
+                    if (values[field] === null) {
+                        groupByValue = null;
+                    } else if (typeof values[field] === "object" && typeof values[field].toString !== "undefined") {
+                        if (typeof values[field].get_lookupValue === "function") {
+                            groupByValue = values[field].get_lookupValue();
+                        } else {
+                            groupByValue = values[field].toString();
+                        }
+                    } else {
+                        groupByValue = values[field];
+                    }
+
+                    if (typeof groupIndexes[groupByValue] === "undefined") {
+                        items.push({
+                            groupName : groupByValue,
+                            items : [values]
+                        });
+                        groupIndexes[groupByValue] = items.length -1;
+                    } else {
+                        items[groupIndexes[groupByValue]].items.push(values);
+                    }
+                } else {
+
+                    items.push(values);
+                }
             }
             execCallback(null, items, {
                 nextPage : nextPage,
@@ -626,8 +686,8 @@ function CamlSqlQuery(query, param) {
       return this;
     };
     
-    function getXml() {
-      var builder = new CamlXmlBuilder(currentQuery);
+    function getXml(isExec) {
+      var builder = new CamlXmlBuilder(currentQuery, isExec);
       return builder.xml;
     }
 
@@ -889,10 +949,6 @@ function extractListAndFieldNameParts(workingObject) {
         } else if (fields[i].indexOf('.') !== -1) {
           throw "[camlsql] Projected fields in the format <list>.<field_name> must be followed with an AS <alias>";
         } 
-
-        if (!fields[i].match(/^[a-z:A-Z_\d]+$/)) {
-          if (console.warn) console.warn("[camlsql] Doubtful field name: " + fields[i]);
-        }
       }
       workingObject.fields = fields;
       workingObject.listName = formatFieldName(m[2]);
@@ -1271,7 +1327,7 @@ var WhereParser = function(whereString, quiet) {
                             s.comparison = p.comparison;
                             statements.push(s);
                         } else {
-                            if(!quiet) throw "[casql] Could not parse statement: " +sp[j];
+                            if(!quiet) throw "[camlsql] Could not parse statement: " +sp[j];
                         }
                     }
                     if (statements.length > 1) {
@@ -1305,13 +1361,11 @@ var WhereParser = function(whereString, quiet) {
 
             if (typeof str === "undefined") return null;
 
-            str = str.replace(/ is not null/i, ' isnotnull ?');
-            str = str.replace(/ is null/i, ' isnull ?');
+            str = str.replace(/ is\s+not\s+null/i, ' cxqlisnotnull ?');
+            str = str.replace(/ is\s+null/i, ' cxqlisnull ?');
 
-            var m = str.match(/(.*)\s*(<>|>=|[^<]>|<=|<[^>]|[^<>]=|like|isnull|isnotnull|in)\s*(\?|@[a-z0-9_]+)/i);
-            if (m) {
-
-                //console.warn("MATCH!", m);
+            var m = str.match(/([a-zA-Z_\d\.]+)\s*(<>|>=|[^<]>|<=|<[^>]|=|\slike|\scxqlisnull|\scxqlisnotnull|in)\s*(\?|@[a-z0-9_]+)/i);
+            if (m) { 
                 var comparison = "eq",
                     macro  = "@param" + _parameters,
                     cmpMatch = trim(m[2]);
@@ -1324,11 +1378,11 @@ var WhereParser = function(whereString, quiet) {
                 
                 if (cmpMatch == '<>' || cmpMatch == "!=") comparison = "ne";
                 if (cmpMatch.toLowerCase() == 'like') comparison = "like";
-                if (cmpMatch.toLowerCase() == 'isnull') comparison = "null";
-                if (cmpMatch.toLowerCase() == 'isnotnull') comparison = "notnull";
+                if (cmpMatch.toLowerCase() == 'cxqlisnull') comparison = "null";
+                if (cmpMatch.toLowerCase() == 'cxqlisnotnull') comparison = "notnull";
                 if (cmpMatch.toLowerCase() == 'in') comparison = "in";
 
-                if (comparison != "null" && comparison != "notnull") {
+                if (comparison != "cxqlisnull" && comparison != "cxqlisnotnull") {
                     _parameters++; 
                     _numMacros++;
                     if (prevMacro == null) 
@@ -1384,7 +1438,7 @@ XML_ELEMENT_WHERE = 'Where',
 XML_ELEMENT_ISNULL = "IsNull",
 XML_ELEMENT_ISNOTNULL = "IsNotNull";
 
-function CamlXmlBuilder(query) {
+function CamlXmlBuilder(query, isExec) {
   var viewXml ="",
   parsedQuery = query.$options.parsedQuery,
   parameters = query.$options.parameters,
@@ -1403,7 +1457,7 @@ function CamlXmlBuilder(query) {
   //    2012-10-24T21:30:46Z
   //  </Value>
 
-  viewXml += createQueryElement(parsedQuery, parsedQuery.statements, parsedQuery.sort, parameters, log);
+  viewXml += createQueryElement(parsedQuery, parsedQuery.statements, parsedQuery.sort, parameters, isExec, log);
   viewXml += createJoinElement(parsedQuery, parsedQuery.listName, parsedQuery.joins);
   viewXml += createProjectedFieldsElement(parsedQuery.projectedFields, parsedQuery.joins);
   viewXml += createViewFieldsElement(parsedQuery.fields);
@@ -1534,10 +1588,10 @@ function createOrderByElement(sort) {
  * @param  {[type]} log        [description]
  * @return {[type]}            [description]
  */
- function createQueryElement(parsedQuery, statements, sort, parameters, log) {
+ function createQueryElement(parsedQuery, statements, sort, parameters, isExec, log) {
   var xml = "";
 //console.log("PARSED", parsedQuery, parameters);
-  if (statements.length > 0 || sort.length > 0 || parsedQuery.group) {
+  if (statements.length > 0 || sort.length > 0 || (parsedQuery.group && !isExec)) {
     xml += xmlBeginElement(XML_ELEMENT_QUERY);
     if (statements.length > 0) {
       xml += xmlBeginElement(XML_ELEMENT_WHERE);
@@ -1545,7 +1599,9 @@ function createOrderByElement(sort) {
       xml += xmlEndElement(XML_ELEMENT_WHERE);
     }
     xml += createOrderByElement(sort, parameters, log);
-    xml += createGroupByElement(parsedQuery);
+    if (!isExec) {
+      xml += createGroupByElement(parsedQuery);
+    }
     xml += xmlEndElement(XML_ELEMENT_QUERY); 
   }
   return xml; 
@@ -1579,9 +1635,19 @@ function createStatementXml(parsedQuery, statement, parameters, log) {
     if (typeof simpleMappings[comparison] !== "undefined") {
       if (typeof param === "undefined")
         throw "[camlsql] Parameter is not defined " +  statement.macro;
-      xml+=xmlBeginElement(simpleMappings[comparison]);
-      xml+=createFieldRefValue(parsedQuery, statement, param);
-      xml+=xmlEndElement(simpleMappings[comparison]);
+
+      if (param && param.type == "Membership") {
+        if (statement.comparison != "eq") throw "[camlsql] Membership comparison must be =";
+        if (param.value.toLowerCase() == "spgroup" && !param.id)
+          throw "[camlsql] Membership of type SPGroup requires a group id";
+        xml += xmlBeginElement("Membership", {Type : param.value, ID : param.id ? param.id : null});
+        xml += xmlBeginElement(XML_FIELD_FIELDREF, {Name : statement.field}, true);
+        xml += xmlEndElement("Membership");
+      } else {
+        xml+=xmlBeginElement(simpleMappings[comparison]);
+        xml+=createFieldRefValue(parsedQuery, statement, param);
+        xml+=xmlEndElement(simpleMappings[comparison]);
+      }
     } else if (comparison == "null") {
       xml+=xmlBeginElement(XML_ELEMENT_ISNULL);
       xml+=createFieldRefValue(parsedQuery, statement);
@@ -1742,8 +1808,7 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
     innerXml = parameterValue;
   } else if (parameter.type == "User") {
     if (typeof parameterValue === "number") {
-      valueAttributes.Type = "Number";
-      valueAttributes.LookupId = 'True';
+      valueAttributes.Type = "User";
       innerXml = encodeHTML(parameterValue + "");
     } else {
       valueAttributes.Type = "Number";
@@ -1823,7 +1888,8 @@ function xmlEndElement(name) {
     choice : createChoiceParameter,
     user : createUserParameter,
     boolean : createBooleanParameter,
-    encode : encodeToInternalField
+    encode : encodeToInternalField,
+    membership : createMembershipParameter
   }; 
   // var _properties = {
   //  query : query,
@@ -2192,6 +2258,8 @@ publicData.__testonly__.getEndOfWeek = getEndOfWeek;
 publicData.__testonly__.executeSPQuery = executeSPQuery;
 publicData.__testonly__.trimParanthesis = trimParanthesis;
 publicData.__testonly__.extractNamesToEncode = extractNamesToEncode;
+publicData.__testonly__.createMembershipParameter = createMembershipParameter;
+
 
 // END c:\git\camlsql-js\src\camlsql-js\__testonly__.js
 

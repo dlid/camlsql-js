@@ -78,7 +78,7 @@
   if (typeof date !== "undefined" && CamlSqlDateParameter.isPrototypeOf(date)) {
     date = date.value;
   } 
-
+    
   // If the user pass in a string, use it - no questions asked
   if (typeof date === "string") {
     stringValue = date + "";
@@ -207,6 +207,30 @@ function createGuidParameter(value) {
   return {
     type : 'Guid',
     value : value
+  };
+}
+
+function createMembershipParameter(type, id) {
+
+//  https://waelmohamed.wordpress.com/2013/06/10/get-tasks-assigned-to-user-or-to-current-user-groups-in-sharepoint-using-caml-query/
+
+  var types = ['SPWeb.AllUsers', 'SPGroup', 'SPWeb.Groups', 'CurrentUserGroups', 'SPWeb.Users'],i,foundAt = null;
+  if (!type) throw "Membership type should be one of " + types.join(', ');
+  for (i=0; i < types.length; i++) {
+    if (types[i].toLowerCase() == type.toLowerCase()){ 
+      type = types[i];
+      foundAt = i;
+      if (type === "SPGroup" && typeof id !== "number")
+        throw "[camlsql] When using SPGroup you must specify a numeric GroupID";
+    }
+  }
+  if(foundAt === null) 
+    throw "Membership type should be one of " + types.join(', ');
+
+  return {
+    type : 'Membership',
+    value : type,
+    id : id
   };
 }
 

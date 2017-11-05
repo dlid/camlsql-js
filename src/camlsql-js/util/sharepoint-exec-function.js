@@ -14,12 +14,19 @@ function executeSPQuery(options) {
             spList = null,
             listName = options.query.getListName(),
             spListItems = null,
-            viewXml = options && options.rawXml ? options.rawXml : options.query.getXml(),
+            viewXml = options && options.rawXml ? options.rawXml : options.query.getXml(true),
             nextPage,
             prevPage,
-            noCallback = false;
+            noCallback = false,
+            groupBy = options.query.$options.parsedQuery.group;
+
 
         if (typeof execCallback !== "function") execCallback = null;
+
+        if (groupBy && options.query.$options.parsedQuery.fields.length > 0) {
+            if ( options.query.$options.parsedQuery.fields.indexOf(groupBy.field)=== -1 )
+                throw "[camlsql] The Grouping Field must be included in the field list";   
+        }
 
 
         if (!execCallback) {
@@ -68,7 +75,7 @@ function executeSPQuery(options) {
         } else {
             if (noCallback) {
                 if (typeof console !== "undefined") {
-                    console.log("[camlsql] ViewXML:", options.query.getXml());
+                    console.log("[camlsql] ViewXML:", options.query.getXml(true));
                 }
             }
             if (execCallback == null) {
@@ -84,7 +91,7 @@ function executeSPQuery(options) {
 
         function onListLoaded() {
             var camlQuery = new SP.CamlQuery();
-            var camlQueryString = options.query.getXml();
+            var camlQueryString = options.query.getXml(true);
             camlQuery.set_viewXml(camlQueryString);
             spListItems = spList.getItems(camlQuery);
             if (noCallback && console) console.log("[camlsql] Executing SP.CamlQuery", camlQueryString); 
@@ -115,18 +122,47 @@ function executeSPQuery(options) {
                 items = [],
                 spListItem;
 
-            var listItemCollectionPosition = spListItems.get_listItemCollectionPosition();
+            var listItemCollectionPosition = spListItems.get_listItemCollectionPosition(),
+                values, field, groupByValue,
+                groupIndexes = {};
 
             if (listItemCollectionPosition) {
                 nextPage = listItemCollectionPosition.get_pagingInfo();
             }
-
             while (listItemEnumerator.moveNext()) {
                 spListItem = listItemEnumerator.get_current();
+                values = spListItem.get_fieldValues();
                 if (!prevPage) {
                     prevPage = "PagedPrev=TRUE&Paged=TRUE&p_ID=" + encodeURIComponent(spListItem.get_id());
                 }
-                items.push(spListItem.get_fieldValues());
+
+                if (groupBy) {
+                    field = groupBy.field;
+                    if (values[field] === null) {
+                        groupByValue = null;
+                    } else if (typeof values[field] === "object" && typeof values[field].toString !== "undefined") {
+                        if (typeof values[field].get_lookupValue === "function") {
+                            groupByValue = values[field].get_lookupValue();
+                        } else {
+                            groupByValue = values[field].toString();
+                        }
+                    } else {
+                        groupByValue = values[field];
+                    }
+
+                    if (typeof groupIndexes[groupByValue] === "undefined") {
+                        items.push({
+                            groupName : groupByValue,
+                            items : [values]
+                        });
+                        groupIndexes[groupByValue] = items.length -1;
+                    } else {
+                        items[groupIndexes[groupByValue]].items.push(values);
+                    }
+                } else {
+
+                    items.push(values);
+                }
             }
             execCallback(null, items, {
                 nextPage : nextPage,

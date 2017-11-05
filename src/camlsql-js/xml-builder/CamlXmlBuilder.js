@@ -8,7 +8,7 @@ XML_ELEMENT_WHERE = 'Where',
 XML_ELEMENT_ISNULL = "IsNull",
 XML_ELEMENT_ISNOTNULL = "IsNotNull";
 
-function CamlXmlBuilder(query) {
+function CamlXmlBuilder(query, isExec) {
   var viewXml ="",
   parsedQuery = query.$options.parsedQuery,
   parameters = query.$options.parameters,
@@ -27,7 +27,7 @@ function CamlXmlBuilder(query) {
   //    2012-10-24T21:30:46Z
   //  </Value>
 
-  viewXml += createQueryElement(parsedQuery, parsedQuery.statements, parsedQuery.sort, parameters, log);
+  viewXml += createQueryElement(parsedQuery, parsedQuery.statements, parsedQuery.sort, parameters, isExec, log);
   viewXml += createJoinElement(parsedQuery, parsedQuery.listName, parsedQuery.joins);
   viewXml += createProjectedFieldsElement(parsedQuery.projectedFields, parsedQuery.joins);
   viewXml += createViewFieldsElement(parsedQuery.fields);
@@ -158,10 +158,10 @@ function createOrderByElement(sort) {
  * @param  {[type]} log        [description]
  * @return {[type]}            [description]
  */
- function createQueryElement(parsedQuery, statements, sort, parameters, log) {
+ function createQueryElement(parsedQuery, statements, sort, parameters, isExec, log) {
   var xml = "";
 //console.log("PARSED", parsedQuery, parameters);
-  if (statements.length > 0 || sort.length > 0 || parsedQuery.group) {
+  if (statements.length > 0 || sort.length > 0 || (parsedQuery.group && !isExec)) {
     xml += xmlBeginElement(XML_ELEMENT_QUERY);
     if (statements.length > 0) {
       xml += xmlBeginElement(XML_ELEMENT_WHERE);
@@ -169,7 +169,9 @@ function createOrderByElement(sort) {
       xml += xmlEndElement(XML_ELEMENT_WHERE);
     }
     xml += createOrderByElement(sort, parameters, log);
-    xml += createGroupByElement(parsedQuery);
+    if (!isExec) {
+      xml += createGroupByElement(parsedQuery);
+    }
     xml += xmlEndElement(XML_ELEMENT_QUERY); 
   }
   return xml; 
@@ -203,9 +205,19 @@ function createStatementXml(parsedQuery, statement, parameters, log) {
     if (typeof simpleMappings[comparison] !== "undefined") {
       if (typeof param === "undefined")
         throw "[camlsql] Parameter is not defined " +  statement.macro;
-      xml+=xmlBeginElement(simpleMappings[comparison]);
-      xml+=createFieldRefValue(parsedQuery, statement, param);
-      xml+=xmlEndElement(simpleMappings[comparison]);
+
+      if (param && param.type == "Membership") {
+        if (statement.comparison != "eq") throw "[camlsql] Membership comparison must be =";
+        if (param.value.toLowerCase() == "spgroup" && !param.id)
+          throw "[camlsql] Membership of type SPGroup requires a group id";
+        xml += xmlBeginElement("Membership", {Type : param.value, ID : param.id ? param.id : null});
+        xml += xmlBeginElement(XML_FIELD_FIELDREF, {Name : statement.field}, true);
+        xml += xmlEndElement("Membership");
+      } else {
+        xml+=xmlBeginElement(simpleMappings[comparison]);
+        xml+=createFieldRefValue(parsedQuery, statement, param);
+        xml+=xmlEndElement(simpleMappings[comparison]);
+      }
     } else if (comparison == "null") {
       xml+=xmlBeginElement(XML_ELEMENT_ISNULL);
       xml+=createFieldRefValue(parsedQuery, statement);
@@ -366,8 +378,7 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
     innerXml = parameterValue;
   } else if (parameter.type == "User") {
     if (typeof parameterValue === "number") {
-      valueAttributes.Type = "Number";
-      valueAttributes.LookupId = 'True';
+      valueAttributes.Type = "User";
       innerXml = encodeHTML(parameterValue + "");
     } else {
       valueAttributes.Type = "Number";

@@ -37,8 +37,8 @@ function CamlSqlQuery(query, param) {
       return this;
     };
     
-    function getXml() {
-      var builder = new CamlXmlBuilder(currentQuery);
+    function getXml(isExec) {
+      var builder = new CamlXmlBuilder(currentQuery, isExec);
       return builder.xml;
     }
 

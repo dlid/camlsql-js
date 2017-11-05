@@ -19,7 +19,8 @@
     choice : createChoiceParameter,
     user : createUserParameter,
     boolean : createBooleanParameter,
-    encode : encodeToInternalField
+    encode : encodeToInternalField,
+    membership : createMembershipParameter
   }; 
   // var _properties = {
   //  query : query,
