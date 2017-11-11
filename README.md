@@ -1,8 +1,14 @@
 # camlsql-js
 
-Create List CAML XML using SQL-like syntax. 
-
 [![Build Status](https://travis-ci.org/dlid/camlsql-js.svg?branch=master)](https://travis-ci.org/dlid/camlsql-js) [![codecov](https://codecov.io/gh/dlid/camlsql-js/branch/master/graph/badge.svg)](https://codecov.io/gh/dlid/camlsql-js)
+
+
+## JavaScript Library for fetching SharePoint List items SQL syntax
+
+Camlsql will let you fetch SharePoint List Items using SQL syntax. It relies on an already existing SP ClientContext and is therefore very lightweight.
+
+### Features
+- 
 
 ------------------------------
 
@@ -32,4 +38,9 @@ camlsql.prepare("SELECT * FROM Pages WHERE Title LIKE ? ORDER BY Modified DESC L
 See more examples in the [SQL Test Queries](https://github.com/dlid/camlsql-js/wiki/SQL-Test-Queries) wiki page.
 
 
+## This is not REST
+
+This is a library only for fetching list data using CSOM and CAML queries using the already available SharePoint Client Context.
+
+This is not a SharePoint REST API Client but indended to be a lightweight way of fetching list items.
 
