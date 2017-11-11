@@ -33,7 +33,7 @@ camlsql.prepare("SELECT * FROM Pages WHERE Title LIKE ? ORDER BY Modified DESC L
 
  - [Text](https://github.com/dlid/camlsql-js/wiki/camlsql.text-method) using BeginsWith, Contains or Equals
  - NULL / IS NOT NULL
- - 
+ - ...
 
 
 See more examples in the [SQL Test Queries](https://github.com/dlid/camlsql-js/wiki/SQL-Test-Queries) wiki page.
