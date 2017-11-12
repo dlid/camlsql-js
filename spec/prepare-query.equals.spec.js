@@ -61,7 +61,7 @@ describe("Query preparation (Equal)", function() {
         xml = result.getXml(),
         expectedDateString = batmanPremierDate.toISOString()
 
-    expect(xml).toEqual('<View><Query><Where><Eq><FieldRef Name="Field" /><Value Type="DateTime" IncludeTimeValue="True" StorageTZ="True">' + expectedDateString + '</Value></Eq></Where></Query></View>');
+    expect(xml).toEqual('<View><Query><Where><Eq><FieldRef Name="Field" /><Value Type="DateTime" IncludeTimeValue="True">1966-01-12T18:30:00</Value></Eq></Where></Query></View>');
   });
 
   it("Equal to date (StorageTZ false)", function() {
@@ -71,7 +71,7 @@ describe("Query preparation (Equal)", function() {
         xml = result.getXml(),
         expectedDateString = batmanPremierDate.toISOString()
 
-    expect(xml).toEqual('<View><Query><Where><Eq><FieldRef Name="Field" /><Value Type="DateTime" IncludeTimeValue="True">' + expectedDateString + '</Value></Eq></Where></Query></View>');
+    expect(xml).toEqual('<View><Query><Where><Eq><FieldRef Name="Field" /><Value Type="DateTime" IncludeTimeValue="True">1966-01-12T18:30:00</Value></Eq></Where></Query></View>');
   });
 
   it("Equal to date (includeTime false)", function() {
@@ -81,7 +81,7 @@ describe("Query preparation (Equal)", function() {
         xml = result.getXml(),
         expectedDateString = batmanPremierDate.toISOString()
 
-    expect(xml).toEqual('<View><Query><Where><Eq><FieldRef Name="Field" /><Value Type="DateTime" StorageTZ="True">' + expectedDateString + '</Value></Eq></Where></Query></View>');
+    expect(xml).toEqual('<View><Query><Where><Eq><FieldRef Name="Field" /><Value Type="DateTime">1966-01-12T18:30:00</Value></Eq></Where></Query></View>');
   });
 
   it("Equal to date (includeTime false, storageTZ false)", function() {
@@ -91,7 +91,7 @@ describe("Query preparation (Equal)", function() {
         xml = result.getXml(),
         expectedDateString = batmanPremierDate.toISOString()
 
-    expect(xml).toEqual('<View><Query><Where><Eq><FieldRef Name="Field" /><Value Type="DateTime">' + expectedDateString + '</Value></Eq></Where></Query></View>');
+    expect(xml).toEqual('<View><Query><Where><Eq><FieldRef Name="Field" /><Value Type="DateTime">1966-01-12T18:30:00</Value></Eq></Where></Query></View>');
   });
 
 }); 

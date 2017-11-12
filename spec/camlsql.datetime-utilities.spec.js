@@ -9,7 +9,7 @@ describe("camlsql.datetime", function() {
     
     var result = camlsql.datetime();
     expect(result.type).toEqual("DateTime");
-    expect(result.today).toEqual(true);
+    expect(result.today).toEqual(false);
     expect(result._includeTime).toEqual(true);
 
   });
@@ -130,8 +130,8 @@ describe("camlsql.datetime", function() {
     var date = camlsql.__testonly__.createDateParameter()
     expect(date.type).toEqual("DateTime");
     expect(date._includeTime).toEqual(false);
-    expect(date.today).toEqual(true);
-    expect(date._storageTZ).toEqual(true);
+    expect(date.today).toEqual(false);
+    expect(date._storageTZ).toEqual(false);
   });
 
 
