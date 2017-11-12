@@ -1,4 +1,4 @@
-# Build your SQL
+# SQL Syntax
 
     SELECT
         [SCOPE {DEFAULTVALUE | RECURSIVE | RECURSIVEALL | FILESONLY}]
@@ -10,10 +10,12 @@
         [ORDER BY [data_type:]field_name [ASC | DESC], ...]
         [LIMIT row_count]
 
-
 ## SCOPE
 
+?> SCOPE {DEFAULTVALUE | RECURSIVE | RECURSIVEALL | FILESONLY}
+
 - Let you set the [View Scope](https://msdn.microsoft.com/en-us/library/microsoft.sharepoint.client.viewscope.aspx) for the query
+
 
 ```
 SELECT SCOPE FilesOnly * FROM Pages;
@@ -31,6 +33,7 @@ SELECT SCOPE FilesOnly * FROM Pages;
 
 
 - Lets you specify the [ViewFields](https://msdn.microsoft.com/en-us/library/office/ms442073.aspx) of the query
+- Separate multiple fields with ,
 - Wrap field names in [ and ] to **encode** them
 
 ```
@@ -49,13 +52,16 @@ If you are including a field from a joined list you must
 
 !> It's recommended that you only get the fields you actually need to lower the response footprint
 
-## List Name
+## List name
+
+?> list_name<br>
+[list_name]
 
 - The Title of the list you want to query
 - This List Name is used in the [exec](camlsqlquery-object.md#exec-function) function
 - Can be retreived later using the [getListName](camlsqlquery-object.md#getlistname-function) function
 
-## Joins
+## JOIN
 
 ?> [LEFT] JOIN ***list_alias*** ON ***list_name***.***field_name***
 
@@ -88,8 +94,8 @@ JOIN   [AuthorList] ON [Books].Author
 
 ### Including a field from the  joined list  {docsify-ignore}
 
-After joining another list you can get field from that list into your result. Then you must include those fields in your query.
-
+- After joining another list you can get **field from the joined list** into your result
+- Then you must **include that field** in your query.
 - These fields are called [ProjectedFields](https://msdn.microsoft.com/en-us/library/office/ee535502.aspx).
 - These fields must be given an **alias** using the `AS` statement
 
@@ -206,7 +212,158 @@ WHERE  [AuthorCity].[EnglishName] IS NOT NULL
 
 ## WHERE statement
 
+?> WHERE *statement* [ [{AND |OR } *statement*] ...]<br><br>
+**statement**:<br>
+***field_name*** {`>` | `<` | `<=` | `>=` | `=` | `<>` | `LIKE` | `IN`} ***macro***<br>
+***field_name*** IS [NOT] NULL<br>
+
+- `macro` is a ? character or a named parameter. See [Bind Parameters](bind-parameters.md#bind-parameters).
+- See [Comparison operators](comparison.md#comparison) for details about comparing values
+- You can combine multiple statements using `AND` and `OR` to create more complex conditions
+
+
+```
+<script>
+camlsql.prepare("SELECT * FROM [Pages] WHERE Title LIKE ? AND [Created] > ?", [ 
+ "%Audit%", 
+ camlsql.date().startOfMonth() 
+]);
+</script>
+
+<View>
+ <Query>
+  <Where>
+   <And>
+    <Contains>
+     <FieldRef Name="Title" />
+     <Value Type="Text">Audit</Value>
+    </Contains>
+    <Gt>
+     <FieldRef Name="Created" />
+     <Value Type="DateTime">2017-11-01T00:00:00</Value>
+    </Gt>
+   </And>
+  </Where>
+ </Query>
+</View>
+
+```
+
+### Multiple conditions  {docsify-ignore}
+
+Multiple AND/OR statements will created the required nested syntax of the Where Element.
+
+
+```
+<script>
+camlsql.prepare("SELECT * FROM [Pages] WHERE Title LIKE ? AND [Created] > ? AND Visible = ?", [ 
+ "%Audit%", 
+ camlsql.date().startOfMonth(),
+ true
+]);
+</script>
+
+<View>
+ <Query>
+  <Where>
+   <And>
+    <Contains>
+     <FieldRef Name="Title" />
+     <Value Type="Text">Audit</Value>
+    </Contains>
+    <And>
+     <Gt>
+      <FieldRef Name="Created" />
+      <Value Type="DateTime">2017-11-01T00:00:00</Value>
+     </Gt>
+     <Eq>
+      <FieldRef Name="Visible" />
+      <Value Type="Boolean">1</Value>
+     </Eq>
+    </And>
+   </And>
+  </Where>
+ </Query>
+</View>
+
+```
+
+### Group conditions  {docsify-ignore}
+
+Group multiple conditions with parenthesis to create even more complex queries.
+
+```
+<script>
+ camlsql
+  .prepare("SELECT * " + 
+           "FROM   [Pages] " + 
+           "WHERE  [Title] LIKE ? AND [Created] > ? " + 
+           "AND   ([Visible] = ? OR Pinned = ?)", 
+          [ 
+            "%Audit%", 
+            camlsql.date().startOfMonth(),
+            true, 
+            true
+          ]);
+</script>
+
+<View>
+ <Query>
+  <Where>
+   <And>
+    <And>
+     <Contains>
+      <FieldRef Name="Title" />
+      <Value Type="Text">Audit</Value>
+     </Contains>
+     <Gt>
+      <FieldRef Name="Created" />
+      <Value Type="DateTime">2017-11-01T00:00:00</Value>
+     </Gt>
+    </And>
+    <Or>
+     <Eq>
+      <FieldRef Name="Visible" />
+      <Value Type="Boolean">1</Value>
+     </Eq>
+     <Eq>
+      <FieldRef Name="Pinned" />
+      <Value Type="Boolean">1</Value>
+     </Eq>
+    </Or>
+   </And>
+  </Where>
+ </Query>
+</View>
+```
+
+
+
 ## GROUP BY
+
+?>  GROUP BY ***field_name***
+
+- Group the result by the values of `field_name`
+
+!> **NOTE!** Group by is not supported by default using CSOM. camlsql will group the data for you after it has been retreived.
+
+Although there is a [Group by element](https://msdn.microsoft.com/en-us/library/office/ms415157.aspx) in the Query schema, it is not supported when using CSOM.
+
+- When you use the GROUP BY statement camlsql will create the GroupBy element in the XML returned by getXml.
+- It will however be removed from the query when you execute the query using the [exec function](camlsqlquery-object.md#exec-function).
+
+```
+SELECT * FROM [Pages] GROUP BY [Title]
+
+<View>
+ <Query>
+  <GroupBy>
+   <FieldRef Name="Title" />
+  </GroupBy>
+ </Query>
+</View>
+```
+
 
 ## ORDER BY 
 

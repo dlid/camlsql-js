@@ -2,7 +2,7 @@
  - [Introduction](introduction.md)
  - [Getting started](getstarted.md)
 - **Prepare your query**
-  - [SQL Syntax](sql.md)
+  - [SQL Syntax](sql.md#sql-syntax)
   - [Bind Parameters](bind-parameters.md#bind-parameters)
   - [Comparison Operators](comparison.md)
   - [Field Types](field-types.md)
