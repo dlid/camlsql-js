@@ -156,7 +156,7 @@ WHERE  [AuthorList].[Pseudonym] IS NOT NULL");
 
 ```
 
-### Joining another list {docsify-ignore}
+### Joining a second list {docsify-ignore}
 
 - CAML will let you join lists via joined lists
 - To do this using camlsql, use the same syntax as before
