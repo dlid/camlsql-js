@@ -6,7 +6,7 @@ Each condition in the WHERE clause must evaluate to true, or the List Item will 
 
 ## Equal (=)
 
-> Check if the values are equal or not. 
+- Check if field value **is equal** to a given value
 
 ```
 <script>

@@ -50,18 +50,31 @@ camlsql.prepare("SELECT * FROM ListName WHERE Age IS NOT NULL")
 
 ## Date only
 
-When using camlsql.`date` the generated CAML query will be generated without the `IncludeTimeValue="True"` attribute.
+When using [camlsql.date](camlsql-object.md#camlsql.date-method) the generated CAML query will be generated without the `IncludeTimeValue="True"` attribute.
 
 ```
 <script>
-camlsql.prepare("SELECT * FROM ListName WHERE Age = ?", [42])
+camlsql.prepare("SELECT * FROM ListName WHERE ImportantDate = ?", [camlsql.date()])
 </script>
 ```
 
-- Also see []
+
+- Working comparisons: [Equal](comparison.md#equal-), [Not Equal](comparison.md#not-equal-ltgt), [NULL](comparison.md#is-null), [NOT NULL](comparison.md#is-not-null), [Greater than](comparison.md#greater-than-gt), [Less than](comparison.md#less-than-lt), [Less than or equal](comparison.md#less-than-or-equal-lt),
+- Also see [DateTime](#datetime), [CamlSqlDate.includeTime](camlsqldate-object.md#includetime)
 
 
 ## DateTime
+
+When using [camlsql.datetime](camlsql-object.md#camlsql.datetime-method) the generated CAML query will be generated without `IncludeTimeValue` set to "**True**".
+
+```
+<script>
+camlsql.prepare("SELECT * FROM ListName WHERE MyDateTime = ?", [camlsql.datetime()])
+</script>
+```
+
+- Working comparisons: [Equal](comparison.md#equal-), [Not Equal](comparison.md#not-equal-ltgt), [NULL](comparison.md#is-null), [NOT NULL](comparison.md#is-not-null), [Greater than](comparison.md#greater-than-gt), [Less than](comparison.md#less-than-lt), [Less than or equal](comparison.md#less-than-or-equal-lt),
+- Also see [Date](#date), [CamlSqlDate.includeTime](camlsqldate-object.md#includetime)
 
 ## Boolean
 

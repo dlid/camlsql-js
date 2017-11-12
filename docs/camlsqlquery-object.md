@@ -1,0 +1,3 @@
+# CamlSqlQuery object
+
+TBD
