@@ -24,9 +24,15 @@ function encodeToInternalField(str) {
    n += "_x0020_";
   } else if( c== '.') {
    n += "_x002e_";
+  } else if( c== '(') {
+   n += "_x0028_";
+  } else if( c== ')') {
+   n += "_x0029_";
   } else {
    n += c;
   }
+
+  
  }
  return n.length > 32 ? n.substr(0,32) : n;
 }

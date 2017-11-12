@@ -363,7 +363,12 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
         if (parameter.stringValue) {
           innerXml = encodeHTML(parameter.stringValue);
         } else {
-          innerXml = parameterValue.toISOString();
+          if (parameter._storageTZ) {
+            innerXml = parameterValue.toISOString();
+          } else {
+            // IF we do not compare to the internal TZ value, then use the non UTC time
+            innerXml = parameterValue.getFullYear() + "-" + padString(parameterValue.getMonth()+1) + "-" + padString(parameterValue.getDate()) + "T" + padString(parameterValue.getHours()) + ":" + padString(parameterValue.getMinutes()) + ":" + padString(parameterValue.getSeconds());
+          }
         }
       }
     // } else if (parameter.type == "Url") {

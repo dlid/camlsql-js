@@ -16,7 +16,7 @@
   "bugs": {
     "url": "https://github.com/dlid/camlsql-js/issues"
   },
-  "files" : [
+  "files": [
     "dist/camlsql.*.js"
   ],
   "homepage": "https://github.com/dlid/camlsql-js#readme",
@@ -24,6 +24,7 @@
     "browser-sync": "^2.18.13",
     "clipboard": "^1.7.1",
     "codecov": "^3.0.0",
+    "docsify-cli": "^4.1.12",
     "git": "^0.1.5",
     "gulp": "^3.9.1",
     "gulp-clean": "^0.3.2",

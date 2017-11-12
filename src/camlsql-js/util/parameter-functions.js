@@ -84,16 +84,15 @@
     stringValue = date + "";
     date = null;
   } else {
-    if (!date) isToday = true;
-    date = date ? new Date(+date) : new Date();
-  }
+      date = date ? new Date(+date) : new Date();
+  } 
 
   return Object.create(CamlSqlDateParameter, {
     type : {value : 'DateTime'},
     value : {value : date, writable : true}, 
     _includeTime : {value : true, writable : true},
     today : {value : isToday, writable : true},
-    _storageTZ : {value : true, writable : true},
+    _storageTZ : {value : false, writable : true},
     stringValue : {value : stringValue, writable : false}
   });
 
@@ -120,7 +119,7 @@ var CamlSqlDateParameter = {
   today : false,
   _includeTime : false,
   value : null,
-  _storageTZ : true,
+  _storageTZ : false,
   stringValue : '',
   add : function(intervalString){
     this.errstr();

@@ -45,3 +45,17 @@ This is a library only for fetching list data using CSOM and CAML queries using 
 
 This is not a SharePoint REST API Client but indended to be a lightweight way of fetching list items.
 
+
+## Install
+
+```
+npm i docsify-cli -g
+npm install
+
+# To run docs
+docsify serve docs
+
+# To build
+gulp
+
+```

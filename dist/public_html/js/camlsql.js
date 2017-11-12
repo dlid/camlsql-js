@@ -184,16 +184,15 @@ function getEndOfWeek(date, startWeekWithMonday) {
     stringValue = date + "";
     date = null;
   } else {
-    if (!date) isToday = true;
-    date = date ? new Date(+date) : new Date();
-  }
+      date = date ? new Date(+date) : new Date();
+  } 
 
   return Object.create(CamlSqlDateParameter, {
     type : {value : 'DateTime'},
     value : {value : date, writable : true}, 
     _includeTime : {value : true, writable : true},
     today : {value : isToday, writable : true},
-    _storageTZ : {value : true, writable : true},
+    _storageTZ : {value : false, writable : true},
     stringValue : {value : stringValue, writable : false}
   });
 
@@ -220,7 +219,7 @@ var CamlSqlDateParameter = {
   today : false,
   _includeTime : false,
   value : null,
-  _storageTZ : true,
+  _storageTZ : false,
   stringValue : '',
   add : function(intervalString){
     this.errstr();
@@ -387,8 +386,10 @@ function executeSPQuery(options) {
             execCallback = options.callback,
             clientContext,
             spList = null,
+            timeZone = null,
             listName = options.query.getListName(),
             spListItems = null,
+            regionalSettings = null,
             viewXml = options && options.rawXml ? options.rawXml : options.query.getXml(true),
             nextPage,
             prevPage,
@@ -422,12 +423,26 @@ function executeSPQuery(options) {
 
             SP.SOD.executeFunc('sp.js', 'SP.ClientContext', function () {});
             SP.SOD.executeOrDelayUntilScriptLoaded(function() {
+
+
+                console.warn("GET SERVER TIMEZOE", _spPageContextInfo.webServerRelativeUrl + "/_api/web/RegionalSettings/TimeZone");
+
+
+                ajaxGet(_spPageContextInfo.webServerRelativeUrl + "/_api/web/RegionalSettings/TimeZone", function(e,r) {
+                    console.warn("TZ INFO", e, r);
+                });
+
                 clientContext = SP.ClientContext.get_current();
                 if (!spWeb) {
+
                     spWeb = clientContext.get_web();
+                    regionalSettings = spWeb.get_regionalSettings();
                     spList = spWeb.get_lists().getByTitle(listName);
+                    timeZone = regionalSettings.get_timeZone();
                     if (noCallback && console) console.log("[camlsql] Loading list '" + listName + "'"); 
                     clientContext.load(spList);
+                    clientContext.load(regionalSettings);
+                    clientContext.load(timeZone);
                     clientContext.executeQueryAsync(onListLoaded, function () {
                         if (execCallback == null) {
                             throw "[camlsql] Failed to load list";
@@ -465,7 +480,10 @@ function executeSPQuery(options) {
         }
 
         function onListLoaded() {
+          
+
             var camlQuery = new SP.CamlQuery();
+            camlQuery.set_datesInUtc(false);
             var camlQueryString = options.query.getXml(true);
             camlQuery.set_viewXml(camlQueryString);
             spListItems = spList.getItems(camlQuery);
@@ -504,11 +522,27 @@ function executeSPQuery(options) {
             if (listItemCollectionPosition) {
                 nextPage = listItemCollectionPosition.get_pagingInfo();
             }
+
+            var info = timeZone.get_information();
+            var offset = (info.get_bias() /*+ (info.get_daylightBias() )*/) / 60.0;
+            console.log("TIMEZONE offset", info.get_bias(), info.get_daylightBias(), offset);
+
             while (listItemEnumerator.moveNext()) {
                 spListItem = listItemEnumerator.get_current();
                 values = spListItem.get_fieldValues();
                 if (!prevPage) {
                     prevPage = "PagedPrev=TRUE&Paged=TRUE&p_ID=" + encodeURIComponent(spListItem.get_id());
+                }
+
+                for(var k in values) {
+                    if (values[k] && typeof values[k].getTimezoneOffset == "function") {
+                        if (k == "DateTime_x0020_field") {
+                           // var o = (values[k].getTimezoneOffset() / 60) * -1 ;
+                            var d = new Date(values[k].getTime() - ((offset ) * 3600 * 1000));
+                            console.log(k, "is a date", values[k], values[k].getUTCFullYear(), values[k].getUTCMonth(), values[k].getUTCDate(), values[k].getUTCHours(), values[k].getUTCMinutes(), values[k].getUTCSeconds() );
+                            console.log(d, "is a date2", d, d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds() );
+                        }
+                    }
                 }
 
                 if (groupBy) {
@@ -545,6 +579,24 @@ function executeSPQuery(options) {
             });
         }
     }
+
+
+    function ajaxGet(url, callback) {
+
+    var xhr = new XMLHttpRequest();
+        xhr.open('GET', url);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Accept', 'application/json; odata=verbose');
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                callback(null, xhr.responseText)
+            } else {
+                callback(xhr, null);
+            }
+        };
+        xhr.send();
+
+    }
 // END C:\git\camlsql-js\src\camlsql-js\util\sharepoint-exec-function.js
 
 // BEGIN C:\git\camlsql-js\src\camlsql-js\util\string-utilities.js*/
@@ -574,9 +626,15 @@ function encodeToInternalField(str) {
    n += "_x0020_";
   } else if( c== '.') {
    n += "_x002e_";
+  } else if( c== '(') {
+   n += "_x0028_";
+  } else if( c== ')') {
+   n += "_x0029_";
   } else {
    n += c;
   }
+
+  
  }
  return n.length > 32 ? n.substr(0,32) : n;
 }
@@ -1793,7 +1851,12 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
         if (parameter.stringValue) {
           innerXml = encodeHTML(parameter.stringValue);
         } else {
-          innerXml = parameterValue.toISOString();
+          if (parameter._storageTZ) {
+            innerXml = parameterValue.toISOString();
+          } else {
+            // IF we do not compare to the internal TZ value, then use the non UTC time
+            innerXml = parameterValue.getFullYear() + "-" + padString(parameterValue.getMonth()+1) + "-" + padString(parameterValue.getDate()) + "T" + padString(parameterValue.getHours()) + ":" + padString(parameterValue.getMinutes()) + ":" + padString(parameterValue.getSeconds());
+          }
         }
       }
     // } else if (parameter.type == "Url") {
