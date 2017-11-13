@@ -5,12 +5,3 @@
 ## CSOM library for getting SharePoint List items SQL syntax {docsify-ignore}
 
 Camlsql will let you fetch SharePoint List Items using SQL syntax. It relies on an already existing SP ClientContext and is therefore very lightweight.
-
-```
-camlsql.prepare("SELECT * FROM Pages WHERE Title LIKE ? ORDER BY Modified DESC LIMIT 10", ["%hello%"])
- .exec(function(err, rows) {
-  console.err(err);
-  console.table(rows);
- });
-```
- 

@@ -23,6 +23,7 @@ Most functions here will create different types of parameters, but there are als
 ?> ***object*** camlsql.**boolean**(***bool*** booleanValue = false)
 
 - Used to create a parameter of type boolean
+- When using native boolean values, they are converted to a camlsql.boolean object
 
 ```
 <script>
@@ -113,10 +114,260 @@ Given the day of this example (2017-11-12) it will give the following CAML -->
 
 
 ### guid method
+
+?> ***object*** camlsql.**guid**(***string*** guid)
+
+- Create a value of type `Guid`
+- Note that no GUID validation will be done by camlsql.
+
+```
+<script>
+camlsql.prepare("SELECT * FROM [Pages] WHERE UniqueId = ?", 
+ [camlsql.guid('2f8fea81-a034-4ecc-8d56-261289df1f6f')]);
+</script>
+<View>
+ <Query>
+  <Where>
+   <Eq>
+    <FieldRef Name="UniqueId" />
+    <Value Type="Guid">2f8fea81-a034-4ecc-8d56-261289df1f6f</Value>
+   </Eq>
+  </Where>
+ </Query>
+</View>s
+```
+
+
+### membership method
+
+?> ***object*** camlsql.**membership**(***string*** type, [**int** groupId])
+
+!> Please correct me if I'm writing these types all wrong. I've not been able to test these ones thoroughly.
+
+- Where `type` can be SPWeb.Allusers, SPGroup, SPWeb.Groups, CurrentUserGroups or SPWeb.Users
+  - `SPWeb.AllUsers` field contains only users, no groups
+  - `SPGroup` Field contains a specific group - you must also include the `groupId` parameter
+  - `SPWeb.Groups` field contains a group for the site 
+  - `SPWeb.Users` field contains users who received rights to the site (not through a group)
+  - `CurrentUserGroups` field contains a group that the current user is in
+- See [membership](https://msdn.microsoft.com/en-us/library/office/aa544234.aspx) element for details
+
+#### Member of a specific group
+
+- Use the type `SPGroup` and provide the group id
+
+```
+<script>
+camlsql.prepare("SELECT Title FROM [Pages] WHERE [AssignedTo] = ?", [
+ camlsql.membership("SPGroup", 5)
+])
+</script>
+
+<View>
+ <Query>
+  <Where>
+   <Membership Type="SPGroup" ID="5">
+    <FieldRef Name="AssignedTo" />
+   </Membership>
+  </Where>
+ </Query>
+ <ViewFields>
+ <FieldRef Name="Title" />
+ </ViewFields>
+</View>
+```
+
+#### Group of the current user
+
+Check if the field contains a group that the current user is a member of.
+
+```
+<script>
+camlsql.prepare("SELECT * FROM [Pages] WHERE [AssignedTo] = ?", [
+ camlsql.membership("CurrentUserGroups")
+])
+</script>
+
+<View>
+ <Query>
+  <Where>
+   <Membership Type="CurrentUserGroups">
+    <FieldRef Name="AssignedTo" />
+   </Membership>
+  </Where>
+ </Query>
+</View>
+
+```
+
 ### number method
+
+?> ***object*** camlsql.**number**(***number*** numericValue = 0)
+
+- Used to create a parameter of type number
+- When using native numeric values, they are converted to a camlsql.number object
+
+```
+<script>
+camlsql.prepare("SELECT * FROM [The List] WHERE [Rate] = ?", [camlsql.number(5)])
+camlsql.prepare("SELECT * FROM [The List] WHERE [Rate] = ?", [5])
+</script>
+
+<View>
+ <Query>
+  <Where>
+   <Eq>
+    <FieldRef Name="Rate" />
+    <Value Type="Number">5</Value>
+   </Eq>
+  </Where>
+ </Query>
+</View>
+```
+
 ### text method
+
+?> ***object*** camlsql.**text**(***string*** stringValue)
+
+- Used to create a parameter of type Text
+- When using native strings, they are converted to a camlsql.text object
+
+```
+<script>
+camlsql.prepare("SELECT * FROM [The List] WHERE [Title] = ?", ["hi"])
+camlsql.prepare("SELECT * FROM [The List] WHERE [Title] = ?", [camlsql.text("hi")])
+</script>
+
+<View>
+ <Query>
+  <Where>
+   <Eq>
+    <FieldRef Name="Title" />
+    <Value Type="Text">hi</Value>
+   </Eq>
+  </Where>
+ </Query>
+</View>
+```
+
+Using newline characters will automatically wrap the string in CDATA.
+
+```
+<script>
+camlsql.prepare("SELECT * FROM [The List] WHERE [Title] = ?", ["hi\nman"])
+</script>
+
+<View>
+ <Query>
+  <Where>
+   <Eq>
+    <FieldRef Name="Title" />
+     <Value Type="Text"><![CDATA[hi
+man]]></Value>
+   </Eq>
+  </Where>
+ </Query>
+</View>
+```
+
 ### today
+
+?> ***CamlSqlDate*** camlsql.**today**(***int*** offset)
+
+- Used to create a parameter of type DateTime with the [Today](https://msdn.microsoft.com/en-us/library/office/ms460496.aspx) element
+- Use a positive or negative number as `offset` to add or subtract that number of days
+
+```
+<script>
+camlsql.prepare("SELECT * FROM [The List] WHERE [Created] = ?", [camlsql.today()])
+</script>
+
+<View>
+ <Query>
+  <Where>
+   <Eq>
+    <FieldRef Name="Created" />
+    <Value Type="DateTime">
+     <Today />
+    </Value>
+   </Eq>
+  </Where>
+ </Query>
+</View>
+```
+
+And another example with offset.
+
+```
+<script>
+camlsql.prepare("SELECT * FROM [The List] WHERE [Created] = ?", [camlsql.today(-14)])
+</script>
+
+<View>
+ <Query>
+  <Where>
+   <Eq>
+    <FieldRef Name="Created" />
+    <Value Type="DateTime">
+     <Today OffsetDays="-14" />
+    </Value>
+   </Eq>
+  </Where>
+ </Query>
+</View>
+```
+
 ### user method
+
+?> ***object*** camlsql.**user**([***int*** userId)
+
+- If no parameter, created the [UserID](https://msdn.microsoft.com/en-us/library/office/ff625789.aspx) element
+- With parameter, creates a Lookup
+
+#### Current user
+
+```
+<script>
+camlsql.prepare("SELECT * FROM [Pages] WHERE [AssignedTo] = ?", [
+ camlsql.user() // Current user
+])
+</script>
+
+<View>
+ <Query>
+  <Where>
+   <Eq>
+    <FieldRef Name="AssignedTo" />
+    <Value Type="Number">
+    <UserID />
+    </Value>
+   </Eq>
+  </Where>
+ </Query>
+</View>
+```
+
+#### By user ID
+
+```
+<script>
+camlsql.prepare("SELECT * FROM [Pages] WHERE [AssignedTo] = ?", [
+ camlsql.user(41) // 41 is the user Id
+])
+</script>
+
+<View>
+ <Query>
+  <Where>
+   <Eq>
+    <FieldRef Name="AssignedTo" LookupId="True" />
+    <Value Type="User">41</Value>
+   </Eq>
+  </Where>
+ </Query>
+</View>
+```
+
 
 ## Helper functions
 

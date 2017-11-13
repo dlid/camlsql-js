@@ -350,7 +350,7 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
       valueAttributes.IncludeTimeValue = parameter._includeTime ? 'True' : null;
       
       if (parameter.value) {
-        vAttr.OffsetDays = parameterValue;
+        vAttr.Offset = parameterValue;
   //        xml += ' OffsetDays="' + paramValue + '"';
   //      }
 }
@@ -379,7 +379,7 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
     } else {
       innerXml = encodeHTML(parameterValue);
     }
-  } else if (parameter.type == "Number") {
+  } else if (parameter.type == "Number" || parameter.type == "Guid") {
     innerXml = parameterValue;
   } else if (parameter.type == "User") {
     if (typeof parameterValue === "number") {
@@ -394,6 +394,7 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
     innerXml = encodeHTML(parameterValue + "");
   } else if (parameter.type == "Boolean") {
     innerXml = parameterValue ? 1 : 0;
+
   } else {
     innerXml = xmlBeginElement('NotImplemented',{}, true);
   }

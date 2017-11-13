@@ -367,4 +367,35 @@ SELECT * FROM [Pages] GROUP BY [Title]
 
 ## ORDER BY 
 
+?>  ORDER BY ***field_name*** [***direction***], ...
+
+- Sort the result by `field_name`
+- `direction` is ASC or DESC (Defaults to ASC)
+
+```
+SELECT * FROM [Pages] ORDER BY [Created] DESC, [Title]
+
+<View>
+ <Query>
+  <OrderBy>
+   <FieldRef Name="Created" Ascending="FALSE" />
+   <FieldRef Name="Title" />
+  </OrderBy>
+ </Query>
+</View>
+```
+
+
 ## LIMIT
+
+?>  LIMIT ***number***
+
+- Get the top `number` items
+
+```
+SELECT * FROM [Pages] LIMIT 50
+
+<View>
+    <RowLimit>50</RowLimit>
+</View>
+```

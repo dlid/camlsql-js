@@ -59,33 +59,37 @@ function executeSPQuery(options) {
                 });
 
                 clientContext = SP.ClientContext.get_current();
-                if (!spWeb) {
+                if (spWeb !== null) {
+                    if (typeof spWeb === "string") {
+                        spWeb = site.openWeb(spWeb);
+                    }
+                } 
 
-                    spWeb = clientContext.get_web();
-                    regionalSettings = spWeb.get_regionalSettings();
-                    spList = spWeb.get_lists().getByTitle(listName);
-                    timeZone = regionalSettings.get_timeZone();
-                    if (noCallback && console) console.log("[camlsql] Loading list '" + listName + "'"); 
-                    clientContext.load(spList);
-                    clientContext.load(regionalSettings);
-                    clientContext.load(timeZone);
-                    clientContext.executeQueryAsync(onListLoaded, function () {
-                        if (execCallback == null) {
-                            throw "[camlsql] Failed to load list";
+                if (!spWeb) spWeb = clientContext.get_web();;
+                    
+                // regionalSettings = spWeb.get_regionalSettings();
+                spList = spWeb.get_lists().getByTitle(listName);
+                // timeZone = regionalSettings.get_timeZone();
+                if (noCallback && console) console.log("[camlsql] Loading list '" + listName + "'"); 
+                clientContext.load(spList);
+                // clientContext.load(regionalSettings);
+                // clientContext.load(timeZone);
+                clientContext.executeQueryAsync(onListLoaded, function () {
+                    if (execCallback == null) {
+                        throw "[camlsql] Failed to load list";
+                    }
+                    execCallback({
+                        status: "error",
+                        message: "Failed to load list",
+                        data: {
+                            sql: options.query.$options.parsedQuery.query,
+                            viewXml: viewXml,
+                            listName: listName,
+                            error: Array.prototype.slice.call(arguments)
                         }
-                        execCallback({
-                            status: "error",
-                            message: "Failed to load list",
-                            data: {
-                                sql: options.query.$options.parsedQuery.query,
-                                viewXml: viewXml,
-                                listName: listName,
-                                error: Array.prototype.slice.call(arguments)
-                            }
-                        }, null);
-                    });
+                    }, null);
+                });
 
-                }
             },"sp.js");
 
         } else {
@@ -149,9 +153,9 @@ function executeSPQuery(options) {
                 nextPage = listItemCollectionPosition.get_pagingInfo();
             }
 
-            var info = timeZone.get_information();
-            var offset = (info.get_bias() /*+ (info.get_daylightBias() )*/) / 60.0;
-            console.log("TIMEZONE offset", info.get_bias(), info.get_daylightBias(), offset);
+            // var info = timeZone.get_information();
+            // var offset = (info.get_bias() /*+ (info.get_daylightBias() )*/) / 60.0;
+            // console.log("TIMEZONE offset", info.get_bias(), info.get_daylightBias(), offset);
 
             while (listItemEnumerator.moveNext()) {
                 spListItem = listItemEnumerator.get_current();
@@ -164,9 +168,9 @@ function executeSPQuery(options) {
                     if (values[k] && typeof values[k].getTimezoneOffset == "function") {
                         if (k == "DateTime_x0020_field") {
                            // var o = (values[k].getTimezoneOffset() / 60) * -1 ;
-                            var d = new Date(values[k].getTime() - ((offset ) * 3600 * 1000));
-                            console.log(k, "is a date", values[k], values[k].getUTCFullYear(), values[k].getUTCMonth(), values[k].getUTCDate(), values[k].getUTCHours(), values[k].getUTCMinutes(), values[k].getUTCSeconds() );
-                            console.log(d, "is a date2", d, d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds() );
+                            // var d = new Date(values[k].getTime() - ((offset ) * 3600 * 1000));
+                            // console.log(k, "is a date", values[k], values[k].getUTCFullYear(), values[k].getUTCMonth(), values[k].getUTCDate(), values[k].getUTCHours(), values[k].getUTCMinutes(), values[k].getUTCSeconds() );
+                            // console.log(d, "is a date2", d, d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds() );
                         }
                     }
                 }

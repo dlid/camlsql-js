@@ -13,15 +13,15 @@ function parseParameters(param) {
      }
    }
  } else if (typeof param === "object") {
-  keys = Object.keys(param);
-  for (var i=0; i < keys.length; i++) {
-    if (keys[i].indexOf('@') === 0) {
-      p = parseParameter(param[keys[i]]);
-      if (p) {
-        newParam[keys[i]] = p;
+    keys = Object.keys(param);
+    for (var i=0; i < keys.length; i++) {
+      if (keys[i].indexOf('@') === 0) {
+        p = parseParameter(param[keys[i]]);
+        if (p) {
+          newParam[keys[i]] = p;
+        }
       }
     }
-  }
  }
  return newParam;
 }
@@ -40,6 +40,8 @@ function parseParameter(parameter) {
    ret = createBooleanParameter(parameter);
  } else if (typeof parameter == "number") {
    ret = createNumberParameter(parameter);
+ } else if (typeof parameter.getMonth === 'function') {
+    ret = createDateTimeParameter(parameter);
  } else if (typeof parameter == "object" && parameter.type !== "undefined") {
    return parameter;
  }
