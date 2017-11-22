@@ -22,8 +22,6 @@ function extractJoinPart(workingObject) {
               throw "[camlsql] Wrap list alias in brackets if it contains special characters: " + m[2] ;
             }
 
-            //console.warn("join list", m[2]);
-
             joins.push({
               inner : trim(m[1]) == "",
               alias : formatFieldName(m[2]),

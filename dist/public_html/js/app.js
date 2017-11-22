@@ -1,4 +1,4 @@
-  /*! camlsqj-js v0.5.0 | (c) dlid.se | https://camlsqljs.dlid.se/license */
+  /*! camlsqj-js v0.5.1 | (c) dlid.se | https://camlsqljs.dlid.se/license */
 
   // BEGIN C:\Users\davlidst\Documents\git\camlsql-js\src\app\js\vendor\q-1.5.1\q.js*/
   // vim:ts=4:sts=4:sw=4:

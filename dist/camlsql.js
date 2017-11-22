@@ -1,4 +1,4 @@
-/*! camlsqj-js v0.5.0 | (c) dlid.se | https://camlsqljs.dlid.se/license */
+/*! camlsqj-js v0.5.1 | (c) dlid.se | https://camlsqljs.dlid.se/license */
 (function (global, factory) {
   'use strict';
   typeof exports === 'object' && typeof module !== 'undefined' ? (module.exports = factory()) :
@@ -826,8 +826,6 @@ function extractJoinPart(workingObject) {
             if (!m[2].match(/^[a-z\d_]+$/i)) {
               throw "[camlsql] Wrap list alias in brackets if it contains special characters: " + m[2] ;
             }
-
-            //console.warn("join list", m[2]);
 
             joins.push({
               inner : trim(m[1]) == "",
@@ -1886,6 +1884,7 @@ function xmlEndElement(name) {
     datetime : createDateTimeParameter,
     encode : encodeToInternalField,
     membership : createMembershipParameter,
+    lookup : createLookupParameter,
     number : createNumberParameter,
     guid : createGuidParameter,
     text : createTextParameter,
