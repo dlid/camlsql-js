@@ -1,4 +1,4 @@
-/*! camlsqj-js v0.5.0 | (c) dlid.se | https://camlsqljs.dlid.se/license */
+/*! camlsqj-js v0.5.1 | (c) dlid.se | https://camlsqljs.dlid.se/license */
 
 // BEGIN C:\Users\davlidst\Documents\git\camlsql-js\src\camlsql-js\core\header.js*/
 (function (global, factory) {
@@ -1936,6 +1936,7 @@ function xmlEndElement(name) {
     datetime : createDateTimeParameter,
     encode : encodeToInternalField,
     membership : createMembershipParameter,
+    lookup : createLookupParameter,
     number : createNumberParameter,
     guid : createGuidParameter,
     text : createTextParameter,

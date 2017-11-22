@@ -11,6 +11,7 @@
     datetime : createDateTimeParameter,
     encode : encodeToInternalField,
     membership : createMembershipParameter,
+    lookup : createLookupParameter,
     number : createNumberParameter,
     guid : createGuidParameter,
     text : createTextParameter,
