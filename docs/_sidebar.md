@@ -1,6 +1,7 @@
 - [Home](/)
  - [Introduction](introduction.md)
  - [Getting started](getstarted.md)
+ - [Changelog](changelog.md)
 - **Prepare your query**
   - [SQL Syntax](sql.md#sql-syntax) 
   - [Bind Parameters](bind-parameters.md#bind-parameters)

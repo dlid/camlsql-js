@@ -228,7 +228,7 @@ var WhereParser = function(whereString, quiet) {
                 if (cmpMatch.toLowerCase() == 'cxqlisnotnull') comparison = "notnull";
                 if (cmpMatch.toLowerCase() == 'in') comparison = "in";
 
-                if (comparison != "cxqlisnull" && comparison != "cxqlisnotnull") {
+                if (comparison != "null" && comparison != "notnull") {
                     _parameters++; 
                     _numMacros++;
                     if (prevMacro == null) 

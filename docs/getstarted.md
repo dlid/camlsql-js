@@ -5,7 +5,7 @@ Just want to get started huh? Here's some copy-pastable material for you!
 ## Include the script
 
 ```
-<script src="https://cdn.rawgit.com/dlid/camlsql-js/0.5.0/dist/camlsql.min.js"></script>
+<script src="https://cdn.rawgit.com/dlid/camlsql-js/0.5.1/dist/camlsql.min.js"></script>
 ```
  
 ## Prepare your query

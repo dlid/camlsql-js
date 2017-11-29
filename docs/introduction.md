@@ -12,4 +12,3 @@ I've been working with databases since I learned what it was, and mostly relatio
 
 - **No prerequisites** - camlsql-js can create the XML without any other libraries (to execute a query will of course require the SP scripts)
 - **Lightweight** - I wanted camlsql-js to just focus on creating XML for getting List Items. Nothing more. To make sure it does not feel too big to include in your projects.
-

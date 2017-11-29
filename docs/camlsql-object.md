@@ -134,9 +134,58 @@ camlsql.prepare("SELECT * FROM [Pages] WHERE UniqueId = ?",
    </Eq>
   </Where>
  </Query>
-</View>s
+</View>
 ```
 
+### lookup method
+
+?> ***object*** camlsql.**lookup**(***string*** value)<br>
+***object*** camlsql.**lookup**(***int*** value)
+
+- Use a `int` parameter to create a lookup by ID setting the LookupId attribute to `true`
+- Use a `string` parameter to create a lookup by value
+
+
+#### LookupId
+
+```
+<script>
+camlsql.prepare("SELECT * FROM List WHERE [MyLookup] = ?", 
+ [camlsql.lookup(5)]);
+</script>
+<View>
+    <Query>
+        <Where>
+            <Eq>
+                <FieldRef Name="MyLookup" LookupId="True" />
+                <Value Type="Lookup" LookupId="True">5</Value>
+            </Eq>
+        </Where>
+    </Query>
+</View>
+```
+
+#### By value
+
+```
+<script>
+camlsql.prepare("SELECT * FROM List WHERE [MyLookup] = ?", 
+ [camlsql.lookup("hello")]);
+</script>
+<View>
+    <Query>
+        <Where>
+            <Eq>
+                <FieldRef Name="MyLookup" />
+                <Value Type="Lookup">Hello</Value>
+            </Eq>
+        </Where>
+    </Query>
+</View>
+```
+
+
+camlsql.prepare("SELECT * FROM List WHERE [MyLookup] = ?", [camlsql.lookup(5)])
 
 ### membership method
 

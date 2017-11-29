@@ -1386,12 +1386,15 @@ var WhereParser = function(whereString, quiet) {
                 if (cmpMatch.toLowerCase() == 'cxqlisnotnull') comparison = "notnull";
                 if (cmpMatch.toLowerCase() == 'in') comparison = "in";
 
-                if (comparison != "cxqlisnull" && comparison != "cxqlisnotnull") {
+                if (comparison != "null" && comparison != "notnull") {
                     _parameters++; 
                     _numMacros++;
                     if (prevMacro == null) 
                         prevMacro = m[3][0];
                     else if (prevMacro != m[3][0]) {
+
+                        console.log("prevMacro", prevMacro, comparison);
+
                         throw "[camlsql] You can not mix named macros and ?";
                         return null;
                     }
