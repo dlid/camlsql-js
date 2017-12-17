@@ -1,6 +1,6 @@
 {
   "name": "camlsql-js",
-  "version": "0.5.2",
+  "version": "0.5.5",
   "description": "Javascript utility to create CAML queries using SQL syntax",
   "main": "dist/camlsql.js",
   "scripts": {
@@ -25,6 +25,7 @@
     "clipboard": "^1.7.1",
     "codecov": "^3.0.0",
     "docsify-cli": "^4.1.12",
+    "extend": "^3.0.1",
     "git": "^0.1.5",
     "gulp": "^3.9.1",
     "gulp-clean": "^0.3.2",

@@ -25,17 +25,19 @@ function executeSPQuery(options) {
 
         if (typeof execCallback !== "function") execCallback = null;
 
-        if (groupBy && options.query.$options.parsedQuery.fields.length > 0) {
-            if ( options.query.$options.parsedQuery.fields.indexOf(groupBy.field)=== -1 )
-                throw "[camlsql] The Grouping Field must be included in the field list";   
-        }
-
-
         if (!execCallback) {
             noCallback = true;
             execCallback = function(err, rows) {
-                if (typeof console !== "undefined") {
-                    if (err) console.error(err);
+                var hasConsole = typeof console !== "undefined";
+
+                if (err.message) {
+                    if (hasConsole) {
+                        console.warn("[camlsql.exec]", err);
+                    }
+                    throw err.message;
+                }
+
+                if (hasConsole) {
                     if (typeof console.table !== "undefined") {
                         console.table(rows);
                     } else {
@@ -43,6 +45,17 @@ function executeSPQuery(options) {
                     }
                 }
             };
+        }
+
+
+        if (groupBy && options.query.$options.parsedQuery.fields.length > 0) {
+            if ( options.query.$options.parsedQuery.fields.indexOf(groupBy.field)=== -1 ) {
+                execCallback({
+                    status: "error",
+                    message: "[camlsql] The Grouping Field must be included in the field list"
+                }, null);
+                return;
+            }
         }
 
         if (typeof SP !== "undefined") {
@@ -67,20 +80,16 @@ function executeSPQuery(options) {
 
                 if (!spWeb) spWeb = clientContext.get_web();
                     
-                // regionalSettings = spWeb.get_regionalSettings();
                 spList = spWeb.get_lists().getByTitle(listName);
+                // regionalSettings = spWeb.get_regionalSettings();
                 // timeZone = regionalSettings.get_timeZone();
-                if (noCallback && console) console.log("[camlsql] Loading list '" + listName + "'"); 
-                clientContext.load(spList);
                 // clientContext.load(regionalSettings);
                 // clientContext.load(timeZone);
+                clientContext.load(spList);
                 clientContext.executeQueryAsync(onListLoaded, function () {
-                    if (execCallback == null) {
-                        throw "[camlsql] Failed to load list";
-                    }
                     execCallback({
                         status: "error",
-                        message: "Failed to load list",
+                        message: "[camlsql] Failed to load list",
                         data: {
                             sql: options.query.$options.parsedQuery.query,
                             viewXml: viewXml,
@@ -93,31 +102,21 @@ function executeSPQuery(options) {
             },"sp.js");
 
         } else {
-            if (noCallback) {
-                if (typeof console !== "undefined") {
-                    console.log("[camlsql] ViewXML:", options.query.getXml(true));
-                }
-            }
-            if (execCallback == null) {
-                // Output xml and info?
-                throw "[camlsql] SP is not defined";
-            }
             execCallback({
                 status: "error",
-                message: "SP is not defined",
+                message: "[camlsql] SP is not defined",
                 data: null
             }, null);
         }
 
         function onListLoaded() {
-          
+            var camlQuery = new SP.CamlQuery(),
+                camlQueryString = options.query.getXml(true);
 
-            var camlQuery = new SP.CamlQuery();
             camlQuery.set_datesInUtc(false);
-            var camlQueryString = options.query.getXml(true);
             camlQuery.set_viewXml(camlQueryString);
+
             spListItems = spList.getItems(camlQuery);
-            if (noCallback && console) console.log("[camlsql] Executing SP.CamlQuery", camlQueryString); 
             clientContext.load(spListItems);
             clientContext.executeQueryAsync(camlQuerySuccess, function (clientRequest, failedEventArgs) {
                 var extraMessage = "";
@@ -144,9 +143,8 @@ function executeSPQuery(options) {
             var listItemEnumerator = spListItems.getEnumerator(),
                 items = [],
                 spListItem,
-                i;
-
-            var listItemCollectionPosition = spListItems.get_listItemCollectionPosition(),
+                i,
+                listItemCollectionPosition = spListItems.get_listItemCollectionPosition(),
                 values, field, groupByValue,
                 groupIndexes = {};
 
