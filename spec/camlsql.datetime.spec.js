@@ -131,16 +131,21 @@ describe("camlsql.datetime", function() {
     expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
 
-   it("camlsql.datetime(new Date()).startOfWeek().sub('1 day').startOfWeek()", function() {
+ it("camlsql.datetime(new Date()).startOfWeek().sub('1 day').startOfWeek()", function() {
     var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0),
         expectedDate = new Date(2008, 0, 7, 0,0,0,0);
     var dateValue = camlsql.datetime(bbPremierDate).startOfWeek().sub('1 day').startOfWeek().value;
     expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
 
+ it("Native date parameter", function() {
+     var stm = camlsql.prepare('SELECT * FROM List1 WHERE Field1 = ?', [new Date()]);
+     var param = stm.$options.parameters["@param0"];
+    expect(param).toBeDefined();
+    expect(param.type).toEqual("DateTime");
+  });
 
 }); 
-
 
 
 describe("Internal date/time functions", function() {
@@ -152,7 +157,29 @@ describe("Internal date/time functions", function() {
     expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
 
-
-
+  it("createDateTimeParameter(camlsql.datetime())", function() {
+    // Hope we can trust this one to not take too long..
+    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0)
+    var dateValue = camlsql.__testonly__.createDateTimeParameter(camlsql.datetime(bbPremierDate));
+    expect(dateValue.value.toISOString()).toEqual("2008-01-20T17:30:00.000Z");
+  });
 
 });
+
+
+describe("Override date with string", function() {
+  it("Totally custom date string", function() {
+    var xml = camlsql.prepare("SELECT * FROM [Notes] WHERE [x] = ?", [ camlsql.datetime("test") ]).getXml();
+    expect(xml).toEqual('<View><Query><Where><Eq><FieldRef Name="x" /><Value Type="DateTime" IncludeTimeValue="True">test</Value></Eq></Where></Query></View>');
+  });
+});
+
+describe("camlsql.datetime().storageTZ(true)", function() {
+  it("Totally custom date string", function() {
+    var xml = camlsql.prepare('SELECT * FROM List1 WHERE Field1 = ?', [camlsql.datetime("2018-01-17T14:58:00.000Z").storageTZ(true)]).getXml()
+    expect(xml).toEqual('<View><Query><Where><Eq><FieldRef Name="Field1" /><Value Type="DateTime" IncludeTimeValue="True" StorageTZ="True">2018-01-17T14:58:00.000Z</Value></Eq></Where></Query></View>');
+  });
+});
+
+
+

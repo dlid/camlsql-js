@@ -14,7 +14,7 @@ function parseParameters(param) {
    }
  } else if (typeof param === "object") {
     keys = Object.keys(param);
-    for (var i=0; i < keys.length; i++) {
+    for (i=0; i < keys.length; i++) {
       if (keys[i].indexOf('@') === 0) {
         p = parseParameter(param[keys[i]]);
         if (p) {

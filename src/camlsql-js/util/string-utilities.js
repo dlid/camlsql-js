@@ -19,9 +19,7 @@ function encodeToInternalField(str) {
  for (i=0; i < str.length; i++) {
   c = encodeURIComponent(str[i]);
   if (c.indexOf('%') == 0) {
-   n += "_x" + ("0000" + str.charCodeAt(i).toString(16)).slice(-4) + "_"
-  } else if (c == ' ') {
-   n += "_x0020_";
+   n += "_x" + ("0000" + str.charCodeAt(i).toString(16)).slice(-4) + "_";
   } else if( c== '.') {
    n += "_x002e_";
   } else if( c== '(') {

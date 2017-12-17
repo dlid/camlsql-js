@@ -1,4 +1,4 @@
-/*! camlsqj-js v0.5.1 | (c) dlid.se | https://camlsqljs.dlid.se/license */
+/*! camlsqj-js v0.5.2 | (c) dlid.se | https://camlsqljs.dlid.se/license */
 (function (global, factory) {
   'use strict';
   typeof exports === 'object' && typeof module !== 'undefined' ? (module.exports = factory()) :
@@ -215,14 +215,14 @@ var CamlSqlDateParameter = {
   stringValue : '',
   add : function(intervalString){
     this.errstr();
-    var diff = getIntervalStringAsMs(intervalString)
+    var diff = getIntervalStringAsMs(intervalString);
     this.value = new Date( this.value.getTime() + diff );
     this.today = false;
     return this;
   },
   sub : function(intervalString){
     this.errstr();
-    var diff = getIntervalStringAsMs(intervalString)
+    var diff = getIntervalStringAsMs(intervalString);
     this.value = new Date( this.value.getTime() - diff );
     this.today = false;
     return this;
@@ -295,6 +295,9 @@ var CamlSqlDateParameter = {
 
 
 function createGuidParameter(value) {
+  if (typeof value === "undefined")  {
+    throw "[camlsql] Missing parameter";
+  }
   return {
     type : 'Guid',
     value : value
@@ -325,19 +328,19 @@ function createMembershipParameter(type, id) {
   };
 }
 
-function createMultiChoiceParameter(value) {
-  return {
-    type : 'MultiChoice',
-    value : value
-  };
-}
+// function createMultiChoiceParameter(value) {
+//   return {
+//     type : 'MultiChoice',
+//     value : value
+//   };
+// }
 
-function createChoiceParameter(value) {
-  return {
-    type : 'Choice',
-    value : value
-  };
-}
+// function createChoiceParameter(value) {
+//   return {
+//     type : 'Choice',
+//     value : value
+//   };
+// }
 
 // function createUrlParameter(value) {
 //   return {
@@ -405,7 +408,7 @@ function executeSPQuery(options) {
                         console.log("[camlsql] Result", rows);
                     }
                 }
-            }
+            };
         }
 
         if (typeof SP !== "undefined") {
@@ -414,12 +417,12 @@ function executeSPQuery(options) {
             SP.SOD.executeOrDelayUntilScriptLoaded(function() {
 
 
-                console.warn("GET SERVER TIMEZOE", _spPageContextInfo.webServerRelativeUrl + "/_api/web/RegionalSettings/TimeZone");
+                // console.warn("GET SERVER TIMEZOE", _spPageContextInfo.webServerRelativeUrl + "/_api/web/RegionalSettings/TimeZone");
 
 
-                ajaxGet(_spPageContextInfo.webServerRelativeUrl + "/_api/web/RegionalSettings/TimeZone", function(e,r) {
-                    console.warn("TZ INFO", e, r);
-                });
+                // ajaxGet(_spPageContextInfo.webServerRelativeUrl + "/_api/web/RegionalSettings/TimeZone", function(e,r) {
+                //     console.warn("TZ INFO", e, r);
+                // });
 
                 clientContext = SP.ClientContext.get_current();
                 if (spWeb !== null) {
@@ -428,7 +431,7 @@ function executeSPQuery(options) {
                     }
                 } 
 
-                if (!spWeb) spWeb = clientContext.get_web();;
+                if (!spWeb) spWeb = clientContext.get_web();
                     
                 // regionalSettings = spWeb.get_regionalSettings();
                 spList = spWeb.get_lists().getByTitle(listName);
@@ -506,7 +509,8 @@ function executeSPQuery(options) {
          function camlQuerySuccess() {
             var listItemEnumerator = spListItems.getEnumerator(),
                 items = [],
-                spListItem;
+                spListItem,
+                i;
 
             var listItemCollectionPosition = spListItems.get_listItemCollectionPosition(),
                 values, field, groupByValue,
@@ -519,7 +523,7 @@ function executeSPQuery(options) {
             // var info = timeZone.get_information();
             // var offset = (info.get_bias() /*+ (info.get_daylightBias() )*/) / 60.0;
             // console.log("TIMEZONE offset", info.get_bias(), info.get_daylightBias(), offset);
-
+ 
             while (listItemEnumerator.moveNext()) {
                 spListItem = listItemEnumerator.get_current();
                 values = spListItem.get_fieldValues();
@@ -527,13 +531,23 @@ function executeSPQuery(options) {
                     prevPage = "PagedPrev=TRUE&Paged=TRUE&p_ID=" + encodeURIComponent(spListItem.get_id());
                 }
 
-                for(var k in values) {
-                    if (values[k] && typeof values[k].getTimezoneOffset == "function") {
-                        if (k == "DateTime_x0020_field") {
-                           // var o = (values[k].getTimezoneOffset() / 60) * -1 ;
-                            // var d = new Date(values[k].getTime() - ((offset ) * 3600 * 1000));
-                            // console.log(k, "is a date", values[k], values[k].getUTCFullYear(), values[k].getUTCMonth(), values[k].getUTCDate(), values[k].getUTCHours(), values[k].getUTCMinutes(), values[k].getUTCSeconds() );
-                            // console.log(d, "is a date2", d, d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds() );
+                // for(var k in values) {
+                //     if (values[k] && typeof values[k].getTimezoneOffset == "function") {
+                //         if (k == "DateTime_x0020_field") {
+                //            // var o = (values[k].getTimezoneOffset() / 60) * -1 ;
+                //             // var d = new Date(values[k].getTime() - ((offset ) * 3600 * 1000));
+                //             // console.log(k, "is a date", values[k], values[k].getUTCFullYear(), values[k].getUTCMonth(), values[k].getUTCDate(), values[k].getUTCHours(), values[k].getUTCMinutes(), values[k].getUTCSeconds() );
+                //             // console.log(d, "is a date2", d, d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds() );
+                //         }
+                //     }
+                // }
+
+                var enc = options.query.$options.parsedQuery.encoded,
+                    encodedFields = Object.keys(options.query.$options.parsedQuery.encoded);
+                if (encodedFields.length > 0) {
+                    for (i=0; i < encodedFields.length; i++) {
+                        if (typeof values[encodedFields[i]] !== "undefined") {
+                            values[enc[encodedFields[i]]] = values[encodedFields[i]];
                         }
                     }
                 }
@@ -562,7 +576,6 @@ function executeSPQuery(options) {
                         items[groupIndexes[groupByValue]].items.push(values);
                     }
                 } else {
-
                     items.push(values);
                 }
             }
@@ -574,22 +587,22 @@ function executeSPQuery(options) {
     }
 
 
-    function ajaxGet(url, callback) {
+    // function ajaxGet(url, callback) {
 
-    var xhr = new XMLHttpRequest();
-        xhr.open('GET', url);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.setRequestHeader('Accept', 'application/json; odata=verbose');
-        xhr.onload = function() {
-            if (xhr.status === 200) {
-                callback(null, xhr.responseText)
-            } else {
-                callback(xhr, null);
-            }
-        };
-        xhr.send();
+    // var xhr = new XMLHttpRequest();
+    //     xhr.open('GET', url);
+    //     xhr.setRequestHeader('Content-Type', 'application/json');
+    //     xhr.setRequestHeader('Accept', 'application/json; odata=verbose');
+    //     xhr.onload = function() {
+    //         if (xhr.status === 200) {
+    //             callback(null, xhr.responseText)
+    //         } else {
+    //             callback(xhr, null);
+    //         }
+    //     };
+    //     xhr.send();
 
-    }
+    // }
 
 /**
  * Add zero padding to a string
@@ -611,9 +624,7 @@ function encodeToInternalField(str) {
  for (i=0; i < str.length; i++) {
   c = encodeURIComponent(str[i]);
   if (c.indexOf('%') == 0) {
-   n += "_x" + ("0000" + str.charCodeAt(i).toString(16)).slice(-4) + "_"
-  } else if (c == ' ') {
-   n += "_x0020_";
+   n += "_x" + ("0000" + str.charCodeAt(i).toString(16)).slice(-4) + "_";
   } else if( c== '.') {
    n += "_x002e_";
   } else if( c== '(') {
@@ -754,7 +765,7 @@ function parseParameters(param) {
    }
  } else if (typeof param === "object") {
     keys = Object.keys(param);
-    for (var i=0; i < keys.length; i++) {
+    for (i=0; i < keys.length; i++) {
       if (keys[i].indexOf('@') === 0) {
         p = parseParameter(param[keys[i]]);
         if (p) {
@@ -800,7 +811,7 @@ function extractGroupByPart(workingObject, quiet) {
         workingObject.group = {
             field : formatFieldName(m[1]),
             collapse : false
-        }
+        };
       }
 } 
 
@@ -974,8 +985,6 @@ function extractListAndFieldNameParts(workingObject) {
       }
 
       workingObject.query = m[3];
-    } else {
-      workingObject.query = "";
     }
   }
 }
@@ -1037,8 +1046,9 @@ function extractOrderByPart(workingObject, quiet) {
                     }
                     dataType = m[0];
                     match[1] = m[1];
-                } else
-                    return [];
+                }
+            } else if (!match[1].match(/^[a-z\d_]+$/i)) {
+                throw "[camlsql] Wrap order by field name in brackets if it contains special characters";
             }
             fieldName = formatFieldName(match[1]);
             if (match.length == 3) {
@@ -1146,7 +1156,7 @@ function extractNamesToEncode(workingObject) {
       counter--;
       if (counter == 0) {
         match = query.substring( startIndex, i+1 );
-        normalized = match.substring(1, match.length-1),
+        normalized = match.substring(1, match.length-1);
         encoded = encodeToInternalField(normalized);
         newQuery = newQuery.replace(match, encoded);
         startIndex = null;
@@ -1392,11 +1402,7 @@ var WhereParser = function(whereString, quiet) {
                     if (prevMacro == null) 
                         prevMacro = m[3][0];
                     else if (prevMacro != m[3][0]) {
-
-                        console.log("prevMacro", prevMacro, comparison);
-
                         throw "[camlsql] You can not mix named macros and ?";
-                        return null;
                     }
                     if (m[3][0] == "@") {
                         macro = m[3];
@@ -1455,7 +1461,7 @@ function CamlXmlBuilder(query, isExec) {
   parsedQuery.uuid = function(prefix) {
     n++;
     return prefix + n;
-  }
+  };
   // remember https://yieldreturnpost.wordpress.com/2012/10/26/caml-query-utc-date-comparisons-in-sharepoint/
   // <Value Type='DateTime' IncludeTimeValue='TRUE' StorageTZ='TRUE'>
   //    2012-10-24T21:30:46Z
@@ -1528,6 +1534,8 @@ function createProjectedFieldsElement(projectedFields, joins) {
     }
 
     xml += xmlEndElement("ProjectedFields");
+  } else if (projectedFields.length > 0 && joins.length == 0) {
+    throw "[camlsql] You must JOIN another list to use projected fields";
   }
 
   return xml;
@@ -1642,8 +1650,8 @@ function createStatementXml(parsedQuery, statement, parameters, log) {
 
       if (param && param.type == "Membership") {
         if (statement.comparison != "eq") throw "[camlsql] Membership comparison must be =";
-        if (param.value.toLowerCase() == "spgroup" && !param.id)
-          throw "[camlsql] Membership of type SPGroup requires a group id";
+        // if (param.value.toLowerCase() == "spgroup" && !param.id)
+        //   throw "[camlsql] Membership of type SPGroup requires a group id";
         xml += xmlBeginElement("Membership", {Type : param.value, ID : param.id ? param.id : null});
         xml += xmlBeginElement(XML_FIELD_FIELDREF, {Name : statement.field}, true);
         xml += xmlEndElement("Membership");
@@ -1665,15 +1673,9 @@ function createStatementXml(parsedQuery, statement, parameters, log) {
       xml+=createFieldRefValue(parsedQuery, statement);
       xml+=xmlEndElement(XML_ELEMENT_ISNOTNULL);
     } else if (comparison == "like") {
-      if (typeof param === "undefined")
-        throw "[camlsql] Parameter is not defined " +  statement.macro;
       var x = getXmlElementForLikeStatement(param.value);
-      //console.log("statement", statement);
-      //console.log("parameters", parameters);
-      //console.warn("X", param);
       elementName = x[1];
       param.overrideValue =  x[0];
-
       xml+=xmlBeginElement(elementName);
       xml+=createFieldRefValue(parsedQuery, statement, param);
       xml+=xmlEndElement(elementName);
@@ -1760,7 +1762,7 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
         if (!parameter || parameter.constructor !== Array)
           throw "[camlsql] IN parameter must be an array";
        xml += '<Values>';
-       for (var i=0; i < parameter.length; i++) {
+       for (i=0; i < parameter.length; i++) {
          xml += creatValueElement(statement, parameter[i], parameter[i].value);      
        }
        xml += '</Values>';
@@ -1768,7 +1770,7 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
         xml += creatValueElement(statement, parameter);
       }
     }
-    return xml;;
+    return xml;
   }
 
   function creatValueElement(statement, parameter) {
@@ -1790,8 +1792,8 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
 }
       if (parameter.today === true) {
         innerXml = xmlBeginElement('Today', vAttr, true);
-      } else if (parameter.isNow === true) {
-        innerXml = "<Now />";
+      // } else if (parameter.isNow === true) {
+      //   innerXml = "<Now />";
       } else {
         valueAttributes.StorageTZ = parameter._storageTZ ? 'True' : null;
         if (parameter.stringValue) {
@@ -1830,7 +1832,7 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
     innerXml = parameterValue ? 1 : 0;
 
   } else {
-    innerXml = xmlBeginElement('NotImplemented',{}, true);
+    throw "[camlsql] Parameter type is not not implemented " + parameter.type;
   }
 
   xml += xmlBeginElement('Value', valueAttributes);

@@ -49,4 +49,14 @@ describe("camlsql.boolean", function() {
   });
 
 
+
+ it("Native type", function() {
+    var stm = camlsql.prepare('SELECT * FROM List1 WHERE Field1 = ?', [camlsql.boolean(true)]);
+    var param = stm.$options.parameters["@param0"];
+    expect(param).toBeDefined()
+
+    expect(param.type).toEqual("Boolean");
+    expect(param.value).toEqual(true);
+  });
+
 }); 

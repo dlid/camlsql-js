@@ -88,4 +88,12 @@ describe("SQL Query #004", function() {
 
 }); 
 
+describe("SQL Query #003", function() {
 
+    it("Query 4", function() {
+     expect(function() {
+      camlsql.prepare('SELECT * FROM List1 ORDER BY :apa')
+    }).toThrow("[camlsql] Wrap order by field name in brackets if it contains special characters");
+  });
+
+}); 

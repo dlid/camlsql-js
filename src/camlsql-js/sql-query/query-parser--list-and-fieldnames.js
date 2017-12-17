@@ -35,8 +35,6 @@ function extractListAndFieldNameParts(workingObject) {
       }
 
       workingObject.query = m[3];
-    } else {
-      workingObject.query = "";
     }
   }
 }

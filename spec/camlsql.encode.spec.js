@@ -35,4 +35,10 @@ describe("camlsql.encode", function() {
     expect(result).toEqual("_x002e_Testing_x0020_a_x0020_dot");
   });
 
+  it("Testing parenthesis", function() {
+    var result = camlsql.encode('Cool (not)');
+    expect(result).toEqual("Cool_x0020__x0028_not_x0029_");
+  });
+
+
 }); 

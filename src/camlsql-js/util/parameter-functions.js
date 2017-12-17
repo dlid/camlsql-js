@@ -123,14 +123,14 @@ var CamlSqlDateParameter = {
   stringValue : '',
   add : function(intervalString){
     this.errstr();
-    var diff = getIntervalStringAsMs(intervalString)
+    var diff = getIntervalStringAsMs(intervalString);
     this.value = new Date( this.value.getTime() + diff );
     this.today = false;
     return this;
   },
   sub : function(intervalString){
     this.errstr();
-    var diff = getIntervalStringAsMs(intervalString)
+    var diff = getIntervalStringAsMs(intervalString);
     this.value = new Date( this.value.getTime() - diff );
     this.today = false;
     return this;
@@ -203,6 +203,9 @@ var CamlSqlDateParameter = {
 
 
 function createGuidParameter(value) {
+  if (typeof value === "undefined")  {
+    throw "[camlsql] Missing parameter";
+  }
   return {
     type : 'Guid',
     value : value
@@ -233,19 +236,19 @@ function createMembershipParameter(type, id) {
   };
 }
 
-function createMultiChoiceParameter(value) {
-  return {
-    type : 'MultiChoice',
-    value : value
-  };
-}
+// function createMultiChoiceParameter(value) {
+//   return {
+//     type : 'MultiChoice',
+//     value : value
+//   };
+// }
 
-function createChoiceParameter(value) {
-  return {
-    type : 'Choice',
-    value : value
-  };
-}
+// function createChoiceParameter(value) {
+//   return {
+//     type : 'Choice',
+//     value : value
+//   };
+// }
 
 // function createUrlParameter(value) {
 //   return {

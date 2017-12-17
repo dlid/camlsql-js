@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.2 
+
+- Added multiple tests
+- Added enhancement [#9 Encoded column names in result](https://github.com/dlid/camlsql-js/issues/9)
+
+
 ## 0.5.1 
 
 - Added [camlsql.lookup](camlsql-object.md#lookup-method)

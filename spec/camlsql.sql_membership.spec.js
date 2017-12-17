@@ -75,7 +75,14 @@
     var result = camlsql.prepare('SELECT * FROM List1 WHERE AssignedTo = ?', [camlsql.membership('SPWeb.Users')]).getXml();
     expect(result).toEqual('<View><Query><Where><Membership Type="SPWeb.Users"><FieldRef Name="AssignedTo" /></Membership></Where></Query></View>');
   });
+}); 
 
+ describe("SQL Test Queries - Membership #009", function() {
+  it("Query 1", function() {
+  expect(function() {
+   var result = camlsql.prepare('SELECT * FROM List1 WHERE AssignedTo = ?', [camlsql.membership('Swedish curd cake')]).getXml()
+  }).toThrow("Membership type should be one of SPWeb.AllUsers, SPGroup, SPWeb.Groups, CurrentUserGroups, SPWeb.Users");
+ }); 
 }); 
 
 

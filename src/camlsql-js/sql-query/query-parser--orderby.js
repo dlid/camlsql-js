@@ -38,8 +38,9 @@ function extractOrderByPart(workingObject, quiet) {
                     }
                     dataType = m[0];
                     match[1] = m[1];
-                } else
-                    return [];
+                }
+            } else if (!match[1].match(/^[a-z\d_]+$/i)) {
+                throw "[camlsql] Wrap order by field name in brackets if it contains special characters";
             }
             fieldName = formatFieldName(match[1]);
             if (match.length == 3) {

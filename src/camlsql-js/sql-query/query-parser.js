@@ -75,7 +75,7 @@ function extractNamesToEncode(workingObject) {
       counter--;
       if (counter == 0) {
         match = query.substring( startIndex, i+1 );
-        normalized = match.substring(1, match.length-1),
+        normalized = match.substring(1, match.length-1);
         encoded = encodeToInternalField(normalized);
         newQuery = newQuery.replace(match, encoded);
         startIndex = null;

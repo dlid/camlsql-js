@@ -42,7 +42,7 @@ function executeSPQuery(options) {
                         console.log("[camlsql] Result", rows);
                     }
                 }
-            }
+            };
         }
 
         if (typeof SP !== "undefined") {
@@ -51,12 +51,12 @@ function executeSPQuery(options) {
             SP.SOD.executeOrDelayUntilScriptLoaded(function() {
 
 
-                console.warn("GET SERVER TIMEZOE", _spPageContextInfo.webServerRelativeUrl + "/_api/web/RegionalSettings/TimeZone");
+                // console.warn("GET SERVER TIMEZOE", _spPageContextInfo.webServerRelativeUrl + "/_api/web/RegionalSettings/TimeZone");
 
 
-                ajaxGet(_spPageContextInfo.webServerRelativeUrl + "/_api/web/RegionalSettings/TimeZone", function(e,r) {
-                    console.warn("TZ INFO", e, r);
-                });
+                // ajaxGet(_spPageContextInfo.webServerRelativeUrl + "/_api/web/RegionalSettings/TimeZone", function(e,r) {
+                //     console.warn("TZ INFO", e, r);
+                // });
 
                 clientContext = SP.ClientContext.get_current();
                 if (spWeb !== null) {
@@ -65,7 +65,7 @@ function executeSPQuery(options) {
                     }
                 } 
 
-                if (!spWeb) spWeb = clientContext.get_web();;
+                if (!spWeb) spWeb = clientContext.get_web();
                     
                 // regionalSettings = spWeb.get_regionalSettings();
                 spList = spWeb.get_lists().getByTitle(listName);
@@ -143,7 +143,8 @@ function executeSPQuery(options) {
          function camlQuerySuccess() {
             var listItemEnumerator = spListItems.getEnumerator(),
                 items = [],
-                spListItem;
+                spListItem,
+                i;
 
             var listItemCollectionPosition = spListItems.get_listItemCollectionPosition(),
                 values, field, groupByValue,
@@ -156,7 +157,7 @@ function executeSPQuery(options) {
             // var info = timeZone.get_information();
             // var offset = (info.get_bias() /*+ (info.get_daylightBias() )*/) / 60.0;
             // console.log("TIMEZONE offset", info.get_bias(), info.get_daylightBias(), offset);
-
+ 
             while (listItemEnumerator.moveNext()) {
                 spListItem = listItemEnumerator.get_current();
                 values = spListItem.get_fieldValues();
@@ -164,13 +165,23 @@ function executeSPQuery(options) {
                     prevPage = "PagedPrev=TRUE&Paged=TRUE&p_ID=" + encodeURIComponent(spListItem.get_id());
                 }
 
-                for(var k in values) {
-                    if (values[k] && typeof values[k].getTimezoneOffset == "function") {
-                        if (k == "DateTime_x0020_field") {
-                           // var o = (values[k].getTimezoneOffset() / 60) * -1 ;
-                            // var d = new Date(values[k].getTime() - ((offset ) * 3600 * 1000));
-                            // console.log(k, "is a date", values[k], values[k].getUTCFullYear(), values[k].getUTCMonth(), values[k].getUTCDate(), values[k].getUTCHours(), values[k].getUTCMinutes(), values[k].getUTCSeconds() );
-                            // console.log(d, "is a date2", d, d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds() );
+                // for(var k in values) {
+                //     if (values[k] && typeof values[k].getTimezoneOffset == "function") {
+                //         if (k == "DateTime_x0020_field") {
+                //            // var o = (values[k].getTimezoneOffset() / 60) * -1 ;
+                //             // var d = new Date(values[k].getTime() - ((offset ) * 3600 * 1000));
+                //             // console.log(k, "is a date", values[k], values[k].getUTCFullYear(), values[k].getUTCMonth(), values[k].getUTCDate(), values[k].getUTCHours(), values[k].getUTCMinutes(), values[k].getUTCSeconds() );
+                //             // console.log(d, "is a date2", d, d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds() );
+                //         }
+                //     }
+                // }
+
+                var enc = options.query.$options.parsedQuery.encoded,
+                    encodedFields = Object.keys(options.query.$options.parsedQuery.encoded);
+                if (encodedFields.length > 0) {
+                    for (i=0; i < encodedFields.length; i++) {
+                        if (typeof values[encodedFields[i]] !== "undefined") {
+                            values[enc[encodedFields[i]]] = values[encodedFields[i]];
                         }
                     }
                 }
@@ -199,7 +210,6 @@ function executeSPQuery(options) {
                         items[groupIndexes[groupByValue]].items.push(values);
                     }
                 } else {
-
                     items.push(values);
                 }
             }
@@ -211,19 +221,19 @@ function executeSPQuery(options) {
     }
 
 
-    function ajaxGet(url, callback) {
+    // function ajaxGet(url, callback) {
 
-    var xhr = new XMLHttpRequest();
-        xhr.open('GET', url);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.setRequestHeader('Accept', 'application/json; odata=verbose');
-        xhr.onload = function() {
-            if (xhr.status === 200) {
-                callback(null, xhr.responseText)
-            } else {
-                callback(xhr, null);
-            }
-        };
-        xhr.send();
+    // var xhr = new XMLHttpRequest();
+    //     xhr.open('GET', url);
+    //     xhr.setRequestHeader('Content-Type', 'application/json');
+    //     xhr.setRequestHeader('Accept', 'application/json; odata=verbose');
+    //     xhr.onload = function() {
+    //         if (xhr.status === 200) {
+    //             callback(null, xhr.responseText)
+    //         } else {
+    //             callback(xhr, null);
+    //         }
+    //     };
+    //     xhr.send();
 
-    }
+    // }

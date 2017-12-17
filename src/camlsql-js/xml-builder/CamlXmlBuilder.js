@@ -21,7 +21,7 @@ function CamlXmlBuilder(query, isExec) {
   parsedQuery.uuid = function(prefix) {
     n++;
     return prefix + n;
-  }
+  };
   // remember https://yieldreturnpost.wordpress.com/2012/10/26/caml-query-utc-date-comparisons-in-sharepoint/
   // <Value Type='DateTime' IncludeTimeValue='TRUE' StorageTZ='TRUE'>
   //    2012-10-24T21:30:46Z
@@ -94,6 +94,8 @@ function createProjectedFieldsElement(projectedFields, joins) {
     }
 
     xml += xmlEndElement("ProjectedFields");
+  } else if (projectedFields.length > 0 && joins.length == 0) {
+    throw "[camlsql] You must JOIN another list to use projected fields";
   }
 
   return xml;
@@ -208,8 +210,8 @@ function createStatementXml(parsedQuery, statement, parameters, log) {
 
       if (param && param.type == "Membership") {
         if (statement.comparison != "eq") throw "[camlsql] Membership comparison must be =";
-        if (param.value.toLowerCase() == "spgroup" && !param.id)
-          throw "[camlsql] Membership of type SPGroup requires a group id";
+        // if (param.value.toLowerCase() == "spgroup" && !param.id)
+        //   throw "[camlsql] Membership of type SPGroup requires a group id";
         xml += xmlBeginElement("Membership", {Type : param.value, ID : param.id ? param.id : null});
         xml += xmlBeginElement(XML_FIELD_FIELDREF, {Name : statement.field}, true);
         xml += xmlEndElement("Membership");
@@ -231,15 +233,9 @@ function createStatementXml(parsedQuery, statement, parameters, log) {
       xml+=createFieldRefValue(parsedQuery, statement);
       xml+=xmlEndElement(XML_ELEMENT_ISNOTNULL);
     } else if (comparison == "like") {
-      if (typeof param === "undefined")
-        throw "[camlsql] Parameter is not defined " +  statement.macro;
       var x = getXmlElementForLikeStatement(param.value);
-      //console.log("statement", statement);
-      //console.log("parameters", parameters);
-      //console.warn("X", param);
       elementName = x[1];
       param.overrideValue =  x[0];
-
       xml+=xmlBeginElement(elementName);
       xml+=createFieldRefValue(parsedQuery, statement, param);
       xml+=xmlEndElement(elementName);
@@ -326,7 +322,7 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
         if (!parameter || parameter.constructor !== Array)
           throw "[camlsql] IN parameter must be an array";
        xml += '<Values>';
-       for (var i=0; i < parameter.length; i++) {
+       for (i=0; i < parameter.length; i++) {
          xml += creatValueElement(statement, parameter[i], parameter[i].value);      
        }
        xml += '</Values>';
@@ -334,7 +330,7 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
         xml += creatValueElement(statement, parameter);
       }
     }
-    return xml;;
+    return xml;
   }
 
   function creatValueElement(statement, parameter) {
@@ -356,8 +352,8 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
 }
       if (parameter.today === true) {
         innerXml = xmlBeginElement('Today', vAttr, true);
-      } else if (parameter.isNow === true) {
-        innerXml = "<Now />";
+      // } else if (parameter.isNow === true) {
+      //   innerXml = "<Now />";
       } else {
         valueAttributes.StorageTZ = parameter._storageTZ ? 'True' : null;
         if (parameter.stringValue) {
@@ -396,7 +392,7 @@ function createFieldRefValue(parsedQuery, statement, parameter, isWhereClause) {
     innerXml = parameterValue ? 1 : 0;
 
   } else {
-    innerXml = xmlBeginElement('NotImplemented',{}, true);
+    throw "[camlsql] Parameter type is not not implemented " + parameter.type;
   }
 
   xml += xmlBeginElement('Value', valueAttributes);

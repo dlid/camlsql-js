@@ -11,6 +11,6 @@ function extractGroupByPart(workingObject, quiet) {
         workingObject.group = {
             field : formatFieldName(m[1]),
             collapse : false
-        }
+        };
       }
 } 

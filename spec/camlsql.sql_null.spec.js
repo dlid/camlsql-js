@@ -7,8 +7,9 @@ describe("NULL SQL Query #001", function() {
 
 
   it("Query 1", function() {
-      var result = camlsql.prepare('SELECT * FROM List1 WHERE Field1 IS NULL').getXml();
-      expect(result).toEqual('<View><Query><Where><IsNull><FieldRef Name="Field1" /></IsNull></Where></Query></View>');
+      var result = camlsql.prepare('SELECT * FROM List1 WHERE Field1 IS NULL');
+      expect(result.getListName()).toEqual("List1");
+      expect(result.getXml()).toEqual('<View><Query><Where><IsNull><FieldRef Name="Field1" /></IsNull></Where></Query></View>');
   });
 
   it("Query 2", function() {
