@@ -157,12 +157,12 @@ describe("Internal date/time functions", function() {
     expect(dateValue.toISOString()).toEqual(expectedDate.toISOString());
   });
 
-  // it("createDateTimeParameter(camlsql.datetime())", function() {
-  //   // Hope we can trust this one to not take too long..
-  //   var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0)
-  //   var dateValue = camlsql.__testonly__.createDateTimeParameter(camlsql.datetime(bbPremierDate));
-  //   expect(dateValue.value.toISOString()).toEqual("2008-01-20T17:30:00.000Z");
-  // });
+  it("createDateTimeParameter(camlsql.datetime())", function() {
+    // Hope we can trust this one to not take too long..
+    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0)
+    var dateValue = camlsql.__testonly__.createDateTimeParameter(camlsql.datetime(bbPremierDate));
+    expect(dateValue.value.getTime()).toEqual(1200850200000);
+  });
 
 });
 
