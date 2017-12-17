@@ -11,8 +11,11 @@ Camlsql will let you fetch SharePoint List Items using SQL syntax. It relies on 
      if (err) console.error(err);
      console.table(rows);
     });
-
 ------
+
+**Looking for the [Documentation](https://dlid.github.io/camlsql-js)**?
+
+----------
 
 ### Why should I use this?
 
@@ -41,12 +44,6 @@ Other than my above attempts to convice you there are few "actual" reasons when 
 Still not convinced? Well, then perhaps this is not the library you're looking for.
 
 Thanks for reading this far! 
-
-#### Documentation
-
-- Read the [documentation](https://dlid.github.io/camlsql-js) for details
-- See example queries that are tested with each build in the [SQL Test Queries](https://github.com/dlid/camlsql-js/wiki/SQL-Test-Queries) wiki page.
-
 
 ## Install
 

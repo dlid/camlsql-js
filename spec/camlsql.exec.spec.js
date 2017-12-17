@@ -42,9 +42,7 @@ global.SP = null;
 
    it("Error when list could not be loaded", function() {
       global.SP = require("./exec_fakes.js")({
-        loadListError : {
-          get_errorCode : function() {return -2130575340;}
-        }
+        loadListError : {}
       });
       camlsql.prepare("SELECT Title, [Låda] FROM Something").exec(function(err, ar) {
         expect(ar).toBeNull();
@@ -55,9 +53,7 @@ global.SP = null;
 
    it("Throw Error when list could not be loaded and no callback", function() {
       global.SP = require("./exec_fakes.js")({
-        loadListError : {
-          get_errorCode : function() {return -2130575340;}
-        }
+        loadListError : {}
       });
       expect(function() {
         camlsql.prepare("SELECT Title FROM Something").exec();  
@@ -93,12 +89,9 @@ global.SP = null;
 
    it("Group by field must be in ViewFields", function() {
       global.SP = require("./exec_fakes.js")({});
-      expect(function() {
-        camlsql.prepare("SELECT Title FROM Something GROUP BY [Category]").exec(function(err, ar) {
-          expect(err.message).toEqual("[camlsql] The Grouping Field must be included in the field list");
-        });
-      });
-      
+      camlsql.prepare("SELECT Title FROM Something GROUP BY [Category]").exec(function(err, ar) {
+        expect(err.message).toEqual("[camlsql] The Grouping Field must be included in the field list");
+      });      
    });
 
   it("Throw error when Group by field must be in ViewFields and no callback", function() {
@@ -144,17 +137,3 @@ global.SP = null;
    });
 
  });
- 
-
-
-
-
-
-
-//  var q = camlsql.prepare("SELECT * FROM Something").exec(function(err, ar) {
-//   if (err) {
-//     console.log(err.status == "error");
-//     console.log(err.message == "Failed to load list")
-//   }
-// });
-
