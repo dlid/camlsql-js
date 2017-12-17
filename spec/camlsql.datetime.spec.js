@@ -159,9 +159,9 @@ describe("Internal date/time functions", function() {
 
   it("createDateTimeParameter(camlsql.datetime())", function() {
     // Hope we can trust this one to not take too long..
-    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0)
+    var bbPremierDate = new Date(2008, 0, 20, 18, 30, 0,0)
     var dateValue = camlsql.__testonly__.createDateTimeParameter(camlsql.datetime(bbPremierDate));
-    expect(dateValue.value.getTime()).toEqual(1200850200000);
+    expect(dateValue.value.getTime()).toEqual(bbPremierDate.getTime());
   });
 
 });
