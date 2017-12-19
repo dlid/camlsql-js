@@ -125,8 +125,17 @@
 			<h2>3. Preview the XML</h2>
 			<p>To preview the CAML Xml, simply fetch it using the .getXml() method.</p>
 			<pre class="prettyprint"><code class="javascript">console.log("xml", query.getXml())</code></pre>
-			<p>This query will give the following XML:</p>
-			<pre class="prettyprint"><code>tbd
+			<p>This query will give the following XML (but without line breaks and indent):</p>
+			<pre class="prettyprint"><code>&lt;View>
+    &lt;Query>
+        &lt;Where>
+            &lt;Eq>
+                &lt;FieldRef Name="Title" />
+                &lt;Value Type="Text">parameter one&lt;/Value>
+            &lt;/Eq>
+        &lt;/Where>
+    &lt;/Query>
+&lt;/View>
 </code></pre>
 
 		<h2>4. Execute the query</h2>
@@ -164,6 +173,11 @@
 	<script type="text/x-template" id="ExamplesTab-template">
 		<div> 
 			<h1>Examples</h1>
+
+ 
+      <textarea id="codemirror" name="code">--Testing
+SELECT * FROM Something
+</textarea>
 
 			<div class="notice notice--info"><p><strong>NOTE!</strong> In many examples I use "<mark>*</mark>" for field selection. It's best practice to just ask for the fields
 			you actually need.</p></div>

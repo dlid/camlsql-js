@@ -4,6 +4,21 @@ var ExamplesTabComponent = {
 	mounted : function() {
 	 	setTimeout(PR.prettyPrint, 10);
 
+	 	var codemirrorTextArea = document.getElementById('codemirror');
+	 	window.cm = CodeMirror.fromTextArea(codemirrorTextArea, {
+	 		mode : 'text/x-camlsql',
+	 		lineNumbers: true,
+	 		extraKeys: {"Ctrl-Space": "autocomplete"},
+	 		hintOptions : {
+	 			tables : {
+		 				'Pages' : ['Title','Something', 'ID', 'Author'],
+		 				'Tasks' : ['Title', 'DueDate']
+		 			}
+	 		}
+	 	});
+
+
+	 	// cm.setOption("hintOptions", { "tables" : {"Tabellen" : ["Title", "ID"] } } );
 
 	},
 	methods : {
@@ -12,7 +27,7 @@ var ExamplesTabComponent = {
 				return s.substring(0, 67) + "...";
 			}
 			return s;
-		},
+		}, 
 		urifyString : function(str) {
 			str = str.toLowerCase();
 			var newString = "";

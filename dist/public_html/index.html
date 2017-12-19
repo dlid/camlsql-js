@@ -114,7 +114,7 @@
 
 			<h2>1. Include the script</h2>
 			<p>Include <code>camlsql</code> on your page. It has no dependencies for basic use.</p>
-			<pre class="prettyprint"><code class="javascript">&lt;script src="https://rawgit.com/dlid/camlsql-js/0.5.2/dist/js/camlsql.min.js"&gt;&lt;script&gt;</code></pre> 
+			<pre class="prettyprint"><code class="javascript">&lt;script src="https://rawgit.com/dlid/camlsql-js/0.5.5/dist/js/camlsql.min.js"&gt;&lt;script&gt;</code></pre> 
 
 			<h2>2. Prepare your query</h2>
 			<p>Your camlsql query consists of two components: the SQL query and the parameters. This is argument one and two in the <code>prepare</code> method.</p>
@@ -125,8 +125,17 @@
 			<h2>3. Preview the XML</h2>
 			<p>To preview the CAML Xml, simply fetch it using the .getXml() method.</p>
 			<pre class="prettyprint"><code class="javascript">console.log("xml", query.getXml())</code></pre>
-			<p>This query will give the following XML:</p>
-			<pre class="prettyprint"><code>tbd
+			<p>This query will give the following XML (but without line breaks and indent):</p>
+			<pre class="prettyprint"><code>&lt;View>
+    &lt;Query>
+        &lt;Where>
+            &lt;Eq>
+                &lt;FieldRef Name="Title" />
+                &lt;Value Type="Text">parameter one&lt;/Value>
+            &lt;/Eq>
+        &lt;/Where>
+    &lt;/Query>
+&lt;/View>
 </code></pre>
 
 		<h2>4. Execute the query</h2>
@@ -164,6 +173,11 @@
 	<script type="text/x-template" id="ExamplesTab-template">
 		<div> 
 			<h1>Examples</h1>
+
+ 
+      <textarea id="codemirror" name="code">--Testing
+SELECT * FROM Something
+</textarea>
 
 			<div class="notice notice--info"><p><strong>NOTE!</strong> In many examples I use "<mark>*</mark>" for field selection. It's best practice to just ask for the fields
 			you actually need.</p></div>

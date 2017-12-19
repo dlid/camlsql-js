@@ -163,6 +163,7 @@ gulp.task('build-app-js',  function (cb) {
         'src/app/js/vendor/lz-string/lz-string.min.js',
         'src/app/js/vendor/vue/vue.min.js',
         'src/app/js/vendor/vue-router/vue-router.js',
+        'src/app/js/vendor/codemirror/*.js',
         'src/app/js/managers/*.js',
         'src/app/js/vue/directives/*.js',
         'src/app/js/vue/components/*.js',
