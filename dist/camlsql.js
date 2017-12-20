@@ -1,4 +1,4 @@
-/*! camlsqj-js v0.5.2 | (c) dlid.se | https://camlsqljs.dlid.se/license */
+/*! camlsqj-js v0.5.5 | (c) dlid.se | https://github.com/dlid/camlsql-js */
 (function (global, factory) {
   'use strict';
   typeof exports === 'object' && typeof module !== 'undefined' ? (module.exports = factory()) :
@@ -961,6 +961,7 @@ function extractListAndFieldNameParts(workingObject) {
 
   if (m) {
     if (m.length == 4) {
+      workingObject.listName = formatFieldName(m[2]);
       fields = parseFieldNames(m[1]);
       for (i=0; i < fields.length; i++) {
 
@@ -972,11 +973,16 @@ function extractListAndFieldNameParts(workingObject) {
           });
           fields[i] = formatFieldName(t[3]);
         } else if (fields[i].indexOf('.') !== -1) {
-          throw "[camlsql] Projected fields in the format <list>.<field_name> must be followed with an AS <alias>";
+          m = fields[i].split('.');
+          if (m[0] == workingObject.listName) {
+            fields[i] = formatFieldName(m[1]);
+          } else {
+            throw "[camlsql] Projected fields in the format <list>.<field_name> must be followed with an AS <alias>";
+          }
         } 
       }
       workingObject.fields = fields;
-      workingObject.listName = formatFieldName(m[2]);
+      
 
       if (!workingObject.listName.match(/^[a-z\d_]+$/i)) {
         throw "[camlsql] Wrap list name in brackets if it contains special characters: [" + workingObject.listName + "]";

@@ -36,7 +36,7 @@ var ftpConfig;
 // Quickly ftp latest build to an ftp server if a ftp.json exists
 try {ftpConfig = JSON.parse(fs.readFileSync('./ftp.json'));} catch(e) { ftpConfig = null;}
 
-var script_header = function (isRelease)  {    var headerComment = "/*! camlsqj-js v" + package.version + " | (c) dlid.se | https://camlsqljs.dlid.se/license */\n",         
+var script_header = function (isRelease)  {    var headerComment = "/*! camlsqj-js v" + package.version + " | (c) dlid.se | https://github.com/dlid/camlsql-js */\n",         
     containerStart = "",
     containerEnd = "";
     return [headerComment + containerStart, containerEnd];
